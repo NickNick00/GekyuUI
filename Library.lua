@@ -1,5 +1,5 @@
 -- Library.lua
--- https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/Library.lua
+-- https://raw.githubusercontent.com/NickNick00/GekyuUI/main/Library.lua
 
 local Library = {}
 Library.__index = Library
@@ -183,10 +183,167 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Engrenagem (placeholder - config hub vem depois)
-    CreateControlButton(TopBar, "", -152, "rbxassetid://133102912527371", function()
-        print("Config hub ainda não implementado")
-    end)
+    -- Config Hub pequeno
+    local ConfigHub = nil
+    local configOpen = false
+
+    local function ToggleConfigHub()
+        if ConfigHub then
+            configOpen = not configOpen
+            ConfigHub.Visible = configOpen
+            window.SearchBar.Visible = not configOpen
+            window.TabBar.Visible = not configOpen
+            window.ContentArea.Visible = not configOpen
+            return
+        end
+
+        ConfigHub = Instance.new("Frame")
+        ConfigHub.Size = UDim2.new(0, 320, 0, 380)
+        ConfigHub.Position = UDim2.new(0.5, -160, 0.5, -190)
+        ConfigHub.BackgroundColor3 = COLORS.Background
+        ConfigHub.BorderSizePixel = 0
+        ConfigHub.ClipsDescendants = true
+        ConfigHub.Visible = true
+        ConfigHub.Parent = ScreenGui
+
+        Instance.new("UICorner", ConfigHub).CornerRadius = CORNERS.Large
+
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = COLORS.Stroke
+        stroke.Transparency = 0.65
+        stroke.Parent = ConfigHub
+
+        local ConfigTop = Instance.new("Frame")
+        ConfigTop.Size = UDim2.new(1,0,0,42)
+        ConfigTop.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+        ConfigTop.BorderSizePixel = 0
+        ConfigTop.Parent = ConfigHub
+
+        Instance.new("UICorner", ConfigTop).CornerRadius = CORNERS.Large
+
+        local configTitle = Instance.new("TextLabel")
+        configTitle.Size = UDim2.new(1, -16, 1, 0)
+        configTitle.Position = UDim2.new(0, 12, 0, 0)
+        configTitle.BackgroundTransparency = 1
+        configTitle.Font = Enum.Font.GothamBlack
+        configTitle.Text = "GEKYU | CONFIG"
+        configTitle.TextColor3 = COLORS.Accent
+        configTitle.TextSize = 17
+        configTitle.TextXAlignment = Enum.TextXAlignment.Left
+        configTitle.Parent = ConfigTop
+
+        CreateControlButton(ConfigTop, "", -54, "rbxassetid://133102912527371", function()
+            configOpen = false
+            ConfigHub.Visible = false
+            window.SearchBar.Visible = true
+            window.TabBar.Visible = true
+            window.ContentArea.Visible = true
+        end).Position = UDim2.new(1, -54, 0.5, -21)
+
+        local ConfigTabBar = Instance.new("Frame")
+        ConfigTabBar.Size = UDim2.new(1,0,0,40)
+        ConfigTabBar.Position = UDim2.new(0,0,0,42)
+        ConfigTabBar.BackgroundTransparency = 1
+        ConfigTabBar.Parent = ConfigHub
+
+        local tabLayout = Instance.new("UIListLayout")
+        tabLayout.FillDirection = Enum.FillDirection.Horizontal
+        tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+        tabLayout.Padding = UDim.new(0,12)
+        tabLayout.Parent = ConfigTabBar
+
+        local ConfigContent = Instance.new("Frame")
+        ConfigContent.Size = UDim2.new(1,0,1,-82)
+        ConfigContent.Position = UDim2.new(0,0,0,82)
+        ConfigContent.BackgroundTransparency = 1
+        ConfigContent.Parent = ConfigHub
+
+        local contentLayout = Instance.new("UIListLayout")
+        contentLayout.Padding = UDim.new(0,10)
+        contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        contentLayout.Parent = ConfigContent
+
+        local currentConfigTab = nil
+
+        local function CreateConfigTab(name, isFirst)
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(0, 100, 0, 32)
+            btn.BackgroundColor3 = COLORS.Element
+            btn.BorderSizePixel = 0
+            btn.Font = Enum.Font.GothamBold
+            btn.Text = name
+            btn.TextColor3 = isFirst and COLORS.Text or COLORS.TextDim
+            btn.TextSize = 14
+            btn.AutoButtonColor = false
+            btn.Parent = ConfigTabBar
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+            local contentFrame = Instance.new("ScrollingFrame")
+            contentFrame.Size = UDim2.new(1,0,1,0)
+            contentFrame.BackgroundTransparency = 1
+            contentFrame.ScrollBarThickness = 3
+            contentFrame.ScrollBarImageColor3 = COLORS.Accent
+            contentFrame.Visible = isFirst
+            contentFrame.Parent = ConfigContent
+
+            btn.Activated:Connect(function()
+                if currentConfigTab then
+                    currentConfigTab.content.Visible = false
+                    currentConfigTab.button.TextColor3 = COLORS.TextDim
+                    currentConfigTab.button.BackgroundColor3 = COLORS.Element
+                end
+                contentFrame.Visible = true
+                btn.TextColor3 = COLORS.Text
+                btn.BackgroundColor3 = COLORS.ElementHover
+                currentConfigTab = {button = btn, content = contentFrame}
+            end)
+
+            btn.MouseEnter:Connect(function()
+                if contentFrame.Visible then return end
+                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = COLORS.ElementHover, TextColor3 = COLORS.Text}):Play()
+            end)
+
+            btn.MouseLeave:Connect(function()
+                if contentFrame.Visible then return end
+                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = COLORS.Element, TextColor3 = COLORS.TextDim}):Play()
+            end)
+
+            return contentFrame
+        end
+
+        local InfoTab = CreateConfigTab("Info", true)
+        local SettingsTab = CreateConfigTab("Config", false)
+        currentConfigTab = {button = ConfigTabBar:FindFirstChildWhichIsA("TextButton"), content = InfoTab}
+
+        -- Conteúdo Info
+        local infoLabel = Instance.new("TextLabel")
+        infoLabel.Size = UDim2.new(0.92, 0, 0, 180)
+        infoLabel.BackgroundTransparency = 1
+        infoLabel.Text = "GEKYU PREMIUM\n\nVersão: 1.0\nData: Janeiro 2026\nDesenvolvedor: Kyuzzy\nDiscord: em breve"
+        infoLabel.TextColor3 = COLORS.Text
+        infoLabel.TextSize = 15
+        infoLabel.Font = Enum.Font.Gotham
+        infoLabel.TextYAlignment = Enum.TextYAlignment.Top
+        infoLabel.TextXAlignment = Enum.TextXAlignment.Left
+        infoLabel.TextWrapped = true
+        infoLabel.Parent = InfoTab
+
+        -- Conteúdo Config (exemplo)
+        local configLabel = Instance.new("TextLabel")
+        configLabel.Size = UDim2.new(0.92, 0, 0, 40)
+        configLabel.BackgroundTransparency = 1
+        configLabel.Text = "Configurações em breve..."
+        configLabel.TextColor3 = COLORS.TextDim
+        configLabel.TextSize = 14
+        configLabel.Font = Enum.Font.GothamBold
+        configLabel.Parent = SettingsTab
+
+        configOpen = true
+    end
+
+    CreateControlButton(TopBar, "", -152, "rbxassetid://133102912527371", ToggleConfigHub)
 
     window.SearchBar = Instance.new("Frame")
     window.SearchBar.Size = UDim2.new(0,140-12,0,32)
@@ -213,9 +370,7 @@ function Library:CreateWindow(title)
     window.TabBar.Position = UDim2.new(0,0,0,100)
     window.TabBar.BackgroundTransparency = 1
     window.TabBar.ScrollBarThickness = 0
-    window.TabBar.ScrollBarImageTransparency = 1
     window.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    window.TabBar.CanvasSize = UDim2.new(0,0,0,0)
     window.TabBar.ScrollingDirection = Enum.ScrollingDirection.Y
     window.TabBar.Parent = window.MainFrame
 
@@ -241,11 +396,8 @@ function Library:CreateWindow(title)
     window.ContentArea.Size = UDim2.new(1, -152, 1, -100)
     window.ContentArea.Position = UDim2.new(0, 148, 0, 96)
     window.ContentArea.BackgroundTransparency = 1
-    window.ContentArea.BorderSizePixel = 0
     window.ContentArea.ScrollBarThickness = 0 
-    window.ContentArea.ScrollBarImageTransparency = 1
     window.ContentArea.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    window.ContentArea.CanvasSize = UDim2.new(0, 0, 0, 0)
     window.ContentArea.Parent = window.MainFrame
 
     local ContentLayout = Instance.new("UIListLayout")
@@ -337,7 +489,6 @@ function Library:CreateWindow(title)
             currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
         end)
 
-        -- Métodos públicos do tab
         function tab:Toggle(options)
             local name = options.Name or "Toggle"
             local checkboxes = options.Checkboxes or {}
@@ -679,6 +830,146 @@ function Library:CreateWindow(title)
                 end)
                 btn.MouseLeave:Connect(function()
                     TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = COLORS.TextDim}):Play()
+                end)
+            end
+
+            selectBox.Activated:Connect(toggleDropdown)
+        end
+
+        function tab:MultiDropdown(options)
+            local name = options.Name or "Multi Dropdown"
+            local opts = options.Options or {}
+            local callback = options.Callback or function() end
+            
+            local container = Instance.new("Frame")
+            container.Size = UDim2.new(0.95, 0, 0, 40)
+            container.BackgroundColor3 = COLORS.Element
+            container.ClipsDescendants = true
+            container.Parent = content
+            Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
+
+            local header = Instance.new("Frame")
+            header.Size = UDim2.new(1, 0, 0, 40)
+            header.BackgroundTransparency = 1
+            header.Parent = container
+
+            local titleLabel = Instance.new("TextLabel")
+            titleLabel.Size = UDim2.new(0, 100, 1, 0)
+            titleLabel.Position = UDim2.new(0, 15, 0, 0)
+            titleLabel.BackgroundTransparency = 1
+            titleLabel.Font = Enum.Font.GothamBold
+            titleLabel.Text = name
+            titleLabel.TextColor3 = COLORS.Text
+            titleLabel.TextSize = 14
+            titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            titleLabel.Parent = header
+
+            local selectBox = Instance.new("TextButton")
+            selectBox.Size = UDim2.new(0, 120, 0, 28)
+            selectBox.Position = UDim2.new(1, -135, 0.5, -14)
+            selectBox.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+            selectBox.Text = ""
+            selectBox.AutoButtonColor = false
+            selectBox.Parent = header
+            
+            local selectStroke = Instance.new("UIStroke")
+            selectStroke.Color = COLORS.Stroke
+            selectStroke.Transparency = 0.8
+            selectStroke.Parent = selectBox
+            
+            Instance.new("UICorner", selectBox).CornerRadius = UDim.new(0, 8)
+
+            local selectedLabel = Instance.new("TextLabel")
+            selectedLabel.Size = UDim2.new(1, -10, 1, 0)
+            selectedLabel.Position = UDim2.new(0, 5, 0, 0)
+            selectedLabel.BackgroundTransparency = 1
+            selectedLabel.Font = Enum.Font.GothamBold
+            selectedLabel.TextColor3 = COLORS.Accent
+            selectedLabel.TextSize = 12
+            selectedLabel.TextXAlignment = Enum.TextXAlignment.Center
+            selectedLabel.Text = "Selecionar..."
+            selectedLabel.Parent = selectBox
+
+            local scrollOptions = Instance.new("ScrollingFrame")
+            scrollOptions.Name = "OptionsScroll"
+            scrollOptions.Size = UDim2.new(1, 0, 0, 0)
+            scrollOptions.Position = UDim2.new(0, 0, 0, 40)
+            scrollOptions.BackgroundTransparency = 1
+            scrollOptions.ScrollBarThickness = 2
+            scrollOptions.ScrollBarImageColor3 = COLORS.Accent
+            scrollOptions.AutomaticCanvasSize = Enum.AutomaticSize.Y
+            scrollOptions.CanvasSize = UDim2.new(0, 0, 0, 0)
+            scrollOptions.Parent = container
+
+            local optionsLayout = Instance.new("UIListLayout")
+            optionsLayout.Padding = UDim.new(0, 3)
+            optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            optionsLayout.Parent = scrollOptions
+
+            local isOpen = false
+            local selectedOptions = {}
+
+            local function toggleDropdown()
+                isOpen = not isOpen
+                local targetScrollHeight = isOpen and math.min(#opts * 36, 150) or 0
+                local targetContainerHeight = 40 + targetScrollHeight
+
+                TweenService:Create(scrollOptions, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, targetScrollHeight)}):Play()
+                TweenService:Create(container, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, targetContainerHeight)}):Play()
+                TweenService:Create(selectStroke, TweenInfo.new(0.3), {Transparency = isOpen and 0.4 or 0.8}):Play()
+            end
+
+            local function updateSelectedDisplay()
+                if #selectedOptions == 0 then
+                    selectedLabel.Text = "Selecionar..."
+                elseif #selectedOptions == 1 then
+                    selectedLabel.Text = selectedOptions[1]
+                else
+                    selectedLabel.Text = #selectedOptions .. " selecionados"
+                end
+                
+                callback(selectedOptions)
+            end
+
+            for _, opt in ipairs(opts) do
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(0.96, 0, 0, 34)
+                btn.BackgroundTransparency = 1
+                btn.BackgroundColor3 = COLORS.Accent
+                btn.Font = Enum.Font.GothamBold
+                btn.Text = opt
+                btn.TextColor3 = COLORS.TextDim
+                btn.TextSize = 13
+                btn.AutoButtonColor = false
+                btn.Parent = scrollOptions
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+                
+                local selected = false
+                
+                btn.Activated:Connect(function()
+                    selected = not selected
+                    btn.TextColor3 = selected and COLORS.Accent or COLORS.TextDim
+                    btn.BackgroundTransparency = selected and 0.85 or 1
+                    
+                    if selected then
+                        table.insert(selectedOptions, opt)
+                    else
+                        for j, v in ipairs(selectedOptions) do
+                            if v == opt then
+                                table.remove(selectedOptions, j)
+                                break
+                            end
+                        end
+                    end
+                    
+                    updateSelectedDisplay()
+                end)
+
+                btn.MouseEnter:Connect(function()
+                    TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.9, TextColor3 = COLORS.Text}):Play()
+                end)
+                btn.MouseLeave:Connect(function()
+                    TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = selected and 0.85 or 1, TextColor3 = selected and COLORS.Accent or COLORS.TextDim}):Play()
                 end)
             end
 
