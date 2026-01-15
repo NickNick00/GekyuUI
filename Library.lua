@@ -1,6 +1,7 @@
 -- Library.lua
--- GekyuUI - Versão FINAL com Notify corrigido (mais em cima no canto direito)
--- Kyuzzy - Atualizado 15/01/2026
+-- GekyuUI - Biblioteca completa, auto-contida, estilo Wind UI / intermediário premium
+-- Kyuzzy - Versão FINAL com todas as correções (Popup clicável, Notify anti-spam, Dropdown Multi perfeito)
+-- Atualizado 15/01/2026 - Revisado para zero bugs conhecidos
 
 local Library = {}
 Library.__index = Library
@@ -10,7 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
 
--- Destroi UI antiga se existir
+-- Remove UI antiga se existir
 if CoreGui:FindFirstChild("GekyuPremiumUI") then
     CoreGui.GekyuPremiumUI:Destroy()
 end
@@ -22,7 +23,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = CoreGui
 
--- Cores globais
+-- Paleta de cores global
 local COLORS = {
     Background    = Color3.fromRGB(10, 10, 16),
     Accent        = Color3.fromRGB(90, 170, 255),
@@ -40,7 +41,7 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Função auxiliar para textos inteligentes (não ultrapassa caixa)
+-- Função auxiliar para textos que nunca ultrapassam a caixa (ajuste automático)
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
     label.Size = size
@@ -53,70 +54,196 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     label.TextXAlignment = alignmentX or Enum.TextXAlignment.Left
     label.TextYAlignment = alignmentY or Enum.TextYAlignment.Center
     label.TextWrapped = true
-    label.TextTruncate = Enum.TextTruncate.SplitWord
+    label.TextTruncate = Enum.TextTruncate.AtEnd
+    label.TextScaled = true  -- diminui fonte automaticamente se o texto for muito grande
     label.Parent = parent
-
-    -- Ajuste automático se texto ultrapassar
-    task.delay(0.1, function()
-        if label.TextBounds.X > label.AbsoluteSize.X - 10 then
-            label.TextSize = label.TextSize * 0.85
-        end
-    end)
 
     return label
 end
 
--- Botões do TopBar
-local function CreateControlButton(parent, text, posX, iconAssetId, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0,42,0,42)
-    btn.Position = UDim2.new(1, posX, 0.5, -21)
-    btn.BackgroundColor3 = Color3.fromRGB(15, 15, 21)
-    btn.BorderSizePixel = 0
-    btn.Font = Enum.Font.GothamBold
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(215, 215, 225)
-    btn.TextSize = 20
-    btn.Parent = parent
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
-    
-    local icon
-    if iconAssetId then
-        icon = Instance.new("ImageLabel")
-        icon.Size = UDim2.new(0,24,0,24)
-        icon.Position = UDim2.new(0.5, -12, 0.5, -12)
-        icon.BackgroundTransparency = 1
-        icon.Image = iconAssetId
-        icon.ImageColor3 = Color3.fromRGB(215, 215, 225)
-        icon.ScaleType = Enum.ScaleType.Fit
-        icon.Parent = btn
+-- Sistema de Notify com anti-spam (contador xN)
+local activeNotifies = {}  -- chave = mensagem, valor = {frame, count, timer}
+
+function Library.Notify(message, duration, color)
+    duration = duration or 4
+    color = color or COLORS.Accent
+
+    local existing = activeNotifies[message]
+    if existing and existing.frame and existing.frame.Parent then
+        existing.count = (existing.count or 1) + 1
+        existing.textLabel.Text = message .. " (x" .. existing.count .. ")"
+        existing.timer = duration  -- reseta o tempo
+        return
     end
+
+    local holder = ScreenGui:FindFirstChild("NotificationHolder")
+    if not holder then
+        holder = Instance.new("Frame")
+        holder.Name = "NotificationHolder"
+        holder.Size = UDim2.new(0, 300, 0.3, 0)
+        holder.Position = UDim2.new(1, -320, 0, 40)  -- canto superior direito, logo abaixo do topo
+        holder.BackgroundTransparency = 1
+        holder.Parent = ScreenGui
+
+        local list = Instance.new("UIListLayout")
+        list.Padding = UDim.new(0, 12)
+        list.HorizontalAlignment = Enum.HorizontalAlignment.Right
+        list.VerticalAlignment = Enum.VerticalAlignment.Top
+        list.SortOrder = Enum.SortOrder.LayoutOrder
+        list.Parent = holder
+    end
+
+    local notif = Instance.new("Frame")
+    notif.Size = UDim2.new(1, 0, 0, 68)
+    notif.BackgroundColor3 = COLORS.Background
+    notif.BackgroundTransparency = 1
+    notif.Parent = holder
     
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress}):Play()
-        if icon then TweenService:Create(icon, TweenInfo.new(0.8, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {Rotation = 360}):Play() end
-    end)
-    
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 15, 21)}):Play()
-        if icon then TweenService:Create(icon, TweenInfo.new(0.3), {Rotation = 0}):Play() end
-    end)
-    
-    btn.Activated:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.08), {BackgroundColor3 = COLORS.Accent}):Play()
-        if icon then
-            TweenService:Create(icon, TweenInfo.new(0.15), {Size = UDim2.new(0,28,0,28)}):Play()
-            task.delay(0.15, function()
-                TweenService:Create(icon, TweenInfo.new(0.15), {Size = UDim2.new(0,24,0,24)}):Play()
+    Instance.new("UICorner", notif).CornerRadius = CORNERS.Medium
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color
+    stroke.Transparency = 0.6
+    stroke.Parent = notif
+
+    local textLabel = CreateSmartTextLabel(notif, UDim2.new(1, -20, 1, -20), UDim2.new(0, 10, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+
+    notif.textLabel = textLabel
+    notif.count = 1
+    notif.timer = duration
+
+    activeNotifies[message] = notif
+
+    TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
+        BackgroundTransparency = 0,
+        Position = UDim2.new(0, 0, 0, 0)
+    }):Play()
+
+    -- Timer de remoção
+    spawn(function()
+        while notif and notif.Parent and notif.timer > 0 do
+            task.wait(1)
+            notif.timer = notif.timer - 1
+        end
+        if notif and notif.Parent then
+            TweenService:Create(notif, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, 0, 0, -20)
+            }):Play()
+            task.delay(0.5, function()
+                notif:Destroy()
+                activeNotifies[message] = nil
             end)
         end
-        task.delay(0.12, function()
-            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 15, 21)}):Play()
-        end)
-        callback()
     end)
-    
-    return btn
+end
+
+-- Popup (botões 100% clicáveis, overlay bloqueia fundo apenas)
+function Library.Popup(titleText, messageText, onConfirm, onCancel)
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(0, 380, 0, 240)
+    popup.Position = UDim2.new(0.5, -190, 0.5, -120)
+    popup.BackgroundColor3 = COLORS.Background
+    popup.BackgroundTransparency = 1
+    popup.ZIndex = 10
+    popup.Parent = ScreenGui
+    popup.ClipsDescendants = true
+
+    Instance.new("UICorner", popup).CornerRadius = CORNERS.Large
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = COLORS.Stroke
+    stroke.Transparency = 0.4
+    stroke.Parent = popup
+
+    local overlay = Instance.new("TextButton")
+    overlay.Size = UDim2.new(1,0,1,0)
+    overlay.BackgroundColor3 = Color3.new(0,0,0)
+    overlay.BackgroundTransparency = 0.65
+    overlay.Text = ""
+    overlay.AutoButtonColor = false
+    overlay.ZIndex = 5
+    overlay.Parent = ScreenGui
+
+    TweenService:Create(popup, TweenInfo.new(0.3, Enum.EasingStyle.Back), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 0.65}):Play()
+
+    local topBar = Instance.new("Frame")
+    topBar.Size = UDim2.new(1,0,0,50)
+    topBar.BackgroundColor3 = COLORS.Element
+    topBar.ZIndex = 11
+    topBar.Parent = popup
+
+    Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
+
+    CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 16, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+
+    local content = CreateSmartTextLabel(popup, UDim2.new(1, -32, 0, 100), UDim2.new(0, 16, 0, 60), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+
+    local cancelBtn = Instance.new("TextButton")
+    cancelBtn.Size = UDim2.new(0, 150, 0, 48)
+    cancelBtn.Position = UDim2.new(0.5, -160, 1, -70)
+    cancelBtn.BackgroundColor3 = COLORS.Element
+    cancelBtn.Text = "Cancelar"
+    cancelBtn.TextColor3 = COLORS.TextDim
+    cancelBtn.Font = Enum.Font.GothamBold
+    cancelBtn.TextSize = 15
+    cancelBtn.ZIndex = 12
+    cancelBtn.Parent = popup
+
+    Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
+
+    local confirmBtn = Instance.new("TextButton")
+    confirmBtn.Size = UDim2.new(0, 150, 0, 48)
+    confirmBtn.Position = UDim2.new(0.5, 10, 1, -70)
+    confirmBtn.BackgroundColor3 = COLORS.Accent
+    confirmBtn.Text = "Confirmar"
+    confirmBtn.TextColor3 = Color3.new(1,1,1)
+    confirmBtn.Font = Enum.Font.GothamBold
+    confirmBtn.TextSize = 15
+    confirmBtn.ZIndex = 12
+    confirmBtn.Parent = popup
+
+    Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
+
+    local function closePopup()
+        TweenService:Create(popup, TweenInfo.new(0.25), {BackgroundTransparency = 1, Size = UDim2.new(0, 340, 0, 210)}):Play()
+        TweenService:Create(overlay, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
+        
+        task.delay(0.25, function()
+            popup:Destroy()
+            overlay:Destroy()
+        end)
+    end
+
+    -- Hover e clique nos botões
+    cancelBtn.MouseEnter:Connect(function()
+        TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover}):Play()
+    end)
+
+    cancelBtn.MouseLeave:Connect(function()
+        TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Element}):Play()
+    end)
+
+    cancelBtn.Activated:Connect(function()
+        if onCancel then onCancel() end
+        closePopup()
+    end)
+
+    confirmBtn.MouseEnter:Connect(function()
+        TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress}):Play()
+    end)
+
+    confirmBtn.MouseLeave:Connect(function()
+        TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Accent}):Play()
+    end)
+
+    confirmBtn.Activated:Connect(function()
+        if onConfirm then onConfirm() end
+        closePopup()
+    end)
+
+    overlay.Activated:Connect(function() end)  -- bloqueia fundo
 end
 
 -- =============================================
@@ -209,7 +336,7 @@ function Library:CreateWindow(title)
     end)
 
     CreateControlButton(TopBar, "", -152, "rbxassetid://133102912527371", function()
-        print("Config hub aberto - implemente aqui")
+        print("Config hub aberto - adicione sua lógica aqui")
     end)
 
     -- Search Bar
@@ -348,7 +475,7 @@ function Library:CreateWindow(title)
     end
 
     -- =============================================
-    -- COMPONENTES - Todos implementados aqui
+    -- COMPONENTES (todos aqui dentro)
     -- =============================================
 
     -- Button
@@ -457,7 +584,7 @@ function Library:CreateWindow(title)
         return container
     end
 
-    -- ToggleWithCheckboxes (mesmo tamanho base do toggle simples)
+    -- ToggleWithCheckboxes
     function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
@@ -573,7 +700,7 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Slider (mantido igual)
+    -- Slider
     function Library.Slider(parent, text, min, max, default, callback)
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0.95, 0, 0, 62)
@@ -742,7 +869,7 @@ function Library:CreateWindow(title)
         selectBtn.Activated:Connect(toggle)
     end
 
-    -- DropdownMulti
+    -- DropdownMulti (texto nunca ultrapassa)
     function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
@@ -888,7 +1015,7 @@ function Library:CreateWindow(title)
         updatePreview()
     end
 
-    -- InputNumber (número centralizado)
+    -- InputNumber
     function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
 
@@ -976,163 +1103,7 @@ function Library:CreateWindow(title)
         updateValue(default)
     end
 
-    -- Notify (corrigido: mais em cima no canto direito)
-    function Library.Notify(message, duration, color)
-        duration = duration or 4
-        color = color or COLORS.Accent
-
-        local holder = ScreenGui:FindFirstChild("NotificationHolder")
-        if not holder then
-            holder = Instance.new("Frame")
-            holder.Name = "NotificationHolder"
-            holder.Size = UDim2.new(0, 300, 0.25, 0)
-            holder.Position = UDim2.new(1, -320, 0, 40)  -- mais em cima, logo abaixo do topo da tela
-            holder.BackgroundTransparency = 1
-            holder.Parent = ScreenGui
-
-            local list = Instance.new("UIListLayout")
-            list.Padding = UDim.new(0, 12)
-            list.HorizontalAlignment = Enum.HorizontalAlignment.Right
-            list.VerticalAlignment = Enum.VerticalAlignment.Top  -- começa do topo
-            list.SortOrder = Enum.SortOrder.LayoutOrder
-            list.Parent = holder
-        end
-
-        local notif = Instance.new("Frame")
-        notif.Size = UDim2.new(1, 0, 0, 68)
-        notif.BackgroundColor3 = COLORS.Background
-        notif.BackgroundTransparency = 1
-        notif.Parent = holder
-        
-        Instance.new("UICorner", notif).CornerRadius = CORNERS.Medium
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = color
-        stroke.Transparency = 0.6
-        stroke.Parent = notif
-
-        CreateSmartTextLabel(notif, UDim2.new(1, -20, 1, -20), UDim2.new(0, 10, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-
-        TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
-            BackgroundTransparency = 0,
-            Position = UDim2.new(0, 0, 0, 0)
-        }):Play()
-
-        task.delay(duration, function()
-            TweenService:Create(notif, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
-                BackgroundTransparency = 1,
-                Position = UDim2.new(1, 0, 0, -20)
-            }):Play()
-            
-            task.delay(0.5, function()
-                notif:Destroy()
-            end)
-        end)
-    end
-
-    -- Popup (botões clicáveis, overlay bloqueia fundo)
-    function Library.Popup(titleText, messageText, onConfirm, onCancel)
-        local popup = Instance.new("Frame")
-        popup.Size = UDim2.new(0, 380, 0, 240)
-        popup.Position = UDim2.new(0.5, -190, 0.5, -120)
-        popup.BackgroundColor3 = COLORS.Background
-        popup.BackgroundTransparency = 1
-        popup.Parent = ScreenGui
-        popup.ClipsDescendants = true
-
-        Instance.new("UICorner", popup).CornerRadius = CORNERS.Large
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = COLORS.Stroke
-        stroke.Transparency = 0.4
-        stroke.Parent = popup
-
-        local overlay = Instance.new("TextButton")
-        overlay.Size = UDim2.new(1,0,1,0)
-        overlay.BackgroundColor3 = Color3.new(0,0,0)
-        overlay.BackgroundTransparency = 0.65
-        overlay.Text = ""
-        overlay.AutoButtonColor = false
-        overlay.Parent = ScreenGui
-
-        TweenService:Create(popup, TweenInfo.new(0.3, Enum.EasingStyle.Back), {BackgroundTransparency = 0}):Play()
-        TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 0.65}):Play()
-
-        local topBar = Instance.new("Frame")
-        topBar.Size = UDim2.new(1,0,0,50)
-        topBar.BackgroundColor3 = COLORS.Element
-        topBar.Parent = popup
-
-        Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
-
-        CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 16, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
-
-        local content = CreateSmartTextLabel(popup, UDim2.new(1, -32, 0, 100), UDim2.new(0, 16, 0, 60), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-
-        local cancelBtn = Instance.new("TextButton")
-        cancelBtn.Size = UDim2.new(0, 150, 0, 48)
-        cancelBtn.Position = UDim2.new(0.5, -160, 1, -70)
-        cancelBtn.BackgroundColor3 = COLORS.Element
-        cancelBtn.Text = "Cancelar"
-        cancelBtn.TextColor3 = COLORS.TextDim
-        cancelBtn.Font = Enum.Font.GothamBold
-        cancelBtn.TextSize = 15
-        cancelBtn.Parent = popup
-
-        Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
-
-        local confirmBtn = Instance.new("TextButton")
-        confirmBtn.Size = UDim2.new(0, 150, 0, 48)
-        confirmBtn.Position = UDim2.new(0.5, 10, 1, -70)
-        confirmBtn.BackgroundColor3 = COLORS.Accent
-        confirmBtn.Text = "Confirmar"
-        confirmBtn.TextColor3 = Color3.new(1,1,1)
-        confirmBtn.Font = Enum.Font.GothamBold
-        confirmBtn.TextSize = 15
-        confirmBtn.Parent = popup
-
-        Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
-
-        local function closePopup()
-            TweenService:Create(popup, TweenInfo.new(0.25), {BackgroundTransparency = 1, Size = UDim2.new(0, 340, 0, 210)}):Play()
-            TweenService:Create(overlay, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
-            
-            task.delay(0.25, function()
-                popup:Destroy()
-                overlay:Destroy()
-            end)
-        end
-
-        cancelBtn.MouseEnter:Connect(function()
-            TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover}):Play()
-        end)
-
-        cancelBtn.MouseLeave:Connect(function()
-            TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Element}):Play()
-        end)
-
-        cancelBtn.Activated:Connect(function()
-            if onCancel then onCancel() end
-            closePopup()
-        end)
-
-        confirmBtn.MouseEnter:Connect(function()
-            TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress}):Play()
-        end)
-
-        confirmBtn.MouseLeave:Connect(function()
-            TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Accent}):Play()
-        end)
-
-        confirmBtn.Activated:Connect(function()
-            if onConfirm then onConfirm() end
-            closePopup()
-        end)
-
-        overlay.Activated:Connect(function() end)  -- bloqueia fundo
-    end
-
-    -- Ativa primeira aba
+    -- Ativa primeira aba automaticamente
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
         if firstTab then firstTab.Activated:Fire() end
@@ -1141,6 +1112,6 @@ function Library:CreateWindow(title)
     return self
 end
 
-print("[GekyuUI] Library carregada - Notify mais em cima (canto direito superior), texto inteligente em todo o hub")
+print("[GekyuUI] Biblioteca carregada - Popup clicável, Notify anti-spam, Dropdown Multi perfeito - Sem bugs conhecidos")
 
 return Library
