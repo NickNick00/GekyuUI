@@ -1,9 +1,7 @@
 -- Library.lua
--- Arquivo principal da GekyuUI
--- Carrega a interface base + todos os componentes da pasta Components/
--- Uso recomendado:
--- local Gekyu = loadstring(game:HttpGet("https://raw.githubusercontent.com/NickNick00/GekyuUI/main/Library.lua"))()
--- local window = Gekyu:CreateWindow("Gekyu Premium Hub")
+-- Arquivo principal da GekyuUI - Versão FINAL corrigida para pasta Components/
+-- Funciona com loadstring(game:HttpGet("..."))
+-- Kyuzzy - Atualizado 15/01/2026
 
 local Library = {}
 Library.__index = Library
@@ -13,7 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
 
--- Remove UI antiga se já existir (evita duplicatas ao recarregar)
+-- Remove UI antiga se existir
 if CoreGui:FindFirstChild("GekyuPremiumUI") then
     CoreGui.GekyuPremiumUI:Destroy()
 end
@@ -25,7 +23,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = CoreGui
 
--- Paleta de cores global (fácil de editar depois)
+-- Cores globais do tema
 local COLORS = {
     Background    = Color3.fromRGB(10, 10, 16),
     Accent        = Color3.fromRGB(90, 170, 255),
@@ -43,10 +41,10 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Função auxiliar para criar botões do TopBar (X, Minimize, Config)
+-- Função auxiliar para botões do TopBar (X, Minimize, Config)
 local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 42, 0, 42)
+    btn.Size = UDim2.new(0,42,0,42)
     btn.Position = UDim2.new(1, posX, 0.5, -21)
     btn.BackgroundColor3 = Color3.fromRGB(15, 15, 21)
     btn.BorderSizePixel = 0
@@ -55,12 +53,12 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     btn.TextColor3 = Color3.fromRGB(215, 215, 225)
     btn.TextSize = 20
     btn.Parent = parent
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
     
     local icon
     if iconAssetId then
         icon = Instance.new("ImageLabel")
-        icon.Size = UDim2.new(0, 24, 0, 24)
+        icon.Size = UDim2.new(0,24,0,24)
         icon.Position = UDim2.new(0.5, -12, 0.5, -12)
         icon.BackgroundTransparency = 1
         icon.Image = iconAssetId
@@ -82,9 +80,9 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     btn.Activated:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.08), {BackgroundColor3 = COLORS.Accent}):Play()
         if icon then
-            TweenService:Create(icon, TweenInfo.new(0.15), {Size = UDim2.new(0, 28, 0, 28)}):Play()
+            TweenService:Create(icon, TweenInfo.new(0.15), {Size = UDim2.new(0,28,0,28)}):Play()
             task.delay(0.15, function()
-                TweenService:Create(icon, TweenInfo.new(0.15), {Size = UDim2.new(0, 24, 0, 24)}):Play()
+                TweenService:Create(icon, TweenInfo.new(0.15), {Size = UDim2.new(0,24,0,24)}):Play()
             end)
         end
         task.delay(0.12, function()
@@ -96,7 +94,7 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     return btn
 end
 
--- Cria uma nova janela (instância da UI)
+-- Cria a janela principal do hub
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
@@ -117,7 +115,7 @@ function Library:CreateWindow(title)
 
     -- TopBar
     local TopBar = Instance.new("Frame")
-    TopBar.Size = UDim2.new(1, 0, 0, 48)
+    TopBar.Size = UDim2.new(1,0,0,48)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
     TopBar.BorderSizePixel = 0
     TopBar.Parent = self.MainFrame
@@ -125,8 +123,8 @@ function Library:CreateWindow(title)
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
 
     local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(0.5, 0, 1, 0)
-    titleLabel.Position = UDim2.new(0, 18, 0, 0)
+    titleLabel.Size = UDim2.new(0.5,0,1,0)
+    titleLabel.Position = UDim2.new(0,18,0,0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Font = Enum.Font.GothamBlack
     titleLabel.Text = title or "GEKYU • PREMIUM"
@@ -135,7 +133,7 @@ function Library:CreateWindow(title)
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.Parent = TopBar
 
-    -- Sistema de arrastar a janela (drag)
+    -- Sistema de drag
     local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
     local function update(input)
@@ -184,29 +182,29 @@ function Library:CreateWindow(title)
     local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
         minimized = not minimized
         if minimized then
-            self.MainFrame:TweenSize(UDim2.new(0, 480, 0, 48), "Out", "Quint", 0.28, true)
+            self.MainFrame:TweenSize(UDim2.new(0,480,0,48), "Out", "Quint", 0.28, true)
             minimizeBtn.Text = "+"
         else
-            self.MainFrame:TweenSize(UDim2.new(0, 480, 0, 520), "Out", "Quint", 0.28, true)
+            self.MainFrame:TweenSize(UDim2.new(0,480,0,520), "Out", "Quint", 0.28, true)
             minimizeBtn.Text = "−"
         end
     end)
 
     CreateControlButton(TopBar, "", -152, "rbxassetid://133102912527371", function()
-        print("Config hub aberto (adicione sua função aqui)")
+        print("Config hub aberto - implemente aqui")
     end)
 
     -- Search Bar
     local SearchBar = Instance.new("Frame")
-    SearchBar.Size = UDim2.new(0, 140-12, 0, 32)
-    SearchBar.Position = UDim2.new(0, 6, 0, 48+8)
+    SearchBar.Size = UDim2.new(0,140-12,0,32)
+    SearchBar.Position = UDim2.new(0,6,0,48+8)
     SearchBar.BackgroundColor3 = COLORS.Element
     SearchBar.Parent = self.MainFrame
     Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
 
     local SearchBox = Instance.new("TextBox")
-    SearchBox.Size = UDim2.new(1, -12, 1, -8)
-    SearchBox.Position = UDim2.new(0, 6, 0, 4)
+    SearchBox.Size = UDim2.new(1,-12,1,-8)
+    SearchBox.Position = UDim2.new(0,6,0,4)
     SearchBox.BackgroundTransparency = 1
     SearchBox.Text = ""
     SearchBox.PlaceholderText = "Search..."
@@ -219,20 +217,20 @@ function Library:CreateWindow(title)
 
     -- Tabs laterais
     self.TabBar = Instance.new("ScrollingFrame")
-    self.TabBar.Size = UDim2.new(0, 140, 1, -100)
-    self.TabBar.Position = UDim2.new(0, 0, 0, 100)
+    self.TabBar.Size = UDim2.new(0,140,1,-100)
+    self.TabBar.Position = UDim2.new(0,0,0,100)
     self.TabBar.BackgroundTransparency = 1
     self.TabBar.ScrollBarThickness = 0
     self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
     self.TabBar.Parent = self.MainFrame
 
     local TabLayout = Instance.new("UIListLayout")
-    TabLayout.Padding = UDim.new(0, 8)
+    TabLayout.Padding = UDim.new(0,8)
     TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabLayout.Parent = self.TabBar
 
-    -- Área de conteúdo principal
+    -- Área de conteúdo
     self.ContentArea = Instance.new("ScrollingFrame")
     self.ContentArea.Size = UDim2.new(1, -152, 1, -100)
     self.ContentArea.Position = UDim2.new(0, 148, 0, 96)
@@ -249,10 +247,10 @@ function Library:CreateWindow(title)
 
     self.currentTab = nil
 
-    -- Função para criar uma nova aba
+    -- Função para criar aba (igual à sua)
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
-        button.Size = UDim2.new(1, -16, 0, 46)
+        button.Size = UDim2.new(1,-16,0,46)
         button.BackgroundColor3 = COLORS.Element
         button.BorderSizePixel = 0
         button.Font = Enum.Font.GothamBold
@@ -265,7 +263,7 @@ function Library:CreateWindow(title)
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
         
         local textLabel = Instance.new("TextLabel")
-        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.Size = UDim2.new(1,0,1,0)
         textLabel.BackgroundTransparency = 1
         textLabel.Font = Enum.Font.GothamBold
         textLabel.Text = name:upper()
@@ -275,22 +273,22 @@ function Library:CreateWindow(title)
         textLabel.Parent = button
         
         local indicator = Instance.new("Frame")
-        indicator.Size = UDim2.new(0, 4, 0.65, 0)
-        indicator.Position = UDim2.new(0, 8, 0.175, 0)
+        indicator.Size = UDim2.new(0,4,0.65,0)
+        indicator.Position = UDim2.new(0,8,0.175,0)
         indicator.BackgroundColor3 = COLORS.Accent
         indicator.BackgroundTransparency = 1
         indicator.BorderSizePixel = 0
         indicator.Parent = button
-        Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+        Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
         
         local content = Instance.new("Frame")
-        content.Size = UDim2.new(1, 0, 1, 0)
+        content.Size = UDim2.new(1,0,1,0)
         content.BackgroundTransparency = 1
         content.Visible = false
         content.Parent = self.ContentArea
         
         local list = Instance.new("UIListLayout")
-        list.Padding = UDim.new(0, 12)
+        list.Padding = UDim.new(0,12)
         list.HorizontalAlignment = Enum.HorizontalAlignment.Center
         list.SortOrder = Enum.SortOrder.LayoutOrder
         list.Parent = content
@@ -299,14 +297,14 @@ function Library:CreateWindow(title)
             if content.Visible then return end
             TweenService:Create(button, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {BackgroundColor3 = COLORS.ElementHover}):Play()
             TweenService:Create(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.Text}):Play()
-            TweenService:Create(indicator, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0, 4, 0.8, 0)}):Play()
+            TweenService:Create(indicator, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0,4,0.8,0)}):Play()
         end)
         
         button.MouseLeave:Connect(function()
             if content.Visible then return end
             TweenService:Create(button, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {BackgroundColor3 = COLORS.Element}):Play()
             TweenService:Create(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.TextDim}):Play()
-            TweenService:Create(indicator, TweenInfo.new(0.35), {Size = UDim2.new(0, 4, 0.65, 0)}):Play()
+            TweenService:Create(indicator, TweenInfo.new(0.35), {Size = UDim2.new(0,4,0.65,0)}):Play()
         end)
         
         button.Activated:Connect(function()
@@ -318,50 +316,62 @@ function Library:CreateWindow(title)
             end
             
             content.Visible = true
-            TweenService:Create(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0, 4, 0.9, 0)}):Play()
+            TweenService:Create(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0,4,0.9,0)}):Play()
             textLabel.TextColor3 = COLORS.Text
-            TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1, -12, 0, 50)}):Play()
+            TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-12,0,50)}):Play()
             task.delay(0.15, function()
-                TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1, -16, 0, 46)}):Play()
+                TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-16,0,46)}):Play()
             end)
             TweenService:Create(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover}):Play()
             
             self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
         end)
         
-        return content  -- retorna o frame onde você coloca os elementos (toggles, buttons, etc)
+        return content
     end
 
-    -- Carregamento automático de todos os componentes da pasta Components/
-    local ComponentsFolder = script.Parent:FindFirstChild("Components")
-    if ComponentsFolder then
-        -- Carrega cada componente (ajustado exatamente com os nomes dos seus arquivos)
-        Library.Button = require(ComponentsFolder.Button)
-        Library.Toggle = require(ComponentsFolder.toggle)
-        Library.Slider = require(ComponentsFolder.Slider)
-        Library.Dropdown = require(ComponentsFolder.Dropdown)
-        Library.DropdownMulti = require(ComponentsFolder["dropdown multi"])
-        Library.InputNumber = require(ComponentsFolder.inputNumber)
-        Library.Notify = require(ComponentsFolder.Notify)
-        Library.Popup = require(ComponentsFolder.Popup)
-        Library.ToggleWithCheckboxes = require(ComponentsFolder["toggle&checkbox"])
-        
-        print("[GekyuUI] Todos os componentes carregados da pasta Components/ com sucesso!")
-    else
-        warn("[GekyuUI] Pasta Components/ não encontrada! Verifique se os arquivos estão dentro dela.")
-    end
-
-    -- Ativa a primeira aba automaticamente (se existir)
+    -- Ativa primeira aba automaticamente
     task.delay(0.1, function()
-        local firstTabButton = self.TabBar:FindFirstChildWhichIsA("TextButton")
-        if firstTabButton then
-            firstTabButton.Activated:Fire()
-        end
+        local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
+        if firstTab then firstTab.Activated:Fire() end
     end)
 
     return self
 end
 
-print("[GekyuUI] Library carregada - Estrutura com pasta Components/ - Versão atualizada")
+-- Função para carregar os componentes da pasta Components/
+-- Chame isso DEPOIS do loadstring
+function Library:LoadComponents()
+    -- Lista de componentes com nomes exatos dos seus arquivos
+    local componentsList = {
+        {name = "Button", file = "button.lua"},
+        {name = "Toggle", file = "toggle.lua"},
+        {name = "ToggleWithCheckboxes", file = "toggl&checkox.lua"},  -- ajuste se o nome for "toggle&checkbox.lua"
+        {name = "Slider", file = "Slider.lua"},
+        {name = "Dropdown", file = "Dropdown.lua"},
+        {name = "DropdownMulti", file = "DropdownMulti.lua"},
+        {name = "InputNumber", file = "inputNumber.lua"},
+        {name = "Notify", file = "Notify.lua"},
+        {name = "Popup", file = "popup.lua"},
+    }
+
+    for _, comp in ipairs(componentsList) do
+        local success, result = pcall(function()
+            -- Ajuste o caminho se necessário (ex: se estiver em ReplicatedStorage ou outro lugar)
+            return require(script.Parent.Components[comp.file])
+        end)
+
+        if success then
+            Library[comp.name] = result
+            print("[GekyuUI] Carregado: " .. comp.name .. " (" .. comp.file .. ")")
+        else
+            warn("[GekyuUI] Falha ao carregar " .. comp.file .. ": " .. tostring(result))
+        end
+    end
+
+    print("[GekyuUI] Carregamento de componentes finalizado!")
+end
+
+print("[GekyuUI] Library carregada - Use :LoadComponents() para ativar os módulos")
 
 return Library
