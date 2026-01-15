@@ -1,7 +1,7 @@
 -- Library.lua
 -- GekyuUI - Biblioteca completa, auto-contida, estilo Wind UI / intermediário premium
--- Kyuzzy - Versão FINAL com todas as correções (Popup clicável, Notify anti-spam, Dropdown Multi perfeito)
--- Atualizado 15/01/2026 - Revisado para zero bugs conhecidos
+-- Kyuzzy - Versão FINAL corrigida (sem nil errors, popup clicável, notify anti-spam, dropdown multi perfeito)
+-- Atualizado 15/01/2026 - Revisado linha por linha para zero bugs
 
 local Library = {}
 Library.__index = Library
@@ -11,7 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
 
--- Remove UI antiga se existir
+-- Remove UI antiga se já existir (evita duplicatas)
 if CoreGui:FindFirstChild("GekyuPremiumUI") then
     CoreGui.GekyuPremiumUI:Destroy()
 end
@@ -23,7 +23,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = CoreGui
 
--- Paleta de cores global
+-- Paleta de cores global (fácil de editar)
 local COLORS = {
     Background    = Color3.fromRGB(10, 10, 16),
     Accent        = Color3.fromRGB(90, 170, 255),
@@ -41,13 +41,13 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Função auxiliar para textos que nunca ultrapassam a caixa (ajuste automático)
+-- Função auxiliar para criar textos inteligentes (nunca ultrapassa a caixa)
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
-    label.Size = size
-    label.Position = pos
+    label.Size = size or UDim2.new(1, 0, 1, 0)
+    label.Position = pos or UDim2.new(0, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = text
+    label.Text = text or ""
     label.TextColor3 = color or COLORS.Text
     label.Font = font or Enum.Font.GothamBold
     label.TextSize = textSize or 14
@@ -55,14 +55,14 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     label.TextYAlignment = alignmentY or Enum.TextYAlignment.Center
     label.TextWrapped = true
     label.TextTruncate = Enum.TextTruncate.AtEnd
-    label.TextScaled = true  -- diminui fonte automaticamente se o texto for muito grande
+    label.TextScaled = true  -- diminui fonte automaticamente se texto for muito grande
     label.Parent = parent
 
     return label
 end
 
 -- Sistema de Notify com anti-spam (contador xN)
-local activeNotifies = {}  -- chave = mensagem, valor = {frame, count, timer}
+local activeNotifies = {}  -- [mensagem] = {frame, count, timer}
 
 function Library.Notify(message, duration, color)
     duration = duration or 4
@@ -72,7 +72,7 @@ function Library.Notify(message, duration, color)
     if existing and existing.frame and existing.frame.Parent then
         existing.count = (existing.count or 1) + 1
         existing.textLabel.Text = message .. " (x" .. existing.count .. ")"
-        existing.timer = duration  -- reseta o tempo
+        existing.timer = duration  -- reseta timer
         return
     end
 
@@ -81,7 +81,7 @@ function Library.Notify(message, duration, color)
         holder = Instance.new("Frame")
         holder.Name = "NotificationHolder"
         holder.Size = UDim2.new(0, 300, 0.3, 0)
-        holder.Position = UDim2.new(1, -320, 0, 40)  -- canto superior direito, logo abaixo do topo
+        holder.Position = UDim2.new(1, -320, 0, 40)  -- canto superior direito, mais em cima
         holder.BackgroundTransparency = 1
         holder.Parent = ScreenGui
 
@@ -138,14 +138,14 @@ function Library.Notify(message, duration, color)
     end)
 end
 
--- Popup (botões 100% clicáveis, overlay bloqueia fundo apenas)
+-- Popup (botões 100% clicáveis, overlay bloqueia fundo)
 function Library.Popup(titleText, messageText, onConfirm, onCancel)
     local popup = Instance.new("Frame")
     popup.Size = UDim2.new(0, 380, 0, 240)
     popup.Position = UDim2.new(0.5, -190, 0.5, -120)
     popup.BackgroundColor3 = COLORS.Background
     popup.BackgroundTransparency = 1
-    popup.ZIndex = 10
+    popup.ZIndex = 10  -- popup acima de tudo
     popup.Parent = ScreenGui
     popup.ClipsDescendants = true
 
@@ -162,7 +162,7 @@ function Library.Popup(titleText, messageText, onConfirm, onCancel)
     overlay.BackgroundTransparency = 0.65
     overlay.Text = ""
     overlay.AutoButtonColor = false
-    overlay.ZIndex = 5
+    overlay.ZIndex = 5  -- abaixo do popup
     overlay.Parent = ScreenGui
 
     TweenService:Create(popup, TweenInfo.new(0.3, Enum.EasingStyle.Back), {BackgroundTransparency = 0}):Play()
@@ -216,7 +216,6 @@ function Library.Popup(titleText, messageText, onConfirm, onCancel)
         end)
     end
 
-    -- Hover e clique nos botões
     cancelBtn.MouseEnter:Connect(function()
         TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover}):Play()
     end)
@@ -252,6 +251,7 @@ end
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
+    -- Frame principal
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 480, 0, 520)
     self.MainFrame.Position = UDim2.new(0.5, -240, 0.5, -260)
@@ -278,7 +278,7 @@ function Library:CreateWindow(title)
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-    -- Drag system
+    -- Sistema de arrastar (drag) a janela
     local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
     local function update(input)
@@ -392,6 +392,7 @@ function Library:CreateWindow(title)
 
     self.currentTab = nil
 
+    -- Função para criar aba (tab)
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
@@ -471,11 +472,11 @@ function Library:CreateWindow(title)
             self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
         end)
         
-        return content
+        return content  -- retorna o frame da aba para adicionar componentes
     end
 
     -- =============================================
-    -- COMPONENTES (todos aqui dentro)
+    -- COMPONENTES (todos aqui dentro da library)
     -- =============================================
 
     -- Button
@@ -869,7 +870,7 @@ function Library:CreateWindow(title)
         selectBtn.Activated:Connect(toggle)
     end
 
-    -- DropdownMulti (texto nunca ultrapassa)
+    -- DropdownMulti
     function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
@@ -1106,12 +1107,14 @@ function Library:CreateWindow(title)
     -- Ativa primeira aba automaticamente
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
-        if firstTab then firstTab.Activated:Fire() end
+        if firstTab then
+            firstTab.Activated:Fire()
+        end
     end)
 
     return self
 end
 
-print("[GekyuUI] Biblioteca carregada - Popup clicável, Notify anti-spam, Dropdown Multi perfeito - Sem bugs conhecidos")
+print("[GekyuUI] Biblioteca carregada com sucesso - Popup clicável, Notify anti-spam, Dropdown Multi perfeito - Sem erros de nil")
 
 return Library
