@@ -1,5 +1,5 @@
 -- Library.lua
--- GekyuUI - Versão com Popup corrigido + Notify anti-spam (contador)
+-- GekyuUI - Versão FINAL com todas correções: Indicator dentro do tab, Notify visível, Popup suave
 -- Kyuzzy - Atualizado 15/01/2026
 
 local Library = {}
@@ -40,7 +40,7 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Função auxiliar para textos inteligentes (não ultrapassa caixa)
+-- Função auxiliar para textos inteligentes (com ajuste automático)
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
     label.Size = size
@@ -54,12 +54,12 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     label.TextYAlignment = alignmentY or Enum.TextYAlignment.Center
     label.TextWrapped = true
     label.TextTruncate = Enum.TextTruncate.SplitWord
+    label.ZIndex = 10
     label.Parent = parent
 
-    -- Ajuste automático se texto ultrapassar
     task.delay(0.1, function()
-        if label.TextBounds.X > label.AbsoluteSize.X - 10 then
-            label.TextSize = label.TextSize * 0.85
+        if label.TextBounds.X > label.AbsoluteSize.X - 20 then
+            label.TextSize = label.TextSize * 0.82
         end
     end)
 
@@ -77,6 +77,7 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(215, 215, 225)
     btn.TextSize = 20
+    btn.ZIndex = 10
     btn.Parent = parent
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
     
@@ -89,6 +90,7 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
         icon.Image = iconAssetId
         icon.ImageColor3 = Color3.fromRGB(215, 215, 225)
         icon.ScaleType = Enum.ScaleType.Fit
+        icon.ZIndex = 11
         icon.Parent = btn
     end
     
@@ -131,6 +133,7 @@ function Library:CreateWindow(title)
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
     self.MainFrame.ClipsDescendants = true
+    self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
@@ -145,6 +148,7 @@ function Library:CreateWindow(title)
     TopBar.Size = UDim2.new(1,0,0,48)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
     TopBar.BorderSizePixel = 0
+    TopBar.ZIndex = 6
     TopBar.Parent = self.MainFrame
 
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
@@ -217,6 +221,7 @@ function Library:CreateWindow(title)
     SearchBar.Size = UDim2.new(0,140-12,0,32)
     SearchBar.Position = UDim2.new(0,6,0,48+8)
     SearchBar.BackgroundColor3 = COLORS.Element
+    SearchBar.ZIndex = 6
     SearchBar.Parent = self.MainFrame
     Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
 
@@ -231,6 +236,7 @@ function Library:CreateWindow(title)
     SearchBox.Font = Enum.Font.GothamBold
     SearchBox.TextSize = 14
     SearchBox.ClearTextOnFocus = false
+    SearchBox.ZIndex = 7
     SearchBox.Parent = SearchBar
 
     -- Tabs laterais
@@ -240,6 +246,7 @@ function Library:CreateWindow(title)
     self.TabBar.BackgroundTransparency = 1
     self.TabBar.ScrollBarThickness = 0
     self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    self.TabBar.ZIndex = 6
     self.TabBar.Parent = self.MainFrame
 
     local TabLayout = Instance.new("UIListLayout")
@@ -255,6 +262,7 @@ function Library:CreateWindow(title)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ScrollBarThickness = 0
     self.ContentArea.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    self.ContentArea.ZIndex = 6
     self.ContentArea.Parent = self.MainFrame
 
     local ContentLayout = Instance.new("UIListLayout")
@@ -270,31 +278,21 @@ function Library:CreateWindow(title)
         button.Size = UDim2.new(1,-16,0,46)
         button.BackgroundColor3 = COLORS.Element
         button.BorderSizePixel = 0
-        button.Font = Enum.Font.GothamBold
-        button.TextColor3 = COLORS.TextDim
-        button.TextSize = 14
-        button.TextWrapped = true
         button.AutoButtonColor = false
         button.Text = ""
+        button.ZIndex = 7
         button.Parent = self.TabBar
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
         
-        local textLabel = Instance.new("TextLabel")
-        textLabel.Size = UDim2.new(1,0,1,0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.Font = Enum.Font.GothamBold
-        textLabel.Text = name:upper()
-        textLabel.TextColor3 = COLORS.TextDim
-        textLabel.TextSize = 14
-        textLabel.TextXAlignment = Enum.TextXAlignment.Center
-        textLabel.Parent = button
+        local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
         
         local indicator = Instance.new("Frame")
-        indicator.Size = UDim2.new(0,4,0.65,0)
-        indicator.Position = UDim2.new(0,8,0.175,0)
+        indicator.Size = UDim2.new(0,4,0.7,0)
+        indicator.Position = UDim2.new(0, 4, 0.15, 0)  -- dentro da caixinha
         indicator.BackgroundColor3 = COLORS.Accent
         indicator.BackgroundTransparency = 1
         indicator.BorderSizePixel = 0
+        indicator.ZIndex = 8
         indicator.Parent = button
         Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
         
@@ -302,6 +300,7 @@ function Library:CreateWindow(title)
         content.Size = UDim2.new(1,0,1,0)
         content.BackgroundTransparency = 1
         content.Visible = false
+        content.ZIndex = 6
         content.Parent = self.ContentArea
         
         local list = Instance.new("UIListLayout")
@@ -312,28 +311,28 @@ function Library:CreateWindow(title)
         
         button.MouseEnter:Connect(function()
             if content.Visible then return end
-            TweenService:Create(button, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {BackgroundColor3 = COLORS.ElementHover}):Play()
+            TweenService:Create(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover}):Play()
             TweenService:Create(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.Text}):Play()
-            TweenService:Create(indicator, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0,4,0.8,0)}):Play()
+            TweenService:Create(indicator, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0,4,0.85,0)}):Play()
         end)
         
         button.MouseLeave:Connect(function()
             if content.Visible then return end
-            TweenService:Create(button, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {BackgroundColor3 = COLORS.Element}):Play()
+            TweenService:Create(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element}):Play()
             TweenService:Create(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.TextDim}):Play()
-            TweenService:Create(indicator, TweenInfo.new(0.35), {Size = UDim2.new(0,4,0.65,0)}):Play()
+            TweenService:Create(indicator, TweenInfo.new(0.35), {Size = UDim2.new(0,4,0.7,0)}):Play()
         end)
         
         button.Activated:Connect(function()
             if self.currentTab then
                 self.currentTab.content.Visible = false
                 TweenService:Create(self.currentTab.indicator, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
-                self.currentTab.button:FindFirstChild("TextLabel").TextColor3 = COLORS.TextDim
+                self.currentTab.button:FindFirstChildWhichIsA("TextLabel").TextColor3 = COLORS.TextDim
                 TweenService:Create(self.currentTab.button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element}):Play()
             end
             
             content.Visible = true
-            TweenService:Create(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0,4,0.9,0)}):Play()
+            TweenService:Create(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0,4,0.95,0)}):Play()
             textLabel.TextColor3 = COLORS.Text
             TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-12,0,50)}):Play()
             task.delay(0.15, function()
@@ -348,10 +347,9 @@ function Library:CreateWindow(title)
     end
 
     -- =============================================
-    -- COMPONENTES - Todos implementados aqui
+    -- COMPONENTES (todos incluídos)
     -- =============================================
 
-    -- Button
     function Library.Button(parent, text, callback, options)
         options = options or {}
         local button = Instance.new("TextButton")
@@ -359,6 +357,7 @@ function Library:CreateWindow(title)
         button.BackgroundColor3 = COLORS.Element
         button.AutoButtonColor = false
         button.Text = ""
+        button.ZIndex = 7
         button.Parent = parent
         
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
@@ -374,6 +373,7 @@ function Library:CreateWindow(title)
             icon.Image = options.icon
             icon.ImageColor3 = COLORS.Text
             icon.ScaleType = Enum.ScaleType.Fit
+            icon.ZIndex = 8
             icon.Parent = button
         end
 
@@ -404,11 +404,11 @@ function Library:CreateWindow(title)
         return button
     end
 
-    -- Toggle simples
     function Library.Toggle(parent, text, default, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
         container.BackgroundColor3 = COLORS.Element
+        container.ZIndex = 7
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
@@ -417,6 +417,7 @@ function Library:CreateWindow(title)
         hitbox.Size = UDim2.new(1, 0, 1, 0)
         hitbox.BackgroundTransparency = 1
         hitbox.Text = ""
+        hitbox.ZIndex = 8
         hitbox.Parent = container
 
         CreateSmartTextLabel(container, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
@@ -425,6 +426,7 @@ function Library:CreateWindow(title)
         track.Size = UDim2.new(0, 52, 0, 26)
         track.Position = UDim2.new(1, -64, 0.5, -13)
         track.BackgroundColor3 = default and COLORS.Accent or COLORS.TextDim
+        track.ZIndex = 8
         track.Parent = container
         
         Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
@@ -433,6 +435,7 @@ function Library:CreateWindow(title)
         circle.Size = UDim2.new(0, 20, 0, 20)
         circle.Position = default and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
         circle.BackgroundColor3 = Color3.new(1,1,1)
+        circle.ZIndex = 9
         circle.Parent = track
         
         Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
@@ -457,12 +460,12 @@ function Library:CreateWindow(title)
         return container
     end
 
-    -- ToggleWithCheckboxes
     function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
         container.BackgroundColor3 = COLORS.Element
         container.ClipsDescendants = true
+        container.ZIndex = 7
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
@@ -478,12 +481,14 @@ function Library:CreateWindow(title)
         toggleBtn.Size = UDim2.new(1, 0, 1, 0)
         toggleBtn.BackgroundTransparency = 1
         toggleBtn.Text = ""
+        toggleBtn.ZIndex = 8
         toggleBtn.Parent = header
 
         local track = Instance.new("Frame")
         track.Size = UDim2.new(0, 52, 0, 26)
         track.Position = UDim2.new(1, -64, 0.5, -13)
         track.BackgroundColor3 = COLORS.TextDim
+        track.ZIndex = 8
         track.Parent = header
         
         Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
@@ -492,6 +497,7 @@ function Library:CreateWindow(title)
         circle.Size = UDim2.new(0, 20, 0, 20)
         circle.Position = UDim2.new(0, 3, 0.5, -10)
         circle.BackgroundColor3 = Color3.new(1,1,1)
+        circle.ZIndex = 9
         circle.Parent = track
         
         Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
@@ -500,6 +506,7 @@ function Library:CreateWindow(title)
         checkboxesContainer.Size = UDim2.new(1, 0, 0, 0)
         checkboxesContainer.Position = UDim2.new(0, 0, 0, 48)
         checkboxesContainer.BackgroundTransparency = 1
+        checkboxesContainer.ZIndex = 8
         checkboxesContainer.Parent = container
 
         local checkListLayout = Instance.new("UIListLayout")
@@ -514,6 +521,7 @@ function Library:CreateWindow(title)
             local checkFrame = Instance.new("Frame")
             checkFrame.Size = UDim2.new(0.92, 0, 0, 36)
             checkFrame.BackgroundTransparency = 1
+            checkFrame.ZIndex = 8
             checkFrame.Parent = checkboxesContainer
 
             CreateSmartTextLabel(checkFrame, UDim2.new(1, -60, 1, 0), UDim2.new(0, 12, 0, 0), checkName, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
@@ -523,12 +531,14 @@ function Library:CreateWindow(title)
             checkHitbox.Position = UDim2.new(1, -45, 0.5, -22)
             checkHitbox.BackgroundTransparency = 1
             checkHitbox.Text = ""
+            checkHitbox.ZIndex = 9
             checkHitbox.Parent = checkFrame
 
             local checkBoxVisual = Instance.new("Frame")
             checkBoxVisual.Size = UDim2.new(0, 20, 0, 20)
             checkBoxVisual.Position = UDim2.new(0.5, -10, 0.5, -10)
             checkBoxVisual.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            checkBoxVisual.ZIndex = 9
             checkBoxVisual.Parent = checkHitbox
             
             Instance.new("UICorner", checkBoxVisual).CornerRadius = UDim.new(0, 5)
@@ -541,6 +551,7 @@ function Library:CreateWindow(title)
             checkMark.Font = Enum.Font.GothamBold
             checkMark.TextSize = 16
             checkMark.Visible = false
+            checkMark.ZIndex = 10
             checkMark.Parent = checkBoxVisual
 
             local cState = false
@@ -573,11 +584,11 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Slider
     function Library.Slider(parent, text, min, max, default, callback)
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0.95, 0, 0, 62)
         frame.BackgroundColor3 = COLORS.Element
+        frame.ZIndex = 7
         frame.Parent = parent
         
         Instance.new("UICorner", frame).CornerRadius = CORNERS.Medium
@@ -590,6 +601,7 @@ function Library:CreateWindow(title)
         bar.Size = UDim2.new(0.92, 0, 0, 8)
         bar.Position = UDim2.new(0.04, 0, 0.68, 0)
         bar.BackgroundColor3 = Color3.fromRGB(45, 45, 62)
+        bar.ZIndex = 8
         bar.Parent = frame
         
         Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
@@ -597,6 +609,7 @@ function Library:CreateWindow(title)
         local fill = Instance.new("Frame")
         fill.Size = UDim2.new(math.clamp((default - min)/(max-min), 0, 1), 0, 1, 0)
         fill.BackgroundColor3 = COLORS.Accent
+        fill.ZIndex = 9
         fill.Parent = bar
         
         Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
@@ -607,6 +620,7 @@ function Library:CreateWindow(title)
         knobArea.AnchorPoint = Vector2.new(0.5, 0.5)
         knobArea.BackgroundTransparency = 1
         knobArea.Text = ""
+        knobArea.ZIndex = 10
         knobArea.Parent = bar
 
         local knob = Instance.new("Frame")
@@ -614,6 +628,7 @@ function Library:CreateWindow(title)
         knob.Position = UDim2.new(0.5, 0, 0.5, 0)
         knob.AnchorPoint = Vector2.new(0.5, 0.5)
         knob.BackgroundColor3 = Color3.new(1,1,1)
+        knob.ZIndex = 11
         knob.Parent = knobArea
         
         Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
@@ -651,12 +666,12 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Dropdown simples
     function Library.Dropdown(parent, text, options, defaultIndex, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
         container.BackgroundColor3 = COLORS.Element
         container.ClipsDescendants = true
+        container.ZIndex = 7
         container.Parent = parent
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
 
@@ -673,6 +688,7 @@ function Library:CreateWindow(title)
         selectBtn.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
         selectBtn.Text = ""
         selectBtn.AutoButtonColor = false
+        selectBtn.ZIndex = 8
         selectBtn.Parent = header
 
         local stroke = Instance.new("UIStroke")
@@ -694,6 +710,7 @@ function Library:CreateWindow(title)
         optionsFrame.ScrollBarThickness = 0
         optionsFrame.ScrollBarImageTransparency = 1
         optionsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        optionsFrame.ZIndex = 9
         optionsFrame.Parent = container
 
         local optionsLayout = Instance.new("UIListLayout")
@@ -718,6 +735,7 @@ function Library:CreateWindow(title)
             btn.BackgroundTransparency = 1
             btn.Text = ""
             btn.AutoButtonColor = false
+            btn.ZIndex = 10
             btn.Parent = optionsFrame
             
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
@@ -742,12 +760,12 @@ function Library:CreateWindow(title)
         selectBtn.Activated:Connect(toggle)
     end
 
-    -- DropdownMulti
     function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
         container.BackgroundColor3 = COLORS.Element
         container.ClipsDescendants = true
+        container.ZIndex = 7
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
@@ -765,6 +783,7 @@ function Library:CreateWindow(title)
         previewBox.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
         previewBox.Text = ""
         previewBox.AutoButtonColor = false
+        previewBox.ZIndex = 8
         previewBox.Parent = header
 
         local stroke = Instance.new("UIStroke")
@@ -786,6 +805,7 @@ function Library:CreateWindow(title)
         arrow.TextColor3 = COLORS.TextDim
         arrow.Font = Enum.Font.GothamBold
         arrow.TextSize = 14
+        arrow.ZIndex = 9
         arrow.Parent = previewBox
 
         local optionsContainer = Instance.new("ScrollingFrame")
@@ -796,6 +816,7 @@ function Library:CreateWindow(title)
         optionsContainer.ScrollBarThickness = 0
         optionsContainer.ScrollBarImageTransparency = 1
         optionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        optionsContainer.ZIndex = 9
         optionsContainer.Parent = container
 
         local optionsLayout = Instance.new("UIListLayout")
@@ -840,6 +861,7 @@ function Library:CreateWindow(title)
             optionBtn.BackgroundTransparency = 1
             optionBtn.Text = ""
             optionBtn.AutoButtonColor = false
+            optionBtn.ZIndex = 10
             optionBtn.Parent = optionsContainer
             
             Instance.new("UICorner", optionBtn).CornerRadius = CORNERS.Small
@@ -855,6 +877,7 @@ function Library:CreateWindow(title)
             checkMark.Font = Enum.Font.GothamBold
             checkMark.TextSize = 18
             checkMark.Visible = selected[i] or false
+            checkMark.ZIndex = 11
             checkMark.Parent = optionBtn
 
             optionBtn.MouseEnter:Connect(function()
@@ -888,13 +911,13 @@ function Library:CreateWindow(title)
         updatePreview()
     end
 
-    -- InputNumber
     function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
 
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 52)
         container.BackgroundColor3 = COLORS.Element
+        container.ZIndex = 7
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
@@ -905,6 +928,7 @@ function Library:CreateWindow(title)
         inputFrame.Size = UDim2.new(0, 140, 0, 34)
         inputFrame.Position = UDim2.new(1, -154, 0, 9)
         inputFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
+        inputFrame.ZIndex = 8
         inputFrame.Parent = container
         
         Instance.new("UICorner", inputFrame).CornerRadius = CORNERS.Small
@@ -919,6 +943,7 @@ function Library:CreateWindow(title)
         valueBox.Font = Enum.Font.GothamBold
         valueBox.TextSize = 16
         valueBox.TextXAlignment = Enum.TextXAlignment.Center
+        valueBox.ZIndex = 9
         valueBox.Parent = inputFrame
 
         local minusBtn = Instance.new("TextButton")
@@ -929,6 +954,7 @@ function Library:CreateWindow(title)
         minusBtn.TextColor3 = COLORS.TextDim
         minusBtn.Font = Enum.Font.GothamBold
         minusBtn.TextSize = 20
+        minusBtn.ZIndex = 9
         minusBtn.Parent = inputFrame
 
         local plusBtn = Instance.new("TextButton")
@@ -939,6 +965,7 @@ function Library:CreateWindow(title)
         plusBtn.TextColor3 = COLORS.TextDim
         plusBtn.Font = Enum.Font.GothamBold
         plusBtn.TextSize = 20
+        plusBtn.ZIndex = 9
         plusBtn.Parent = inputFrame
 
         local currentValue = default
@@ -976,10 +1003,8 @@ function Library:CreateWindow(title)
         updateValue(default)
     end
 
-    -- =============================================
-    -- Notify - Versão Anti-Spam com contador de repetições
-    -- =============================================
-    local activeNotifications = {}  -- [mensagem] = {frame, count, destroyTime}
+    -- Notify (anti-spam com contador)
+    local activeNotifications = {}
 
     function Library.Notify(message, duration, color)
         duration = duration or 4
@@ -1003,23 +1028,20 @@ function Library:CreateWindow(title)
             list.Parent = holder
         end
 
-        -- Já existe notificação com essa mensagem?
         if activeNotifications[message] then
             local data = activeNotifications[message]
-            data.count = data.count + 1
+            data.count = (data.count or 1) + 1
             
-            local newText = message .. "  <font color='rgb(180,180,200)'>x" .. data.count .. "</font>"
-            data.frame:FindFirstChildWhichIsA("TextLabel").RichText = true
-            data.frame:FindFirstChildWhichIsA("TextLabel").Text = newText
+            local label = data.frame:FindFirstChildWhichIsA("TextLabel")
+            label.RichText = true
+            label.Text = message .. "  <font color='rgb(200,220,255)'>x" .. data.count .. "</font>"
             
-            -- Reseta timer
-            if data.destroyTime then
-                task.cancel(data.destroyTime)
-            end
+            if data.destroyTime then task.cancel(data.destroyTime) end
+            
             data.destroyTime = task.delay(duration, function()
                 TweenService:Create(data.frame, TweenInfo.new(0.5), {
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(1, 0, 0, -30)
+                    Position = UDim2.new(1, 0, 0, -40)
                 }):Play()
                 task.delay(0.5, function()
                     data.frame:Destroy()
@@ -1027,7 +1049,6 @@ function Library:CreateWindow(title)
                 end)
             end)
             
-            -- Efeito pulsar leve
             TweenService:Create(data.frame, TweenInfo.new(0.2), {BackgroundColor3 = color}):Play()
             task.delay(0.2, function()
                 TweenService:Create(data.frame, TweenInfo.new(0.4), {BackgroundColor3 = COLORS.Background}):Play()
@@ -1036,25 +1057,24 @@ function Library:CreateWindow(title)
             return
         end
 
-        -- Nova notificação
         local notif = Instance.new("Frame")
         notif.Size = UDim2.new(1, 0, 0, 64)
         notif.BackgroundColor3 = COLORS.Background
-        notif.BackgroundTransparency = 1
-        notif.ZIndex = 101
+        notif.BackgroundTransparency = 0
+        notif.ZIndex = 102
         notif.Parent = holder
         
         Instance.new("UICorner", notif).CornerRadius = CORNERS.Medium
 
         local stroke = Instance.new("UIStroke")
         stroke.Color = color
-        stroke.Transparency = 0.55
+        stroke.Transparency = 0.4
         stroke.Parent = notif
 
         local label = CreateSmartTextLabel(notif, UDim2.new(1, -24, 1, -20), UDim2.new(0, 12, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+        label.ZIndex = 103
 
-        TweenService:Create(notif, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            BackgroundTransparency = 0,
+        TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
             Position = UDim2.new(0, 0, 0, 0)
         }):Play()
 
@@ -1064,7 +1084,7 @@ function Library:CreateWindow(title)
             destroyTime = task.delay(duration, function()
                 TweenService:Create(notif, TweenInfo.new(0.5), {
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(1, 0, 0, -30)
+                    Position = UDim2.new(1, 0, 0, -40)
                 }):Play()
                 task.delay(0.5, function()
                     notif:Destroy()
@@ -1074,9 +1094,7 @@ function Library:CreateWindow(title)
         }
     end
 
-    -- =============================================
-    -- Popup - Corrigido (botões agora devem funcionar)
-    -- =============================================
+    -- Popup (sai tudo junto)
     function Library.Popup(titleText, messageText, onConfirm, onCancel)
         local popupHolder = Instance.new("Frame")
         popupHolder.Name = "PopupLayer"
@@ -1088,7 +1106,7 @@ function Library:CreateWindow(title)
         local overlay = Instance.new("TextButton")
         overlay.Size = UDim2.new(1,0,1,0)
         overlay.BackgroundColor3 = Color3.new(0,0,0)
-        overlay.BackgroundTransparency = 0.7
+        overlay.BackgroundTransparency = 0.85
         overlay.Text = ""
         overlay.AutoButtonColor = false
         overlay.ZIndex = 201
@@ -1098,7 +1116,7 @@ function Library:CreateWindow(title)
         popup.Size = UDim2.new(0, 390, 0, 250)
         popup.Position = UDim2.new(0.5, -195, 0.5, -125)
         popup.BackgroundColor3 = COLORS.Background
-        popup.BackgroundTransparency = 1
+        popup.BackgroundTransparency = 0
         popup.ZIndex = 202
         popup.Parent = popupHolder
         
@@ -1109,17 +1127,10 @@ function Library:CreateWindow(title)
         stroke.Transparency = 0.45
         stroke.Parent = popup
 
-        TweenService:Create(popup, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            BackgroundTransparency = 0,
-            Size = UDim2.new(0, 390, 0, 250)
-        }):Play()
-        
-        TweenService:Create(overlay, TweenInfo.new(0.35), {BackgroundTransparency = 0.7}):Play()
-
         local topBar = Instance.new("Frame")
         topBar.Size = UDim2.new(1,0,0,52)
         topBar.BackgroundColor3 = COLORS.Element
-        topBar.ZIndex = 203
+        topBar.ZIndex = 204
         topBar.Parent = popup
 
         Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
@@ -1127,7 +1138,7 @@ function Library:CreateWindow(title)
         CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
         local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-        content.ZIndex = 203
+        content.ZIndex = 205
 
         local cancelBtn = Instance.new("TextButton")
         cancelBtn.Size = UDim2.new(0, 158, 0, 52)
@@ -1137,7 +1148,7 @@ function Library:CreateWindow(title)
         cancelBtn.TextColor3 = COLORS.TextDim
         cancelBtn.Font = Enum.Font.GothamBold
         cancelBtn.TextSize = 15
-        cancelBtn.ZIndex = 205
+        cancelBtn.ZIndex = 206
         cancelBtn.Parent = popup
 
         Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
@@ -1150,7 +1161,7 @@ function Library:CreateWindow(title)
         confirmBtn.TextColor3 = Color3.new(1,1,1)
         confirmBtn.Font = Enum.Font.GothamBold
         confirmBtn.TextSize = 15
-        confirmBtn.ZIndex = 205
+        confirmBtn.ZIndex = 206
         confirmBtn.Parent = popup
 
         Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
@@ -1163,7 +1174,7 @@ function Library:CreateWindow(title)
             
             TweenService:Create(overlay, TweenInfo.new(0.28), {BackgroundTransparency = 1}):Play()
             
-            task.delay(0.28, function()
+            task.delay(0.3, function()
                 popupHolder:Destroy()
             end)
         end
@@ -1193,11 +1204,8 @@ function Library:CreateWindow(title)
             if onConfirm then onConfirm() end
             closePopup()
         end)
-
-        -- overlay.Activated:Connect(closePopup)  -- ← descomente se quiser fechar clicando fora
     end
 
-    -- Ativa primeira aba automaticamente
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
         if firstTab then firstTab.Activated:Fire() end
@@ -1206,6 +1214,6 @@ function Library:CreateWindow(title)
     return self
 end
 
-print("[GekyuUI] Library carregada - Popup corrigido + Notify com contador anti-spam")
+print("[GekyuUI] Biblioteca carregada completa - Indicator dentro do tab | Notify visível | Popup suave")
 
 return Library
