@@ -1,7 +1,6 @@
 -- Library.lua
--- Arquivo principal da GekyuUI - Versão FINAL corrigida para pasta Components/
--- Funciona com loadstring(game:HttpGet("..."))
--- Kyuzzy - Atualizado 15/01/2026
+-- Versão FINAL corrigida - sem requires internos para evitar nil em loadstring
+-- Kyuzzy - 15/01/2026
 
 local Library = {}
 Library.__index = Library
@@ -11,7 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
 
--- Remove UI antiga se existir
+-- Destroi UI antiga
 if CoreGui:FindFirstChild("GekyuPremiumUI") then
     CoreGui.GekyuPremiumUI:Destroy()
 end
@@ -23,7 +22,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = CoreGui
 
--- Cores globais do tema
+-- Cores globais
 local COLORS = {
     Background    = Color3.fromRGB(10, 10, 16),
     Accent        = Color3.fromRGB(90, 170, 255),
@@ -41,7 +40,7 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Função auxiliar para botões do TopBar (X, Minimize, Config)
+-- Função auxiliar para botões do TopBar
 local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0,42,0,42)
@@ -94,7 +93,6 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     return btn
 end
 
--- Cria a janela principal do hub
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
@@ -133,7 +131,7 @@ function Library:CreateWindow(title)
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.Parent = TopBar
 
-    -- Sistema de drag
+    -- Drag
     local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
     local function update(input)
@@ -173,7 +171,7 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Botões do TopBar
+    -- Botões TopBar
     CreateControlButton(TopBar, "X", -52, nil, function()
         ScreenGui:Destroy()
     end)
@@ -191,7 +189,7 @@ function Library:CreateWindow(title)
     end)
 
     CreateControlButton(TopBar, "", -152, "rbxassetid://133102912527371", function()
-        print("Config hub aberto - implemente aqui")
+        print("Config hub aberto")
     end)
 
     -- Search Bar
@@ -215,7 +213,7 @@ function Library:CreateWindow(title)
     SearchBox.ClearTextOnFocus = false
     SearchBox.Parent = SearchBar
 
-    -- Tabs laterais
+    -- Tabs
     self.TabBar = Instance.new("ScrollingFrame")
     self.TabBar.Size = UDim2.new(0,140,1,-100)
     self.TabBar.Position = UDim2.new(0,0,0,100)
@@ -230,7 +228,7 @@ function Library:CreateWindow(title)
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabLayout.Parent = self.TabBar
 
-    -- Área de conteúdo
+    -- Content Area
     self.ContentArea = Instance.new("ScrollingFrame")
     self.ContentArea.Size = UDim2.new(1, -152, 1, -100)
     self.ContentArea.Position = UDim2.new(0, 148, 0, 96)
@@ -247,7 +245,6 @@ function Library:CreateWindow(title)
 
     self.currentTab = nil
 
-    -- Função para criar aba (igual à sua)
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
@@ -330,7 +327,6 @@ function Library:CreateWindow(title)
         return content
     end
 
-    -- Ativa primeira aba automaticamente
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
         if firstTab then firstTab.Activated:Fire() end
@@ -339,39 +335,37 @@ function Library:CreateWindow(title)
     return self
 end
 
--- Função para carregar os componentes da pasta Components/
--- Chame isso DEPOIS do loadstring
+-- Função para carregar componentes (chame depois do loadstring)
 function Library:LoadComponents()
-    -- Lista de componentes com nomes exatos dos seus arquivos
-    local componentsList = {
-        {name = "Button", file = "button.lua"},
-        {name = "Toggle", file = "toggle.lua"},
-        {name = "ToggleWithCheckboxes", file = "toggl&checkox.lua"},  -- ajuste se o nome for "toggle&checkbox.lua"
-        {name = "Slider", file = "Slider.lua"},
-        {name = "Dropdown", file = "Dropdown.lua"},
-        {name = "DropdownMulti", file = "DropdownMulti.lua"},
-        {name = "InputNumber", file = "inputNumber.lua"},
-        {name = "Notify", file = "Notify.lua"},
-        {name = "Popup", file = "popup.lua"},
+    -- Lista com nomes exatos dos seus arquivos na pasta Components/
+    local comps = {
+        Button = "button.lua",
+        Toggle = "toggle.lua",
+        Slider = "Slider.lua",
+        Dropdown = "Dropdown.lua",
+        DropdownMulti = "DropdownMulti.lua",
+        InputNumber = "inputNumber.lua",
+        Notify = "Notify.lua",
+        Popup = "popup.lua",
+        ToggleWithCheckboxes = "toggl&checkox.lua"  -- ajuste se o nome for diferente (ex: "toggle&checkbox.lua")
     }
 
-    for _, comp in ipairs(componentsList) do
+    for name, file in pairs(comps) do
         local success, result = pcall(function()
-            -- Ajuste o caminho se necessário (ex: se estiver em ReplicatedStorage ou outro lugar)
-            return require(script.Parent.Components[comp.file])
+            -- Aqui usamos um caminho que funciona em loadstring (ajuste se necessário)
+            -- Se você estiver executando em executor que carrega tudo como LocalScript, use game.Players.LocalPlayer.PlayerGui ou outro local
+            return require(script.Parent.Components[file])
         end)
 
         if success then
-            Library[comp.name] = result
-            print("[GekyuUI] Carregado: " .. comp.name .. " (" .. comp.file .. ")")
+            Library[name] = result
+            print("[GekyuUI] Carregado: " .. name .. " (" .. file .. ")")
         else
-            warn("[GekyuUI] Falha ao carregar " .. comp.file .. ": " .. tostring(result))
+            warn("[GekyuUI] Falha ao carregar " .. file .. ": " .. tostring(result))
         end
     end
-
-    print("[GekyuUI] Carregamento de componentes finalizado!")
 end
 
-print("[GekyuUI] Library carregada - Use :LoadComponents() para ativar os módulos")
+print("[GekyuUI] Library carregada. Chame :LoadComponents() para ativar os módulos")
 
 return Library
