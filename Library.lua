@@ -158,7 +158,64 @@ function Library:CreateWindow(title)
     uiStroke.Color = COLORS.Stroke
     uiStroke.Transparency = 0.65
     uiStroke.Parent = self.MainFrame
+    
+    -- Handle de Redimensionamento (Canto inferior direito)
+local ResizeHandle = Instance.new("TextButton")
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Text = ""
+ResizeHandle.ZIndex = 10
+ResizeHandle.Parent = self.MainFrame
 
+-- Ícone visual opcional (três linhazinhas no canto)
+local ResizeIcon = Instance.new("ImageLabel")
+ResizeIcon.Size = UDim2.new(0, 12, 0, 12)
+ResizeIcon.Position = UDim2.new(0.5, -2, 0.5, -2)
+ResizeIcon.BackgroundTransparency = 1
+ResizeIcon.Image = "rbxassetid://6031094678" -- Ícone de redimensionar
+ResizeIcon.ImageColor3 = COLORS.TextDim
+ResizeIcon.ImageTransparency = 0.5
+ResizeIcon.Parent = ResizeHandle
+
+-- Lógica de Redimensionamento
+local resizing = false
+local resizeStartPos = nil
+local startSize = nil
+
+ResizeHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        resizing = true
+        resizeStartPos = input.Position
+        startSize = self.MainFrame.Size
+        
+        -- Impede que o drag do TopBar interfira
+        ContextActionService:BindAction("GekyuResize", function() return Enum.ContextActionResult.Sink end, false, 
+            Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - resizeStartPos
+        
+        -- Define limites mínimos para não quebrar a UI
+        local newWidth = math.max(400, startSize.X.Offset + delta.X)
+        local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
+        
+        -- Aplica o tamanho (instantâneo e fluido)
+        self.MainFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        resizing = false
+        ContextActionService:UnbindAction("GekyuResize")
+    end
+end)
+    
     -- TopBar
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1,0,0,48)
