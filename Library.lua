@@ -143,9 +143,12 @@ end
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
+-- Tamanho inicial salvo (ou padrão se for a primeira vez)
+    self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
+    
     self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = UDim2.new(0, 480, 0, 520)
-    self.MainFrame.Position = UDim2.new(0.5, -240, 0.5, -260)
+    self.MainFrame.Size = self.SavedSize  -- Usa o tamanho que o usuário deixou da última vez
+    self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)  -- Centraliza com o novo tamanho
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
     self.MainFrame.ClipsDescendants = true
@@ -158,63 +161,62 @@ function Library:CreateWindow(title)
     uiStroke.Color = COLORS.Stroke
     uiStroke.Transparency = 0.65
     uiStroke.Parent = self.MainFrame
-    
-    -- Handle de Redimensionamento (Canto inferior direito)
-local ResizeHandle = Instance.new("TextButton")
-ResizeHandle.Name = "ResizeHandle"
-ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
-ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
-ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Text = ""
-ResizeHandle.ZIndex = 10
-ResizeHandle.Parent = self.MainFrame
 
--- Ícone visual opcional (três linhazinhas no canto)
-local ResizeIcon = Instance.new("ImageLabel")
-ResizeIcon.Size = UDim2.new(0, 12, 0, 12)
-ResizeIcon.Position = UDim2.new(0.5, -2, 0.5, -2)
-ResizeIcon.BackgroundTransparency = 1
-ResizeIcon.Image = "rbxassetid://6031094678" -- Ícone de redimensionar
-ResizeIcon.ImageColor3 = COLORS.TextDim
-ResizeIcon.ImageTransparency = 0.5
-ResizeIcon.Parent = ResizeHandle
+    -- Handle de Redimensionamento + lógica completa (cole aqui tudo)
+    local function updateResize()
+        local resizing = false
+        local resizeStartPos
+        local startSize
 
--- Lógica de Redimensionamento
-local resizing = false
-local resizeStartPos = nil
-local startSize = nil
+        local ResizeHandle = Instance.new("ImageButton")
+        ResizeHandle.Name = "ResizeHandle"
+        ResizeHandle.Size = UDim2.new(0, 18, 0, 18)
+        ResizeHandle.Position = UDim2.new(1, -18, 1, -18)
+        ResizeHandle.BackgroundTransparency = 1
+        ResizeHandle.Image = "rbxassetid://11419730533" -- Ícone bonito
+        ResizeHandle.ImageColor3 = COLORS.Accent
+        ResizeHandle.ZIndex = 20
+        ResizeHandle.Parent = self.MainFrame
 
-ResizeHandle.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        resizing = true
-        resizeStartPos = input.Position
-        startSize = self.MainFrame.Size
-        
-        -- Impede que o drag do TopBar interfira
-        ContextActionService:BindAction("GekyuResize", function() return Enum.ContextActionResult.Sink end, false, 
-            Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
+        local BlockOverlay = Instance.new("TextButton")
+        BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
+        BlockOverlay.BackgroundTransparency = 1
+        BlockOverlay.Text = ""
+        BlockOverlay.Visible = false
+        BlockOverlay.ZIndex = 19
+        BlockOverlay.Parent = self.MainFrame
+
+        ResizeHandle.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                resizing = true
+                resizeStartPos = input.Position
+                startSize = self.MainFrame.Size
+                BlockOverlay.Visible = true
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - resizeStartPos
+                
+                local newWidth = math.max(450, startSize.X.Offset + delta.X)
+                local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
+                
+                local newSize = UDim2.new(0, newWidth, 0, newHeight)
+                self.MainFrame.Size = newSize
+                self.SavedSize = newSize  -- Salva para a próxima vez que abrir
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                resizing = false
+                BlockOverlay.Visible = false
+            end
+        end)
     end
-end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - resizeStartPos
-        
-        -- Define limites mínimos para não quebrar a UI
-        local newWidth = math.max(400, startSize.X.Offset + delta.X)
-        local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
-        
-        -- Aplica o tamanho (instantâneo e fluido)
-        self.MainFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        resizing = false
-        ContextActionService:UnbindAction("GekyuResize")
-    end
-end)
+    updateResize()  -- Executa a função para criar o handle
     
     -- TopBar
     local TopBar = Instance.new("Frame")
@@ -1080,7 +1082,8 @@ end)
             
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
 
-            CreateSmartTextLabel(btn, UDim2.new(1, 0, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+           local label = CreateSmartTextLabel(btn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+label.TextTruncate = Enum.TextTruncate.AtEnd
 
             btn.Activated:Connect(function()
                 selectedText.Text = limitedOpt
@@ -1204,7 +1207,8 @@ end)
             
             Instance.new("UICorner", optionBtn).CornerRadius = CORNERS.Small
 
-            CreateSmartTextLabel(optionBtn, UDim2.new(1, -40, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+            local label = CreateSmartTextLabel(optionBtn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+label.TextTruncate = Enum.TextTruncate.AtEnd
 
             local checkMark = Instance.new("TextLabel")
             checkMark.Size = UDim2.new(0, 24, 0, 24)
