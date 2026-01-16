@@ -162,6 +162,15 @@ function Library:CreateWindow(title)
     uiStroke.Transparency = 0.65
     uiStroke.Parent = self.MainFrame
 
+    -- ← COLOQUE AQUI A CRIAÇÃO DO BOTTOM DRAG
+    local BottomDrag = Instance.new("Frame")
+    BottomDrag.Name = "BottomDrag"
+    BottomDrag.Size = UDim2.new(1, 0, 0, 24)
+    BottomDrag.Position = UDim2.new(0, 0, 1, -24)
+    BottomDrag.BackgroundTransparency = 1
+    BottomDrag.ZIndex = 15
+    BottomDrag.Parent = self.MainFrame
+
     -- Handle de Redimensionamento + lógica completa (cole aqui tudo)
     local function updateResize()
         local resizing = false
