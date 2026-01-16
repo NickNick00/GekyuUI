@@ -1,6 +1,8 @@
 -- Library.lua
--- GekyuUI - Biblioteca completa com todas as correções: Config minimiza/desminimiza, scroll por tab, engrenagem no lugar, InputNumber limitado
+-- GekyuUI - Biblioteca completa com TODOS os componentes, scroll salvo por tab, config minimiza/desminimiza, engrenagem corrigida
 -- Kyuzzy - Atualizado 16/01/2026
+
+print("[GekyuUI] Iniciando carregamento da Library...")
 
 local Library = {}
 Library.__index = Library
@@ -44,7 +46,7 @@ local CORNERS = {
 local lastConfigPosition = UDim2.new(0.5, -200, 0.5, -250)
 local lastConfigMinimized = false
 
--- Função auxiliar para labels inteligentes
+-- Função auxiliar para labels inteligentes (sem limite forçado)
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
     label.Size = size
@@ -78,7 +80,7 @@ local function LimitDropdownText(text)
     return text
 end
 
--- Botões do TopBar
+-- Botões do TopBar (ícones, hover, animação)
 local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0,42,0,42)
@@ -224,8 +226,8 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Engrenagem de Config (posição correta -152)
-    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()  -- ícone engrenagem
+    -- Engrenagem de Config (posição correta)
+    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
         self:ToggleConfigPanel()
     end)
 
@@ -358,7 +360,6 @@ function Library:CreateWindow(title)
         
         button.Activated:Connect(function()
             if self.currentTab then
-                -- Salva scroll da tab atual
                 self.tabScrollPositions[self.currentTab.name] = self.currentTab.content.CanvasPosition
                 self.currentTab.content.Visible = false
                 TweenService:Create(self.currentTab.indicator, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
@@ -368,7 +369,6 @@ function Library:CreateWindow(title)
             
             content.Visible = true
             
-            -- Restaura scroll salvo ou vai pro topo
             if self.tabScrollPositions[name:upper()] then
                 content.CanvasPosition = self.tabScrollPositions[name:upper()]
             else
@@ -386,7 +386,6 @@ function Library:CreateWindow(title)
             self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel, name = name:upper()}
         end)
         
-        -- Atualiza CanvasSize automaticamente
         list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 20)
         end)
@@ -441,7 +440,6 @@ function Library:CreateWindow(title)
 
     function self:ToggleConfigPanel()
         if self.ConfigPanel and self.ConfigPanel.Parent then
-            -- Salva estado antes de fechar
             lastConfigPosition = self.ConfigPanel.Position
             lastConfigMinimized = (self.ConfigPanel.Size.Y.Offset == 40)
             
@@ -451,7 +449,6 @@ function Library:CreateWindow(title)
                 self.ConfigPanel = nil
             end)
         else
-            -- Cria painel com estado salvo
             local panel = Instance.new("Frame")
             panel.Name = "ConfigPanel"
             panel.BackgroundColor3 = COLORS.Background
@@ -464,7 +461,6 @@ function Library:CreateWindow(title)
             stroke.Transparency = 0.5
             stroke.Parent = panel
 
-            -- TopBar
             local configTopBar = Instance.new("Frame")
             configTopBar.Size = UDim2.new(1,0,0,40)
             configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
@@ -475,7 +471,6 @@ function Library:CreateWindow(title)
 
             CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
 
-            -- Minimizar / Desminimizar
             local configMinimizeBtn = Instance.new("TextButton")
             configMinimizeBtn.Size = UDim2.new(0,30,0,30)
             configMinimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
@@ -489,15 +484,12 @@ function Library:CreateWindow(title)
 
             configMinimizeBtn.Activated:Connect(function()
                 if panel.Size.Y.Offset == 40 then
-                    -- Desminimiza
                     TweenService:Create(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,500)}):Play()
                 else
-                    -- Minimiza
                     TweenService:Create(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,40)}):Play()
                 end
             end)
 
-            -- X para fechar
             local configCloseBtn = Instance.new("TextButton")
             configCloseBtn.Size = UDim2.new(0,30,0,30)
             configCloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
@@ -513,7 +505,6 @@ function Library:CreateWindow(title)
                 self:ToggleConfigPanel()
             end)
 
-            -- Tabs internas
             local configTabBar = Instance.new("Frame")
             configTabBar.Size = UDim2.new(1,0,0,40)
             configTabBar.Position = UDim2.new(0,0,0,40)
@@ -578,7 +569,6 @@ function Library:CreateWindow(title)
                 configTabBtn.TextColor3 = COLORS.Accent
             end)
 
-            -- Drag do painel
             local configDragging, configDragInput, configDragStart, configStartPos = false, nil, nil, nil
 
             local function configUpdate(input)
@@ -619,7 +609,6 @@ function Library:CreateWindow(title)
                 end
             end)
 
-            -- Aplica estado salvo
             panel.Position = lastConfigPosition
             if lastConfigMinimized then
                 panel.Size = UDim2.new(0,400,0,40)
@@ -633,7 +622,6 @@ function Library:CreateWindow(title)
         end
     end
 
-    -- Popup de trocar hub
     function self:ShowSwitchHubPopup()
         Library.Popup(
             "Trocar de Hub",
@@ -1315,7 +1303,6 @@ function Library:CreateWindow(title)
         updateValue(default)
     end
 
-    -- Notify
     local activeNotifications = {}
 
     function Library.Notify(message, duration, color)
@@ -1406,7 +1393,6 @@ function Library:CreateWindow(title)
         }
     end
 
-    -- Popup
     function Library.Popup(titleText, messageText, onConfirm, onCancel)
         local popupHolder = Instance.new("Frame")
         popupHolder.Name = "PopupLayer"
@@ -1519,14 +1505,3 @@ function Library:CreateWindow(title)
     end
 
     -- Abre a primeira aba automaticamente
-    task.delay(0.1, function()
-        local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
-        if firstTab then firstTab.Activated:Fire() end
-    end)
-
-    return self
-end
-
-print("[GekyuUI] Biblioteca completa carregada: Config minimiza/desminimiza, scroll por tab, engrenagem no lugar, todos componentes inclusos")
-
-return Library
