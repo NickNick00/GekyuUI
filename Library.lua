@@ -1,5 +1,5 @@
 -- Library.lua
--- GekyuUI - Versão COMPLETA com Drag Duplo (topo + base) + Todos componentes
+-- GekyuUI - Versão FINAL COMPLETA - Drag Duplo + Todos Componentes + Tabs + Search
 -- Kyuzzy - Atualizado 16/01/2026
 
 local Library = {}
@@ -40,17 +40,17 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Variáveis de salvamento (posição do painel de config e tamanho da janela principal)
+-- Variáveis de salvamento
 local lastConfigPosition = UDim2.new(0.5, -200, 0.5, -250)
 local savedMainSize = UDim2.new(0, 550, 0, 350)
 
--- Tween seguro (evita erros se objeto for destruído)
+-- Tween seguro
 local function safeTween(obj, tweenInfo, properties)
     if not obj or not obj.Parent then return end
     TweenService:Create(obj, tweenInfo, properties):Play()
 end
 
--- TextLabel com ajuste automático de tamanho (bom para textos longos)
+-- TextLabel inteligente (ajusta tamanho se texto for muito longo)
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
     label.Size = size
@@ -80,13 +80,11 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
 end
 
 local function LimitDropdownText(text)
-    if #text > 30 then
-        return text:sub(1, 27) .. "..."
-    end
+    if #text > 30 then return text:sub(1, 27) .. "..." end
     return text
 end
 
--- Botão de controle do TopBar (X, minimizar, config, switch)
+-- Botão de controle do TopBar
 local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0,42,0,42)
@@ -128,13 +126,9 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
         safeTween(btn, TweenInfo.new(0.08), {BackgroundColor3 = COLORS.Accent})
         if icon then
             safeTween(icon, TweenInfo.new(0.15), {Size = UDim2.new(0,28,0,28)})
-            task.delay(0.15, function()
-                safeTween(icon, TweenInfo.new(0.15), {Size = UDim2.new(0,24,0,24)})
-            end)
+            task.delay(0.15, function() safeTween(icon, TweenInfo.new(0.15), {Size = UDim2.new(0,24,0,24)}) end)
         end
-        task.delay(0.12, function()
-            safeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 15, 21)})
-        end)
+        task.delay(0.12, function() safeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 15, 21)}) end)
         callback()
     end)
     
@@ -162,7 +156,7 @@ function Library:CreateWindow(title)
     uiStroke.Transparency = 0.65
     uiStroke.Parent = self.MainFrame
 
-    -- Área inferior para drag (estilo moderno)
+    -- Bottom Drag Area
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
     BottomDrag.Size = UDim2.new(1, 0, 0, 24)
@@ -171,16 +165,13 @@ function Library:CreateWindow(title)
     BottomDrag.ZIndex = 15
     BottomDrag.Parent = self.MainFrame
 
-    -- Lógica de Drag (topo + base)
+    -- Drag Logic (duplo)
     local dragging, dragStart, startPos = false, nil, nil
 
     local function updateDrag(input)
         if not dragging then return end
         local delta = input.Position - dragStart
-        self.MainFrame.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
+        self.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 
     local function setupDrag(dragObject)
@@ -210,7 +201,6 @@ function Library:CreateWindow(title)
     TopBar.BorderSizePixel = 0
     TopBar.ZIndex = 6
     TopBar.Parent = self.MainFrame
-
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
@@ -224,12 +214,11 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Redimensionamento (canto inferior direito)
+    -- Resize Handle
     local resizing = false
     local resizeStartPos, startSize
 
     local ResizeHandle = Instance.new("ImageButton")
-    ResizeHandle.Name = "ResizeHandle"
     ResizeHandle.Size = UDim2.new(0, 18, 0, 18)
     ResizeHandle.Position = UDim2.new(1, -18, 1, -18)
     ResizeHandle.BackgroundTransparency = 1
@@ -273,10 +262,8 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Botões do TopBar
-    CreateControlButton(TopBar, "X", -52, nil, function()
-        ScreenGui:Destroy()
-    end)
+    -- Botões TopBar
+    CreateControlButton(TopBar, "X", -52, nil, function() ScreenGui:Destroy() end)
 
     local minimized = false
     local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
@@ -290,13 +277,8 @@ function Library:CreateWindow(title)
         end
     end)
 
-    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
-        self:ToggleConfigPanel()
-    end)
-
-    local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
-        self:ShowSwitchHubPopup()
-    end)
+    CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function() self:ToggleConfigPanel() end)
+    CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function() self:ShowSwitchHubPopup() end)
 
     -- Search Bar
     local SearchBar = Instance.new("Frame")
@@ -353,240 +335,8 @@ function Library:CreateWindow(title)
     self.currentTab = nil
     self.tabs = {}
 
-    -- Painel de Configuração
-    self.ConfigPanel = nil
-    self.ConfigMinimized = false
-
-    function self:ToggleConfigPanel()
-        if self.ConfigPanel and self.ConfigPanel.Parent then
-            safeTween(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1.5, 0, 0.5, -250)})
-            task.delay(0.35, function()
-                if self.ConfigPanel then
-                    self.ConfigPanel:Destroy()
-                    self.ConfigPanel = nil
-                end
-            end)
-        else
-            local panel = Instance.new("Frame")
-            panel.Name = "ConfigPanel"
-            panel.Size = self.ConfigMinimized and UDim2.new(0,400,0,40) or UDim2.new(0,400,0,500)
-            panel.Position = lastConfigPosition
-            panel.BackgroundColor3 = COLORS.Background
-            panel.ZIndex = 50
-            panel.Parent = ScreenGui
-            Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
-
-            local stroke = Instance.new("UIStroke")
-            stroke.Color = COLORS.Stroke
-            stroke.Transparency = 0.5
-            stroke.Parent = panel
-
-            local configTopBar = Instance.new("Frame")
-            configTopBar.Size = UDim2.new(1,0,0,40)
-            configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-            configTopBar.ZIndex = 51
-            configTopBar.Parent = panel
-
-            Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
-
-            CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
-
-            local configMinimizeBtn = Instance.new("TextButton")
-            configMinimizeBtn.Size = UDim2.new(0,30,0,30)
-            configMinimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
-            configMinimizeBtn.BackgroundTransparency = 1
-            configMinimizeBtn.Text = self.ConfigMinimized and "+" or "−"
-            configMinimizeBtn.TextColor3 = COLORS.Text
-            configMinimizeBtn.Font = Enum.Font.GothamBold
-            configMinimizeBtn.TextSize = 20
-            configMinimizeBtn.ZIndex = 52
-            configMinimizeBtn.Parent = configTopBar
-
-            configMinimizeBtn.Activated:Connect(function()
-                self.ConfigMinimized = not self.ConfigMinimized
-                if self.ConfigMinimized then
-                    safeTween(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,40)})
-                    configMinimizeBtn.Text = "+"
-                else
-                    safeTween(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,500)})
-                    configMinimizeBtn.Text = "−"
-                end
-            end)
-
-            local configCloseBtn = Instance.new("TextButton")
-            configCloseBtn.Size = UDim2.new(0,30,0,30)
-            configCloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
-            configCloseBtn.BackgroundTransparency = 1
-            configCloseBtn.Text = "X"
-            configCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-            configCloseBtn.Font = Enum.Font.GothamBold
-            configCloseBtn.TextSize = 18
-            configCloseBtn.ZIndex = 52
-            configCloseBtn.Parent = configTopBar
-
-            configCloseBtn.Activated:Connect(function()
-                self:ToggleConfigPanel()
-            end)
-
-            -- Drag do painel de config
-            local configDragging, configDragStart, configStartPos = false, nil, nil
-
-            local function configUpdate(input)
-                local delta = input.Position - configDragStart
-                safeTween(panel, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
-                    Position = UDim2.new(configStartPos.X.Scale, configStartPos.X.Offset + delta.X, configStartPos.Y.Scale, configStartPos.Y.Offset + delta.Y)
-                })
-            end
-
-            configTopBar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    configDragging = true
-                    configDragStart = input.Position
-                    configStartPos = panel.Position
-                    
-                    ContextActionService:BindAction("ConfigDrag", function() return Enum.ContextActionResult.Sink end, false, 
-                        Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
-                    
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            configDragging = false
-                            ContextActionService:UnbindAction("ConfigDrag")
-                            lastConfigPosition = panel.Position
-                        end
-                    end)
-                end
-            end)
-
-            UserInputService.InputChanged:Connect(function(input)
-                if configDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    configUpdate(input)
-                end
-            end)
-
-            panel.Position = UDim2.new(1.5, 0, 0.5, -250)
-            safeTween(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = lastConfigPosition})
-
-            self.ConfigPanel = panel
-        end
-    end
-
-    function self:ShowSwitchHubPopup()
-        Library.Popup(
-            "Trocar de Hub",
-            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
-            function()
-                -- loadstring(game:HttpGet("URL_AQUI"))()
-                ScreenGui:Destroy()
-            end,
-            function() end
-        )
-    end
-
-    -- Criação de Tabs com scroll preservado por aba
-    function self:CreateTab(name)
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(1,-16,0,46)
-        button.BackgroundColor3 = COLORS.Element
-        button.BorderSizePixel = 0
-        button.AutoButtonColor = false
-        button.Text = ""
-        button.ZIndex = 7
-        button.ClipsDescendants = true
-        button.Parent = self.TabBar
-        Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
-        
-        local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
-        
-        local indicator = Instance.new("Frame")
-        indicator.Size = UDim2.new(0,4,0.7,0)
-        indicator.Position = UDim2.new(0, 4, 0.15, 0)
-        indicator.BackgroundColor3 = COLORS.Accent
-        indicator.BackgroundTransparency = 1
-        indicator.BorderSizePixel = 0
-        indicator.ZIndex = 8
-        indicator.Parent = button
-        Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
-        
-        local content = Instance.new("ScrollingFrame")
-        content.Name = "TabContent_" .. name
-        content.Size = UDim2.new(1,0,1,0)
-        content.BackgroundTransparency = 1
-        content.Visible = false
-        content.ZIndex = 6
-        content.ScrollBarThickness = 4
-        content.ScrollBarImageColor3 = COLORS.Stroke
-        content.CanvasSize = UDim2.new(0,0,0,0)
-        content.Parent = self.ContentArea
-        
-        local list = Instance.new("UIListLayout")
-        list.Padding = UDim.new(0,12)
-        list.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        list.SortOrder = Enum.SortOrder.LayoutOrder
-        list.Parent = content
-
-        local lastScrollPos = Vector2.new(0, 0)
-        
-        content:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
-            if content.Visible then
-                lastScrollPos = content.CanvasPosition
-            end
-        end)
-
-        table.insert(self.tabs, {
-            button = button,
-            textLabel = textLabel,
-            indicator = indicator,
-            content = content,
-            name = name:upper(),
-            lastScrollPos = lastScrollPos
-        })
-        
-        button.MouseEnter:Connect(function()
-            if content.Visible then return end
-            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover})
-            safeTween(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.Text})
-            safeTween(indicator, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0,4,0.85,0)})
-        end)
-        
-        button.MouseLeave:Connect(function()
-            if content.Visible then return end
-            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element})
-            safeTween(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.TextDim})
-            safeTween(indicator, TweenInfo.new(0.35), {Size = UDim2.new(0,4,0.7,0)})
-        end)
-        
-        button.Activated:Connect(function()
-            if self.currentTab then
-                self.currentTab.content.Visible = false
-                self.currentTab.lastScrollPos = self.currentTab.content.CanvasPosition
-                safeTween(self.currentTab.indicator, TweenInfo.new(0.25), {BackgroundTransparency = 1})
-                self.currentTab.textLabel.TextColor3 = COLORS.TextDim
-                safeTween(self.currentTab.button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element})
-            end
-            
-            content.CanvasPosition = lastScrollPos
-            content.Visible = true
-            
-            safeTween(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0,4,0.95,0)})
-            textLabel.TextColor3 = COLORS.Text
-            safeTween(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-12,0,50)})
-            task.delay(0.15, function()
-                safeTween(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-16,0,46)})
-            end)
-            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover})
-            
-            self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel, lastScrollPos = lastScrollPos}
-        end)
-
-        list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 20)
-        end)
-        
-        return content
-    end
-
     -- =============================================
-    -- COMPONENTES
+    -- COMPONENTES (todos completos)
     -- =============================================
 
     function Library.Button(parent, text, callback, options)
@@ -630,13 +380,9 @@ function Library:CreateWindow(title)
             safeTween(button, TweenInfo.new(0.08), {BackgroundColor3 = COLORS.AccentPress})
             if icon then
                 safeTween(icon, TweenInfo.new(0.12), {Size = UDim2.new(0,32,0,32)})
-                task.delay(0.12, function()
-                    safeTween(icon, TweenInfo.new(0.12), {Size = UDim2.new(0,28,0,28)})
-                end)
+                task.delay(0.12, function() safeTween(icon, TweenInfo.new(0.12), {Size = UDim2.new(0,28,0,28)}) end)
             end
-            task.delay(0.15, function()
-                safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.ElementHover})
-            end)
+            task.delay(0.15, function() safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.ElementHover}) end)
             callback()
         end)
 
@@ -779,6 +525,8 @@ function Library:CreateWindow(title)
                 dragging = false
             end
         end)
+
+        return frame
     end
 
     function Library.Dropdown(parent, text, options, defaultIndex, callback)
@@ -811,9 +559,7 @@ function Library:CreateWindow(title)
         stroke.Transparency = 0.75
         stroke.Parent = selectBtn
 
-        local selectCorner = Instance.new("UICorner")
-        selectCorner.CornerRadius = UDim.new(0, 8)
-        selectCorner.Parent = selectBtn
+        Instance.new("UICorner", selectBtn).CornerRadius = UDim.new(0, 8)
 
         local selectedText = CreateSmartTextLabel(selectBtn, UDim2.new(1, -12, 1, 0), UDim2.new(0, 6, 0, 0), options[defaultIndex or 1] or "Selecione...", COLORS.Accent, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Center)
 
@@ -837,7 +583,6 @@ function Library:CreateWindow(title)
         local function toggle()
             opened = not opened
             local height = opened and math.min(#options * 38, 180) or 0
-            
             safeTween(optionsFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, height)})
             safeTween(container, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, 40 + height)})
             safeTween(stroke, TweenInfo.new(0.3), {Transparency = opened and 0.35 or 0.75})
@@ -1000,7 +745,9 @@ function Library:CreateWindow(title)
                 BackgroundTransparency = 1,
                 Size = UDim2.new(0, 340, 0, 210)
             })
+            
             safeTween(overlay, TweenInfo.new(0.28), {BackgroundTransparency = 1})
+            
             task.delay(0.3, function()
                 popupHolder:Destroy()
             end)
@@ -1017,7 +764,241 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Inicializa abrindo a primeira aba automaticamente
+    -- Criação de Tabs com scroll individual preservado
+    function self:CreateTab(name)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(1,-16,0,46)
+        button.BackgroundColor3 = COLORS.Element
+        button.BorderSizePixel = 0
+        button.AutoButtonColor = false
+        button.Text = ""
+        button.ZIndex = 7
+        button.ClipsDescendants = true
+        button.Parent = self.TabBar
+        Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
+        
+        local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
+        
+        local indicator = Instance.new("Frame")
+        indicator.Size = UDim2.new(0,4,0.7,0)
+        indicator.Position = UDim2.new(0, 4, 0.15, 0)
+        indicator.BackgroundColor3 = COLORS.Accent
+        indicator.BackgroundTransparency = 1
+        indicator.BorderSizePixel = 0
+        indicator.ZIndex = 8
+        indicator.Parent = button
+        Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
+        
+        local content = Instance.new("ScrollingFrame")
+        content.Name = "TabContent_" .. name
+        content.Size = UDim2.new(1,0,1,0)
+        content.BackgroundTransparency = 1
+        content.Visible = false
+        content.ZIndex = 6
+        content.ScrollBarThickness = 4
+        content.ScrollBarImageColor3 = COLORS.Stroke
+        content.CanvasSize = UDim2.new(0,0,0,0)
+        content.Parent = self.ContentArea
+        
+        local list = Instance.new("UIListLayout")
+        list.Padding = UDim.new(0,12)
+        list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        list.SortOrder = Enum.SortOrder.LayoutOrder
+        list.Parent = content
+
+        local lastScrollPos = Vector2.new(0, 0)
+        
+        content:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+            if content.Visible then
+                lastScrollPos = content.CanvasPosition
+            end
+        end)
+
+        table.insert(self.tabs, {
+            button = button,
+            textLabel = textLabel,
+            indicator = indicator,
+            content = content,
+            name = name:upper(),
+            lastScrollPos = lastScrollPos
+        })
+        
+        button.MouseEnter:Connect(function()
+            if content.Visible then return end
+            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover})
+            safeTween(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.Text})
+            safeTween(indicator, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0,4,0.85,0)})
+        end)
+        
+        button.MouseLeave:Connect(function()
+            if content.Visible then return end
+            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element})
+            safeTween(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.TextDim})
+            safeTween(indicator, TweenInfo.new(0.35), {Size = UDim2.new(0,4,0.7,0)})
+        end)
+        
+        button.Activated:Connect(function()
+            if self.currentTab then
+                self.currentTab.content.Visible = false
+                self.currentTab.lastScrollPos = self.currentTab.content.CanvasPosition
+                safeTween(self.currentTab.indicator, TweenInfo.new(0.25), {BackgroundTransparency = 1})
+                self.currentTab.textLabel.TextColor3 = COLORS.TextDim
+                safeTween(self.currentTab.button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element})
+            end
+            
+            content.CanvasPosition = lastScrollPos
+            content.Visible = true
+            
+            safeTween(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0,4,0.95,0)})
+            textLabel.TextColor3 = COLORS.Text
+            safeTween(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-12,0,50)})
+            task.delay(0.15, function()
+                safeTween(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-16,0,46)})
+            end)
+            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover})
+            
+            self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel, lastScrollPos = lastScrollPos}
+        end)
+
+        list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 20)
+        end)
+        
+        return content
+    end
+
+    -- Filtro de busca (funcional)
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local query = SearchBox.Text:lower()
+        if query == "" then
+            for _, tab in ipairs(self.tabs) do
+                tab.button.Visible = true
+            end
+            return
+        end
+
+        local foundAny = false
+        for _, tab in ipairs(self.tabs) do
+            local match = tab.name:lower():find(query, 1, true)
+
+            if not match then
+                for _, child in ipairs(tab.content:GetChildren()) do
+                    if child:IsA("Frame") or child:IsA("TextButton") then
+                        local lbl = child:FindFirstChildWhichIsA("TextLabel")
+                        if lbl and lbl.Text:lower():find(query, 1, true) then
+                            match = true
+                            break
+                        end
+                    end
+                end
+            end
+
+            tab.button.Visible = match
+            if match then foundAny = true end
+        end
+
+        if foundAny then
+            for _, tab in ipairs(self.tabs) do
+                if tab.button.Visible then
+                    tab.button.Activated:Fire()
+                    break
+                end
+            end
+        end
+    end
+
+    -- Painel de Configuração completo
+    function self:ToggleConfigPanel()
+        if self.ConfigPanel and self.ConfigPanel.Parent then
+            safeTween(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1.5, 0, 0.5, -250)})
+            task.delay(0.35, function()
+                if self.ConfigPanel then
+                    self.ConfigPanel:Destroy()
+                    self.ConfigPanel = nil
+                end
+            end)
+        else
+            local panel = Instance.new("Frame")
+            panel.Name = "ConfigPanel"
+            panel.Size = self.ConfigMinimized and UDim2.new(0,400,0,40) or UDim2.new(0,400,0,500)
+            panel.Position = lastConfigPosition
+            panel.BackgroundColor3 = COLORS.Background
+            panel.ZIndex = 50
+            panel.Parent = ScreenGui
+            Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
+
+            local stroke = Instance.new("UIStroke")
+            stroke.Color = COLORS.Stroke
+            stroke.Transparency = 0.5
+            stroke.Parent = panel
+
+            local configTopBar = Instance.new("Frame")
+            configTopBar.Size = UDim2.new(1,0,0,40)
+            configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+            configTopBar.ZIndex = 51
+            configTopBar.Parent = panel
+
+            Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
+
+            CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
+
+            local configMinimizeBtn = Instance.new("TextButton")
+            configMinimizeBtn.Size = UDim2.new(0,30,0,30)
+            configMinimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
+            configMinimizeBtn.BackgroundTransparency = 1
+            configMinimizeBtn.Text = self.ConfigMinimized and "+" or "−"
+            configMinimizeBtn.TextColor3 = COLORS.Text
+            configMinimizeBtn.Font = Enum.Font.GothamBold
+            configMinimizeBtn.TextSize = 20
+            configMinimizeBtn.ZIndex = 52
+            configMinimizeBtn.Parent = configTopBar
+
+            configMinimizeBtn.Activated:Connect(function()
+                self.ConfigMinimized = not self.ConfigMinimized
+                if self.ConfigMinimized then
+                    safeTween(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,40)})
+                    configMinimizeBtn.Text = "+"
+                else
+                    safeTween(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,500)})
+                    configMinimizeBtn.Text = "−"
+                end
+            end)
+
+            local configCloseBtn = Instance.new("TextButton")
+            configCloseBtn.Size = UDim2.new(0,30,0,30)
+            configCloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
+            configCloseBtn.BackgroundTransparency = 1
+            configCloseBtn.Text = "X"
+            configCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+            configCloseBtn.Font = Enum.Font.GothamBold
+            configCloseBtn.TextSize = 18
+            configCloseBtn.ZIndex = 52
+            configCloseBtn.Parent = configTopBar
+
+            configCloseBtn.Activated:Connect(function()
+                self:ToggleConfigPanel()
+            end)
+
+            panel.Position = UDim2.new(1.5, 0, 0.5, -250)
+            safeTween(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = lastConfigPosition})
+
+            self.ConfigPanel = panel
+        end
+    end
+
+    function self:ShowSwitchHubPopup()
+        Library.Popup(
+            "Trocar de Hub",
+            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
+            function()
+                -- Coloque aqui o loadstring do seu outro hub
+                -- loadstring(game:HttpGet("URL_AQUI"))()
+                ScreenGui:Destroy()
+            end,
+            function() end
+        )
+    end
+
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
         if firstTab then firstTab.Activated:Fire() end
@@ -1026,6 +1007,6 @@ function Library:CreateWindow(title)
     return self
 end
 
-print("[GekyuUI] Versão FINAL completa - Drag duplo + todos componentes - 16/01/2026")
+print("[GekyuUI] Versão FINAL completa - Drag duplo + todos componentes + tabs + search - 16/01/2026")
 
 return Library
