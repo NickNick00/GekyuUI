@@ -1,4 +1,4 @@
---Library.lua
+-- Library.lua
 -- GekyuUI - Versão FINAL corrigida + DRAG DUPLO (topo + base)
 -- Kyuzzy - Atualizado 16/01/2026
 
@@ -206,7 +206,7 @@ ResizeHandle.Name = "ResizeHandle"
 ResizeHandle.Size = UDim2.new(0, 32, 0, 32)          -- maior para melhor clique
 ResizeHandle.Position = UDim2.new(1, -34, 1, -34)    -- ajustado para não ficar colado na borda
 ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Image = "rbxassetid://7733715400"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
+ResizeHandle.Image = "rbxassetid://3926305904"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
 ResizeHandle.ImageColor3 = COLORS.Accent
 ResizeHandle.ImageTransparency = 0.4                 -- sutil quando não hover
 ResizeHandle.ZIndex = 25
