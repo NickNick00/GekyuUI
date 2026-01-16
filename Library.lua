@@ -140,6 +140,34 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     return btn
 end
 
+local function setupDrag(dragFrame, frameToMove)
+    local dragging, dragStart, startPos
+    
+    dragFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frameToMove.Position
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frameToMove.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X, 
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
@@ -162,62 +190,22 @@ function Library:CreateWindow(title)
     uiStroke.Transparency = 0.65
     uiStroke.Parent = self.MainFrame
 
-    -- Handle de Redimensionamento + lógica completa (cole aqui tudo)
-    local function updateResize()
-        local resizing = false
-        local resizeStartPos
-        local startSize
+-- CRIAÇÃO DA ÁREA DE ARRASTE DE BAIXO (BottomDrag)
+    local BottomDrag = Instance.new("Frame")
+    BottomDrag.Name = "BottomDrag"
+    BottomDrag.Size = UDim2.new(1, -40, 0, 20) -- Deixa espaço para o botão de resize no canto
+    BottomDrag.Position = UDim2.new(0, 0, 1, -20)
+    BottomDrag.BackgroundTransparency = 1 -- Deixe 0.5 se quiser ver a área para testar
+    BottomDrag.ZIndex = 50 -- Garante que fique por cima dos botões internos
+    BottomDrag.Parent = self.MainFrame
 
-        local ResizeHandle = Instance.new("ImageButton")
-        ResizeHandle.Name = "ResizeHandle"
-        ResizeHandle.Size = UDim2.new(0, 18, 0, 18)
-        ResizeHandle.Position = UDim2.new(1, -18, 1, -18)
-        ResizeHandle.BackgroundTransparency = 1
-        ResizeHandle.Image = "rbxassetid://11419730533" -- Ícone bonito
-        ResizeHandle.ImageColor3 = COLORS.Accent
-        ResizeHandle.ZIndex = 20
-        ResizeHandle.Parent = self.MainFrame
-
-        local BlockOverlay = Instance.new("TextButton")
-        BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
-        BlockOverlay.BackgroundTransparency = 1
-        BlockOverlay.Text = ""
-        BlockOverlay.Visible = false
-        BlockOverlay.ZIndex = 19
-        BlockOverlay.Parent = self.MainFrame
-
-        ResizeHandle.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                resizing = true
-                resizeStartPos = input.Position
-                startSize = self.MainFrame.Size
-                BlockOverlay.Visible = true
-            end
-        end)
-
-        UserInputService.InputChanged:Connect(function(input)
-            if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - resizeStartPos
-                
-                local newWidth = math.max(450, startSize.X.Offset + delta.X)
-                local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
-                
-                local newSize = UDim2.new(0, newWidth, 0, newHeight)
-                self.MainFrame.Size = newSize
-                self.SavedSize = newSize  -- Salva para a próxima vez que abrir
-            end
-        end)
-
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                resizing = false
-                BlockOverlay.Visible = false
-            end
-        end)
-    end
-
-    updateResize()  -- Executa a função para criar o handle
+    -- O SEGREDO ESTÁ AQUI: Chamando para os dois ao mesmo tempo
+    setupDrag(TopBar, self.MainFrame)      -- Ativa o arraste na barra de cima
+    setupDrag(BottomDrag, self.MainFrame)   -- Ativa o arraste na barra de baixo
     
+    -- ... (restante do código como Resize e Tabs) ...
+end
+
     -- TopBar
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1,0,0,48)
@@ -229,51 +217,6 @@ function Library:CreateWindow(title)
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
-
-    -- Drag do hub principal
-    local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
-
-    local function update(input)
-        local delta = input.Position - dragStart
-        safeTween(self.MainFrame, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
-            Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        })
-    end
-
-    TopBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = self.MainFrame.Position
-            
-            ContextActionService:BindAction("GekyuDrag", function() return Enum.ContextActionResult.Sink end, false, 
-                Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                    ContextActionService:UnbindAction("GekyuDrag")
-                end
-            end)
-        end
-    end)
-
-    TopBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input)
-        end
-    end)
-
-    -- Botões do TopBar
-    CreateControlButton(TopBar, "X", -52, nil, function()
-        ScreenGui:Destroy()
-    end)
 
     local minimized = false
     local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
