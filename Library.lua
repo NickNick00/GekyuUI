@@ -1,5 +1,5 @@
 -- Library.lua
--- GekyuUI - Versão atualizada: limite 30 apenas em Dropdowns, Notify com texto maior, botão Hub Switch + Config funcional
+-- GekyuUI - Versão com Config Panel funcional (tabs internas + drag + minimizar/X), engrenagem/cadeado corretos
 -- Kyuzzy - Atualizado 16/01/2026
 
 local Library = {}
@@ -9,7 +9,6 @@ local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
-local HttpService = game:GetService("HttpService")
 
 -- Destroi UI antiga se existir
 if CoreGui:FindFirstChild("GekyuPremiumUI") then
@@ -67,7 +66,7 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     return label
 end
 
--- Limite apenas para textos de Dropdown (30 chars)
+-- Limite SOMENTE para Dropdowns (30 chars)
 local function LimitDropdownText(text)
     if #text > 30 then
         return text:sub(1, 27) .. "..."
@@ -131,7 +130,7 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
 end
 
 -- =============================================
--- Criação da janela principal
+-- Criação da janela principal do hub
 -- =============================================
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
@@ -204,7 +203,7 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Botões do TopBar
+    -- Botões do TopBar (ordem corrigida: minimizar perto do X, engrenagem e cadeado antes)
     CreateControlButton(TopBar, "X", -52, nil, function()
         ScreenGui:Destroy()
     end)
@@ -221,13 +220,13 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Botão de Config (engrenagem)
-    local configBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://3926305904", function()  -- ícone de engrenagem (você pode trocar)
+    -- Engrenagem de Config (posição -152, perto do minimizar)
+    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()  -- ícone engrenagem
         self:ToggleConfigPanel()
     end)
 
-    -- Novo botão: Switch Hub (trocar para outro hub)
-    local switchHubBtn = CreateControlButton(TopBar, "", -252, "rbxassetid://7072718362", function()  -- ícone de troca/seta (pode trocar)
+    -- Cadeado: Trocar Hub (posição -202)
+    local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()  -- ícone cadeado/troca
         self:ShowSwitchHubPopup()
     end)
 
@@ -288,22 +287,25 @@ function Library:CreateWindow(title)
     self.currentTab = nil
     self.tabs = {}
 
-    -- Painel de Configuração (abre ao clicar na engrenagem)
+    -- =============================================
+    -- Painel de Configuração (abre/fecha com engrenagem)
+    -- =============================================
     self.ConfigPanel = nil
 
     function self:ToggleConfigPanel()
         if self.ConfigPanel and self.ConfigPanel.Parent then
-            -- Fecha
+            -- Fecha o painel
             TweenService:Create(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -150, 1.5, 0)}):Play()
             task.delay(0.3, function()
                 self.ConfigPanel:Destroy()
                 self.ConfigPanel = nil
             end)
         else
-            -- Abre
+            -- Cria e abre o painel
             local panel = Instance.new("Frame")
-            panel.Size = UDim2.new(0, 300, 0, 400)
-            panel.Position = UDim2.new(0.5, -150, 1.5, 0)  -- começa fora da tela
+            panel.Name = "ConfigPanel"
+            panel.Size = UDim2.new(0, 400, 0, 500)
+            panel.Position = UDim2.new(0.5, -200, 1.5, 0)  -- começa fora da tela
             panel.BackgroundColor3 = COLORS.Background
             panel.ZIndex = 50
             panel.Parent = ScreenGui
@@ -314,12 +316,158 @@ function Library:CreateWindow(title)
             stroke.Transparency = 0.5
             stroke.Parent = panel
 
-            CreateSmartTextLabel(panel, UDim2.new(1, -20, 0, 40), UDim2.new(0, 10, 0, 10), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+            -- TopBar do painel de config (com título, minimizar e X)
+            local configTopBar = Instance.new("Frame")
+            configTopBar.Size = UDim2.new(1,0,0,40)
+            configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+            configTopBar.ZIndex = 51
+            configTopBar.Parent = panel
 
-            -- Aqui você pode adicionar toggles, sliders, etc. no futuro
-            local placeholder = CreateSmartTextLabel(panel, UDim2.new(1, -20, 1, -60), UDim2.new(0, 10, 0, 50), "Em desenvolvimento... Adicione suas configs aqui!", COLORS.TextDim, Enum.Font.Gotham, 14, Enum.TextXAlignment.Center)
+            Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
 
-            TweenService:Create(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -150, 0.5, -200)}):Play()
+            CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
+
+            -- Botão Minimizar no painel
+            local configMinimizeBtn = Instance.new("TextButton")
+            configMinimizeBtn.Size = UDim2.new(0,30,0,30)
+            configMinimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
+            configMinimizeBtn.BackgroundTransparency = 1
+            configMinimizeBtn.Text = "−"
+            configMinimizeBtn.TextColor3 = COLORS.Text
+            configMinimizeBtn.Font = Enum.Font.GothamBold
+            configMinimizeBtn.TextSize = 20
+            configMinimizeBtn.ZIndex = 52
+            configMinimizeBtn.Parent = configTopBar
+
+            configMinimizeBtn.Activated:Connect(function()
+                TweenService:Create(panel, TweenInfo.new(0.3), {Size = UDim2.new(0,400,0,40)}):Play()
+            end)
+
+            -- Botão X para fechar painel
+            local configCloseBtn = Instance.new("TextButton")
+            configCloseBtn.Size = UDim2.new(0,30,0,30)
+            configCloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
+            configCloseBtn.BackgroundTransparency = 1
+            configCloseBtn.Text = "X"
+            configCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+            configCloseBtn.Font = Enum.Font.GothamBold
+            configCloseBtn.TextSize = 18
+            configCloseBtn.ZIndex = 52
+            configCloseBtn.Parent = configTopBar
+
+            configCloseBtn.Activated:Connect(function()
+                self:ToggleConfigPanel()  -- fecha
+            end)
+
+            -- Tabs internas do painel: Info e Config
+            local configTabBar = Instance.new("Frame")
+            configTabBar.Size = UDim2.new(1,0,0,40)
+            configTabBar.Position = UDim2.new(0,0,0,40)
+            configTabBar.BackgroundColor3 = COLORS.Element
+            configTabBar.ZIndex = 51
+            configTabBar.Parent = panel
+
+            local infoTabBtn = Instance.new("TextButton")
+            infoTabBtn.Size = UDim2.new(0.5,0,1,0)
+            infoTabBtn.BackgroundTransparency = 1
+            infoTabBtn.Text = "Info"
+            infoTabBtn.TextColor3 = COLORS.Accent
+            infoTabBtn.Font = Enum.Font.GothamBold
+            infoTabBtn.TextSize = 14
+            infoTabBtn.ZIndex = 52
+            infoTabBtn.Parent = configTabBar
+
+            local configTabBtn = Instance.new("TextButton")
+            configTabBtn.Size = UDim2.new(0.5,0,1,0)
+            configTabBtn.Position = UDim2.new(0.5,0,0,0)
+            configTabBtn.BackgroundTransparency = 1
+            configTabBtn.Text = "Config"
+            configTabBtn.TextColor3 = COLORS.TextDim
+            configTabBtn.Font = Enum.Font.GothamBold
+            configTabBtn.TextSize = 14
+            configTabBtn.ZIndex = 52
+            configTabBtn.Parent = configTabBar
+
+            -- Conteúdo das tabs internas (exemplo simples)
+            local infoContent = Instance.new("Frame")
+            infoContent.Size = UDim2.new(1,0,1,-80)
+            infoContent.Position = UDim2.new(0,0,0,80)
+            infoContent.BackgroundTransparency = 1
+            infoContent.ZIndex = 51
+            infoContent.Visible = true
+            infoContent.Parent = panel
+
+            CreateSmartTextLabel(infoContent, UDim2.new(1,-20,1,-20), UDim2.new(0,10,0,10), "GekyuUI v1.0\nFeito por Kyuzzy\nPremium Dark Theme", COLORS.Text, Enum.Font.Gotham, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+
+            local configContent = Instance.new("Frame")
+            configContent.Size = UDim2.new(1,0,1,-80)
+            configContent.Position = UDim2.new(0,0,0,80)
+            configContent.BackgroundTransparency = 1
+            configContent.ZIndex = 51
+            configContent.Visible = false
+            configContent.Parent = panel
+
+            CreateSmartTextLabel(configContent, UDim2.new(1,-20,0,30), UDim2.new(0,10,0,10), "Configurações Gerais", COLORS.Accent, Enum.Font.GothamBold, 16, Enum.TextXAlignment.Left)
+
+            -- Você pode adicionar mais toggles/sliders aqui depois
+
+            -- Alternar entre tabs internas
+            infoTabBtn.Activated:Connect(function()
+                infoContent.Visible = true
+                configContent.Visible = false
+                infoTabBtn.TextColor3 = COLORS.Accent
+                configTabBtn.TextColor3 = COLORS.TextDim
+            end)
+
+            configTabBtn.Activated:Connect(function()
+                infoContent.Visible = false
+                configContent.Visible = true
+                infoTabBtn.TextColor3 = COLORS.TextDim
+                configTabBtn.TextColor3 = COLORS.Accent
+            end)
+
+            -- Drag do painel de config (igual ao principal)
+            local configDragging, configDragInput, configDragStart, configStartPos = false, nil, nil, nil
+
+            local function configUpdate(input)
+                local delta = input.Position - configDragStart
+                TweenService:Create(panel, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
+                    Position = UDim2.new(configStartPos.X.Scale, configStartPos.X.Offset + delta.X, configStartPos.Y.Scale, configStartPos.Y.Offset + delta.Y)
+                }):Play()
+            end
+
+            configTopBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    configDragging = true
+                    configDragStart = input.Position
+                    configStartPos = panel.Position
+                    
+                    ContextActionService:BindAction("DisableCameraConfig", function() return Enum.ContextActionResult.Sink end, false, 
+                        Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
+                    
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            configDragging = false
+                            ContextActionService:UnbindAction("DisableCameraConfig")
+                        end
+                    end)
+                end
+            end)
+
+            configTopBar.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    configDragInput = input
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if configDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    configUpdate(input)
+                end
+            end)
+
+            -- Animação de abertura
+            TweenService:Create(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -200, 0.5, -250)}):Play()
 
             self.ConfigPanel = panel
         end
@@ -329,21 +477,24 @@ function Library:CreateWindow(title)
     function self:ShowSwitchHubPopup()
         Library.Popup(
             "Trocar de Hub",
-            "Você deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
+            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
             function()  -- Confirmar
-                -- Aqui coloca o loadstring do outro hub
+                -- Coloque aqui o loadstring do seu outro hub
                 -- Exemplo:
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/seuusuario/seurepo/main/OutroHub.lua"))()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/OutroHub.lua"))()
                 
                 -- Fecha o atual
                 ScreenGui:Destroy()
             end,
             function()  -- Cancelar
-                -- Nada acontece
+                -- Nada
             end
         )
     end
 
+    -- =============================================
+    -- Criação de Tabs
+    -- =============================================
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
@@ -352,7 +503,7 @@ function Library:CreateWindow(title)
         button.AutoButtonColor = false
         button.Text = ""
         button.ZIndex = 7
-        button.ClipsDescendants = true  -- Garante que o indicator não vaze
+        button.ClipsDescendants = true
         button.Parent = self.TabBar
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
         
@@ -426,7 +577,7 @@ function Library:CreateWindow(title)
         return content
     end
 
-    -- Filtro de pesquisa
+    -- Filtro de busca (mantido)
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower()
         if query == "" then
@@ -467,7 +618,7 @@ function Library:CreateWindow(title)
     end)
 
     -- =============================================
-    -- COMPONENTES
+    -- COMPONENTES (mantidos como antes, com limite só em Dropdowns)
     -- =============================================
 
     function Library.Button(parent, text, callback, options)
@@ -524,7 +675,7 @@ function Library:CreateWindow(title)
         return button
     end
 
-    -- Toggle (sem limite de texto)
+    -- Toggle simples
     function Library.Toggle(parent, text, default, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
@@ -581,7 +732,7 @@ function Library:CreateWindow(title)
         return container
     end
 
-    -- ToggleWithCheckboxes (sem limite)
+    -- ToggleWithCheckboxes
     function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
@@ -706,7 +857,7 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Slider (sem limite)
+    -- Slider
     function Library.Slider(parent, text, min, max, default, callback)
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0.95, 0, 0, 62)
@@ -789,7 +940,7 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Dropdown (limite 30 chars apenas aqui)
+    -- Dropdown (limite 30 chars)
     function Library.Dropdown(parent, text, options, defaultIndex, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
@@ -885,7 +1036,7 @@ function Library:CreateWindow(title)
         selectBtn.Activated:Connect(toggle)
     end
 
-    -- DropdownMulti (limite 30 chars também)
+    -- DropdownMulti (limite 30 chars)
     function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
@@ -1038,7 +1189,7 @@ function Library:CreateWindow(title)
         updatePreview()
     end
 
-    -- InputNumber (sem limite)
+    -- InputNumber
     function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
 
@@ -1131,7 +1282,7 @@ function Library:CreateWindow(title)
         updateValue(default)
     end
 
-    -- Notify com texto maior (15 -> melhor legibilidade)
+    -- Notify com texto maior (15)
     local activeNotifications = {}
 
     function Library.Notify(message, duration, color)
@@ -1199,7 +1350,7 @@ function Library:CreateWindow(title)
         stroke.Transparency = 0.4
         stroke.Parent = notif
 
-        local label = CreateSmartTextLabel(notif, UDim2.new(1, -24, 1, -20), UDim2.new(0, 12, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)  -- ← texto maior
+        local label = CreateSmartTextLabel(notif, UDim2.new(1, -24, 1, -20), UDim2.new(0, 12, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
         label.ZIndex = 103
 
         TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
@@ -1334,7 +1485,6 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Abre primeira aba
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
         if firstTab then firstTab.Activated:Fire() end
@@ -1343,6 +1493,6 @@ function Library:CreateWindow(title)
     return self
 end
 
-print("[GekyuUI] Atualização: Limite 30 apenas Dropdowns | Notify texto maior | Botão Switch Hub + Config funcional")
+print("[GekyuUI] Atualização: Config Panel com tabs internas + drag + minimizar/X | Engrenagem e Cadeado alinhados")
 
 return Library
