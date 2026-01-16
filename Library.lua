@@ -1,5 +1,5 @@
 -- Library.lua
--- GekyuUI - Versão completa com Config Panel funcional, scroll salvo por tab, componentes todos incluídos
+-- GekyuUI - Biblioteca completa com todas as correções: Config minimiza/desminimiza, scroll por tab, engrenagem no lugar, InputNumber limitado
 -- Kyuzzy - Atualizado 16/01/2026
 
 local Library = {}
@@ -22,7 +22,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = CoreGui
 
--- Cores globais
+-- Cores globais (tema dark premium)
 local COLORS = {
     Background    = Color3.fromRGB(10, 10, 16),
     Accent        = Color3.fromRGB(90, 170, 255),
@@ -44,7 +44,7 @@ local CORNERS = {
 local lastConfigPosition = UDim2.new(0.5, -200, 0.5, -250)
 local lastConfigMinimized = false
 
--- Função auxiliar para textos inteligentes
+-- Função auxiliar para labels inteligentes
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
     label.Size = size
@@ -133,6 +133,9 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     return btn
 end
 
+-- =============================================
+-- Criação da janela principal do hub
+-- =============================================
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
@@ -221,8 +224,8 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Engrenagem de Config (posição correta)
-    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
+    -- Engrenagem de Config (posição correta -152)
+    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()  -- ícone engrenagem
         self:ToggleConfigPanel()
     end)
 
@@ -575,7 +578,7 @@ function Library:CreateWindow(title)
                 configTabBtn.TextColor3 = COLORS.Accent
             end)
 
-            -- Drag
+            -- Drag do painel
             local configDragging, configDragInput, configDragStart, configStartPos = false, nil, nil, nil
 
             local function configUpdate(input)
@@ -628,6 +631,22 @@ function Library:CreateWindow(title)
 
             self.ConfigPanel = panel
         end
+    end
+
+    -- Popup de trocar hub
+    function self:ShowSwitchHubPopup()
+        Library.Popup(
+            "Trocar de Hub",
+            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai fechar automaticamente o GekyuUI atual.",
+            function()
+                -- Coloque aqui o loadstring do seu outro hub
+                loadstring(game:HttpGet("URL_DO_SEU_OUTRO_HUB_AQUI"))()
+                ScreenGui:Destroy()
+            end,
+            function()
+                -- cancelar
+            end
+        )
     end
 
     -- =============================================
@@ -1422,3 +1441,92 @@ function Library:CreateWindow(title)
 
         local topBar = Instance.new("Frame")
         topBar.Size = UDim2.new(1,0,0,52)
+        topBar.BackgroundColor3 = COLORS.Element
+        topBar.ZIndex = 204
+        topBar.Parent = popup
+
+        Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
+
+        CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+
+        local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+        content.ZIndex = 205
+
+        local cancelBtn = Instance.new("TextButton")
+        cancelBtn.Size = UDim2.new(0, 158, 0, 52)
+        cancelBtn.Position = UDim2.new(0.5, -168, 1, -80)
+        cancelBtn.BackgroundColor3 = COLORS.Element
+        cancelBtn.Text = "Cancelar"
+        cancelBtn.TextColor3 = COLORS.TextDim
+        cancelBtn.Font = Enum.Font.GothamBold
+        cancelBtn.TextSize = 15
+        cancelBtn.ZIndex = 206
+        cancelBtn.Parent = popup
+
+        Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
+
+        local confirmBtn = Instance.new("TextButton")
+        confirmBtn.Size = UDim2.new(0, 158, 0, 52)
+        confirmBtn.Position = UDim2.new(0.5, 10, 1, -80)
+        confirmBtn.BackgroundColor3 = COLORS.Accent
+        confirmBtn.Text = "Confirmar"
+        confirmBtn.TextColor3 = Color3.new(1,1,1)
+        confirmBtn.Font = Enum.Font.GothamBold
+        confirmBtn.TextSize = 15
+        confirmBtn.ZIndex = 206
+        confirmBtn.Parent = popup
+
+        Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
+
+        local function closePopup()
+            TweenService:Create(popup, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 340, 0, 210)
+            }):Play()
+            
+            TweenService:Create(overlay, TweenInfo.new(0.28), {BackgroundTransparency = 1}):Play()
+            
+            task.delay(0.3, function()
+                popupHolder:Destroy()
+            end)
+        end
+
+        cancelBtn.MouseEnter:Connect(function()
+            TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover}):Play()
+        end)
+        
+        cancelBtn.MouseLeave:Connect(function()
+            TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Element}):Play()
+        end)
+
+        confirmBtn.MouseEnter:Connect(function()
+            TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress}):Play()
+        end)
+        
+        confirmBtn.MouseLeave:Connect(function()
+            TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Accent}):Play()
+        end)
+
+        cancelBtn.Activated:Connect(function()
+            if onCancel then onCancel() end
+            closePopup()
+        end)
+
+        confirmBtn.Activated:Connect(function()
+            if onConfirm then onConfirm() end
+            closePopup()
+        end)
+    end
+
+    -- Abre a primeira aba automaticamente
+    task.delay(0.1, function()
+        local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
+        if firstTab then firstTab.Activated:Fire() end
+    end)
+
+    return self
+end
+
+print("[GekyuUI] Biblioteca completa carregada: Config minimiza/desminimiza, scroll por tab, engrenagem no lugar, todos componentes inclusos")
+
+return Library
