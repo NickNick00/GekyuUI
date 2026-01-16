@@ -278,6 +278,16 @@ function Library:CreateWindow(title)
             update(input)
         end
     end)
+    
+    -- Conecta o drag tanto no TopBar quanto no BottomDrag
+    setupDrag(TopBar)
+    setupDrag(BottomDrag)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            update(input)
+        end
+    end)
 
     -- Botões do TopBar
     CreateControlButton(TopBar, "X", -52, nil, function()
