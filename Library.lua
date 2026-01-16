@@ -1,5 +1,5 @@
 -- Library.lua
--- GekyuUI - Versão FINAL com Indicator dentro do tab, Search completo, DropdownMulti compacto e limite de 20 chars
+-- GekyuUI - Versão atualizada: limite 30 apenas em Dropdowns, Notify com texto maior, botão Hub Switch + Config funcional
 -- Kyuzzy - Atualizado 16/01/2026
 
 local Library = {}
@@ -9,6 +9,7 @@ local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
+local HttpService = game:GetService("HttpService")
 
 -- Destroi UI antiga se existir
 if CoreGui:FindFirstChild("GekyuPremiumUI") then
@@ -40,22 +41,13 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Função que limita texto a 20 caracteres (com "...")
-local function LimitText(text)
-    if #text > 20 then
-        return text:sub(1, 17) .. "..."
-    end
-    return text
-end
-
--- Função auxiliar para criar labels inteligentes (com limite de texto)
+-- Função auxiliar para textos inteligentes (sem limite forçado)
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
-    local limited = LimitText(text)
     local label = Instance.new("TextLabel")
     label.Size = size
     label.Position = pos
     label.BackgroundTransparency = 1
-    label.Text = limited
+    label.Text = text
     label.TextColor3 = color or COLORS.Text
     label.Font = font or Enum.Font.GothamBold
     label.TextSize = textSize or 14
@@ -75,16 +67,23 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     return label
 end
 
--- Botões de controle do TopBar
+-- Limite apenas para textos de Dropdown (30 chars)
+local function LimitDropdownText(text)
+    if #text > 30 then
+        return text:sub(1, 27) .. "..."
+    end
+    return text
+end
+
+-- Botões do TopBar
 local function CreateControlButton(parent, text, posX, iconAssetId, callback)
-    local limitedText = LimitText(text)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0,42,0,42)
     btn.Position = UDim2.new(1, posX, 0.5, -21)
     btn.BackgroundColor3 = Color3.fromRGB(15, 15, 21)
     btn.BorderSizePixel = 0
     btn.Font = Enum.Font.GothamBold
-    btn.Text = limitedText
+    btn.Text = text
     btn.TextColor3 = Color3.fromRGB(215, 215, 225)
     btn.TextSize = 20
     btn.ZIndex = 10
@@ -163,9 +162,9 @@ function Library:CreateWindow(title)
 
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
 
-    CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), LimitText(title or "GEKYU • PREMIUM"), COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+    CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-    -- Drag
+    -- Drag system
     local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
     local function update(input)
@@ -205,6 +204,7 @@ function Library:CreateWindow(title)
         end
     end)
 
+    -- Botões do TopBar
     CreateControlButton(TopBar, "X", -52, nil, function()
         ScreenGui:Destroy()
     end)
@@ -221,11 +221,17 @@ function Library:CreateWindow(title)
         end
     end)
 
-    CreateControlButton(TopBar, "", -152, "rbxassetid://133102912527371", function()
-        print("Config hub aberto - implemente aqui")
+    -- Botão de Config (engrenagem)
+    local configBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://3926305904", function()  -- ícone de engrenagem (você pode trocar)
+        self:ToggleConfigPanel()
     end)
 
-    -- Search Bar com filtro de abas e funções
+    -- Novo botão: Switch Hub (trocar para outro hub)
+    local switchHubBtn = CreateControlButton(TopBar, "", -252, "rbxassetid://7072718362", function()  -- ícone de troca/seta (pode trocar)
+        self:ShowSwitchHubPopup()
+    end)
+
+    -- Search Bar
     local SearchBar = Instance.new("Frame")
     SearchBar.Size = UDim2.new(0,140-12,0,32)
     SearchBar.Position = UDim2.new(0,6,0,48+8)
@@ -280,11 +286,65 @@ function Library:CreateWindow(title)
     ContentLayout.Parent = self.ContentArea
 
     self.currentTab = nil
-    self.tabs = {}  -- Armazena todas as tabs para o search
+    self.tabs = {}
+
+    -- Painel de Configuração (abre ao clicar na engrenagem)
+    self.ConfigPanel = nil
+
+    function self:ToggleConfigPanel()
+        if self.ConfigPanel and self.ConfigPanel.Parent then
+            -- Fecha
+            TweenService:Create(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -150, 1.5, 0)}):Play()
+            task.delay(0.3, function()
+                self.ConfigPanel:Destroy()
+                self.ConfigPanel = nil
+            end)
+        else
+            -- Abre
+            local panel = Instance.new("Frame")
+            panel.Size = UDim2.new(0, 300, 0, 400)
+            panel.Position = UDim2.new(0.5, -150, 1.5, 0)  -- começa fora da tela
+            panel.BackgroundColor3 = COLORS.Background
+            panel.ZIndex = 50
+            panel.Parent = ScreenGui
+            Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
+
+            local stroke = Instance.new("UIStroke")
+            stroke.Color = COLORS.Stroke
+            stroke.Transparency = 0.5
+            stroke.Parent = panel
+
+            CreateSmartTextLabel(panel, UDim2.new(1, -20, 0, 40), UDim2.new(0, 10, 0, 10), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+
+            -- Aqui você pode adicionar toggles, sliders, etc. no futuro
+            local placeholder = CreateSmartTextLabel(panel, UDim2.new(1, -20, 1, -60), UDim2.new(0, 10, 0, 50), "Em desenvolvimento... Adicione suas configs aqui!", COLORS.TextDim, Enum.Font.Gotham, 14, Enum.TextXAlignment.Center)
+
+            TweenService:Create(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -150, 0.5, -200)}):Play()
+
+            self.ConfigPanel = panel
+        end
+    end
+
+    -- Popup de confirmação para trocar de hub
+    function self:ShowSwitchHubPopup()
+        Library.Popup(
+            "Trocar de Hub",
+            "Você deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
+            function()  -- Confirmar
+                -- Aqui coloca o loadstring do outro hub
+                -- Exemplo:
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/seuusuario/seurepo/main/OutroHub.lua"))()
+                
+                -- Fecha o atual
+                ScreenGui:Destroy()
+            end,
+            function()  -- Cancelar
+                -- Nada acontece
+            end
+        )
+    end
 
     function self:CreateTab(name)
-        local limitedName = LimitText(name:upper())
-        
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
         button.BackgroundColor3 = COLORS.Element
@@ -292,15 +352,15 @@ function Library:CreateWindow(title)
         button.AutoButtonColor = false
         button.Text = ""
         button.ZIndex = 7
-        button.ClipsDescendants = true  -- <-- ESSENCIAL: impede o indicator de sair da caixinha
+        button.ClipsDescendants = true  -- Garante que o indicator não vaze
         button.Parent = self.TabBar
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
         
-        local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), limitedName, COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
+        local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
         
         local indicator = Instance.new("Frame")
         indicator.Size = UDim2.new(0,4,0.7,0)
-        indicator.Position = UDim2.new(0, 4, 0.15, 0)  -- dentro da borda
+        indicator.Position = UDim2.new(0, 4, 0.15, 0)
         indicator.BackgroundColor3 = COLORS.Accent
         indicator.BackgroundTransparency = 1
         indicator.BorderSizePixel = 0
@@ -326,8 +386,7 @@ function Library:CreateWindow(title)
             textLabel = textLabel,
             indicator = indicator,
             content = content,
-            name = name:upper(),
-            limitedName = limitedName
+            name = name:upper()
         })
         
         button.MouseEnter:Connect(function()
@@ -367,11 +426,10 @@ function Library:CreateWindow(title)
         return content
     end
 
-    -- Sistema de busca (abas + funções dentro delas)
+    -- Filtro de pesquisa
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower()
         if query == "" then
-            -- Mostra tudo normalmente
             for _, tab in ipairs(self.tabs) do
                 tab.button.Visible = true
             end
@@ -380,10 +438,8 @@ function Library:CreateWindow(title)
 
         local foundAny = false
         for _, tab in ipairs(self.tabs) do
-            local tabName = tab.name:lower()
-            local match = tabName:find(query, 1, true)
+            local match = tab.name:lower():find(query, 1, true)
 
-            -- Procura também dentro dos elementos da aba
             if not match then
                 for _, child in ipairs(tab.content:GetChildren()) do
                     if child:IsA("Frame") or child:IsA("TextButton") then
@@ -400,7 +456,6 @@ function Library:CreateWindow(title)
             if match then foundAny = true end
         end
 
-        -- Se achou algo, abre a primeira aba visível
         if foundAny then
             for _, tab in ipairs(self.tabs) do
                 if tab.button.Visible then
@@ -412,12 +467,11 @@ function Library:CreateWindow(title)
     end)
 
     -- =============================================
-    -- COMPONENTES (todos com texto limitado)
+    -- COMPONENTES
     -- =============================================
 
     function Library.Button(parent, text, callback, options)
         options = options or {}
-        local limited = LimitText(text)
         local button = Instance.new("TextButton")
         button.Size = options.size or UDim2.new(0.95, 0, 0, 48)
         button.BackgroundColor3 = COLORS.Element
@@ -428,7 +482,7 @@ function Library:CreateWindow(title)
         
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
 
-        local label = CreateSmartTextLabel(button, UDim2.new(1, options.icon and -60 or 0, 1, 0), UDim2.new(0, options.icon and 16 or 0, 0, 0), limited, COLORS.Text, Enum.Font.GothamBold, options.textSize or 15, Enum.TextXAlignment.Left)
+        local label = CreateSmartTextLabel(button, UDim2.new(1, options.icon and -60 or 0, 1, 0), UDim2.new(0, options.icon and 16 or 0, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, options.textSize or 15, Enum.TextXAlignment.Left)
 
         local icon
         if options.icon then
@@ -470,9 +524,8 @@ function Library:CreateWindow(title)
         return button
     end
 
-    -- Toggle simples
+    -- Toggle (sem limite de texto)
     function Library.Toggle(parent, text, default, callback)
-        local limited = LimitText(text)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
         container.BackgroundColor3 = COLORS.Element
@@ -488,7 +541,7 @@ function Library:CreateWindow(title)
         hitbox.ZIndex = 8
         hitbox.Parent = container
 
-        CreateSmartTextLabel(container, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), limited, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        CreateSmartTextLabel(container, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
         local track = Instance.new("Frame")
         track.Size = UDim2.new(0, 52, 0, 26)
@@ -528,9 +581,8 @@ function Library:CreateWindow(title)
         return container
     end
 
-    -- Toggle com checkboxes
+    -- ToggleWithCheckboxes (sem limite)
     function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
-        local limited = LimitText(toggleText)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
         container.BackgroundColor3 = COLORS.Element
@@ -545,7 +597,7 @@ function Library:CreateWindow(title)
         header.BackgroundTransparency = 1
         header.Parent = container
 
-        CreateSmartTextLabel(header, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), limited, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        CreateSmartTextLabel(header, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), toggleText, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
         local toggleBtn = Instance.new("TextButton")
         toggleBtn.Size = UDim2.new(1, 0, 1, 0)
@@ -588,14 +640,13 @@ function Library:CreateWindow(title)
         local state = false
 
         for _, checkName in ipairs(checkboxesList) do
-            local limitedCheck = LimitText(checkName)
             local checkFrame = Instance.new("Frame")
             checkFrame.Size = UDim2.new(0.92, 0, 0, 36)
             checkFrame.BackgroundTransparency = 1
             checkFrame.ZIndex = 8
             checkFrame.Parent = checkboxesContainer
 
-            CreateSmartTextLabel(checkFrame, UDim2.new(1, -60, 1, 0), UDim2.new(0, 12, 0, 0), limitedCheck, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+            CreateSmartTextLabel(checkFrame, UDim2.new(1, -60, 1, 0), UDim2.new(0, 12, 0, 0), checkName, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
 
             local checkHitbox = Instance.new("TextButton")
             checkHitbox.Size = UDim2.new(0, 45, 0, 45)
@@ -655,9 +706,8 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Slider
+    -- Slider (sem limite)
     function Library.Slider(parent, text, min, max, default, callback)
-        local limited = LimitText(text)
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0.95, 0, 0, 62)
         frame.BackgroundColor3 = COLORS.Element
@@ -666,7 +716,7 @@ function Library:CreateWindow(title)
         
         Instance.new("UICorner", frame).CornerRadius = CORNERS.Medium
 
-        CreateSmartTextLabel(frame, UDim2.new(0.68, 0, 0, 26), UDim2.new(0, 14, 0, 6), limited, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        CreateSmartTextLabel(frame, UDim2.new(0.68, 0, 0, 26), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
         local valueLabel = CreateSmartTextLabel(frame, UDim2.new(0.28, 0, 0, 26), UDim2.new(0.72, 0, 0, 6), tostring(default), COLORS.Accent, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Right)
 
@@ -739,9 +789,8 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Dropdown simples
+    -- Dropdown (limite 30 chars apenas aqui)
     function Library.Dropdown(parent, text, options, defaultIndex, callback)
-        local limited = LimitText(text)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
         container.BackgroundColor3 = COLORS.Element
@@ -755,7 +804,7 @@ function Library:CreateWindow(title)
         header.BackgroundTransparency = 1
         header.Parent = container
 
-        CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), limited, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
         local selectBtn = Instance.new("TextButton")
         selectBtn.Size = UDim2.new(0, 130, 0, 30)
@@ -805,7 +854,7 @@ function Library:CreateWindow(title)
         end
 
         for _, opt in ipairs(options) do
-            local limitedOpt = LimitText(opt)
+            local limitedOpt = LimitDropdownText(opt)
             local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(0.96, 0, 0, 34)
             btn.BackgroundTransparency = 1
@@ -836,11 +885,10 @@ function Library:CreateWindow(title)
         selectBtn.Activated:Connect(toggle)
     end
 
-    -- DropdownMulti compacto (mesmo tamanho do normal)
+    -- DropdownMulti (limite 30 chars também)
     function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
-        local limited = LimitText(text)
         local container = Instance.new("Frame")
-        container.Size = UDim2.new(0.95, 0, 0, 40)  -- mesmo tamanho do Dropdown simples
+        container.Size = UDim2.new(0.95, 0, 0, 40)
         container.BackgroundColor3 = COLORS.Element
         container.ClipsDescendants = true
         container.ZIndex = 7
@@ -853,10 +901,10 @@ function Library:CreateWindow(title)
         header.BackgroundTransparency = 1
         header.Parent = container
 
-        CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), limited, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
         local previewBox = Instance.new("TextButton")
-        previewBox.Size = UDim2.new(0, 130, 0, 30)  -- mesmo tamanho do botão simples
+        previewBox.Size = UDim2.new(0, 130, 0, 30)
         previewBox.Position = UDim2.new(1, -140, 0.5, -15)
         previewBox.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
         previewBox.Text = ""
@@ -923,7 +971,7 @@ function Library:CreateWindow(title)
             end
             
             local previewStr = count == 0 and "Nenhum selecionado" or (count == #options and "Todos selecionados" or count .. " selecionado(s)")
-            previewText.Text = LimitText(previewStr)
+            previewText.Text = LimitDropdownText(previewStr)
             previewText.TextColor3 = count > 0 and COLORS.Accent or COLORS.TextDim
             
             local selectedList = {}
@@ -934,7 +982,7 @@ function Library:CreateWindow(title)
         end
 
         for i, optionName in ipairs(options) do
-            local limitedOpt = LimitText(optionName)
+            local limitedOpt = LimitDropdownText(optionName)
             local optionBtn = Instance.new("TextButton")
             optionBtn.Size = UDim2.new(0.96, 0, 0, 34)
             optionBtn.BackgroundTransparency = 1
@@ -990,10 +1038,10 @@ function Library:CreateWindow(title)
         updatePreview()
     end
 
-    -- InputNumber (com texto limitado)
+    -- InputNumber (sem limite)
     function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
-        local limited = LimitText(text)
+
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 52)
         container.BackgroundColor3 = COLORS.Element
@@ -1002,7 +1050,7 @@ function Library:CreateWindow(title)
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
 
-        CreateSmartTextLabel(container, UDim2.new(0.6, 0, 0, 24), UDim2.new(0, 14, 0, 6), limited, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        CreateSmartTextLabel(container, UDim2.new(0.6, 0, 0, 24), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
         local inputFrame = Instance.new("Frame")
         inputFrame.Size = UDim2.new(0, 140, 0, 34)
@@ -1083,14 +1131,12 @@ function Library:CreateWindow(title)
         updateValue(default)
     end
 
-    -- Notify com contador anti-spam
+    -- Notify com texto maior (15 -> melhor legibilidade)
     local activeNotifications = {}
 
     function Library.Notify(message, duration, color)
         duration = duration or 4
         color = color or COLORS.Accent
-
-        local limitedMsg = LimitText(message)
 
         local holder = ScreenGui:FindFirstChild("NotificationHolder")
         if not holder then
@@ -1110,13 +1156,13 @@ function Library:CreateWindow(title)
             list.Parent = holder
         end
 
-        if activeNotifications[limitedMsg] then
-            local data = activeNotifications[limitedMsg]
+        if activeNotifications[message] then
+            local data = activeNotifications[message]
             data.count = (data.count or 1) + 1
             
             local label = data.frame:FindFirstChildWhichIsA("TextLabel")
             label.RichText = true
-            label.Text = limitedMsg .. "  <font color='rgb(200,220,255)'>x" .. data.count .. "</font>"
+            label.Text = message .. "  <font color='rgb(200,220,255)'>x" .. data.count .. "</font>"
             
             if data.destroyTime then task.cancel(data.destroyTime) end
             
@@ -1127,7 +1173,7 @@ function Library:CreateWindow(title)
                 }):Play()
                 task.delay(0.5, function()
                     data.frame:Destroy()
-                    activeNotifications[limitedMsg] = nil
+                    activeNotifications[message] = nil
                 end)
             end)
             
@@ -1153,14 +1199,14 @@ function Library:CreateWindow(title)
         stroke.Transparency = 0.4
         stroke.Parent = notif
 
-        local label = CreateSmartTextLabel(notif, UDim2.new(1, -24, 1, -20), UDim2.new(0, 12, 0, 10), limitedMsg, COLORS.Text, Enum.Font.GothamSemibold, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+        local label = CreateSmartTextLabel(notif, UDim2.new(1, -24, 1, -20), UDim2.new(0, 12, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)  -- ← texto maior
         label.ZIndex = 103
 
         TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
             Position = UDim2.new(0, 0, 0, 0)
         }):Play()
 
-        activeNotifications[limitedMsg] = {
+        activeNotifications[message] = {
             frame = notif,
             count = 1,
             destroyTime = task.delay(duration, function()
@@ -1170,7 +1216,7 @@ function Library:CreateWindow(title)
                 }):Play()
                 task.delay(0.5, function()
                     notif:Destroy()
-                    activeNotifications[limitedMsg] = nil
+                    activeNotifications[message] = nil
                 end)
             end)
         }
@@ -1178,9 +1224,6 @@ function Library:CreateWindow(title)
 
     -- Popup
     function Library.Popup(titleText, messageText, onConfirm, onCancel)
-        local limitedTitle = LimitText(titleText)
-        local limitedMsg = LimitText(messageText)
-        
         local popupHolder = Instance.new("Frame")
         popupHolder.Name = "PopupLayer"
         popupHolder.Size = UDim2.new(1,0,1,0)
@@ -1220,9 +1263,9 @@ function Library:CreateWindow(title)
 
         Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
 
-        CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), limitedTitle, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+        CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-        local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), limitedMsg, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+        local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
         content.ZIndex = 205
 
         local cancelBtn = Instance.new("TextButton")
@@ -1291,7 +1334,7 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Abre a primeira aba automaticamente
+    -- Abre primeira aba
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
         if firstTab then firstTab.Activated:Fire() end
@@ -1300,6 +1343,6 @@ function Library:CreateWindow(title)
     return self
 end
 
-print("[GekyuUI] Versão final: Indicator dentro do tab | Search completo | DropdownMulti compacto | Limite 20 chars")
+print("[GekyuUI] Atualização: Limite 30 apenas Dropdowns | Notify texto maior | Botão Switch Hub + Config funcional")
 
 return Library
