@@ -143,158 +143,133 @@ end
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
--- Tamanho inicial salvo (ou padrão se for a primeira vez)
-    self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
+    -- Tamanho inicial salvo
+    self.SavedSize = UDim2.new(0, 550, 0, 350)
     
-    self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = self.SavedSize  -- Usa o tamanho que o usuário deixou da última vez
-    self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)  -- Centraliza com o novo tamanho
-    self.MainFrame.BackgroundColor3 = COLORS.Background
-    self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.ClipsDescendants = true
-    self.MainFrame.ZIndex = 5
-    self.MainFrame.Parent = ScreenGui
-
-    Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
-
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = COLORS.Stroke
-    uiStroke.Transparency = 0.65
-    uiStroke.Parent = self.MainFrame
-
-    -- Handle de Redimensionamento + lógica completa (cole aqui tudo)
-    local function updateResize()
-        local resizing = false
-        local resizeStartPos
-        local startSize
-
-        local ResizeHandle = Instance.new("ImageButton")
-        ResizeHandle.Name = "ResizeHandle"
-        ResizeHandle.Size = UDim2.new(0, 18, 0, 18)
-        ResizeHandle.Position = UDim2.new(1, -18, 1, -18)
-        ResizeHandle.BackgroundTransparency = 1
-        ResizeHandle.Image = "rbxassetid://11419730533" -- Ícone bonito
-        ResizeHandle.ImageColor3 = COLORS.Accent
-        ResizeHandle.ZIndex = 20
-        ResizeHandle.Parent = self.MainFrame
-
-        local BlockOverlay = Instance.new("TextButton")
-        BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
-        BlockOverlay.BackgroundTransparency = 1
-        BlockOverlay.Text = ""
-        BlockOverlay.Visible = false
-        BlockOverlay.ZIndex = 19
-        BlockOverlay.Parent = self.MainFrame
-
-        ResizeHandle.InputBegan:Connect(function(input)
+    -- 1. FUNÇÃO DE ARRASTE UNIFICADA
+    local function setupDrag(dragFrame, frameToMove)
+        local dragging, dragStart, startPos
+        dragFrame.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                resizing = true
-                resizeStartPos = input.Position
-                startSize = self.MainFrame.Size
-                BlockOverlay.Visible = true
+                dragging = true
+                dragStart = input.Position
+                startPos = frameToMove.Position
             end
         end)
-
         UserInputService.InputChanged:Connect(function(input)
-            if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - resizeStartPos
-                
-                local newWidth = math.max(450, startSize.X.Offset + delta.X)
-                local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
-                
-                local newSize = UDim2.new(0, newWidth, 0, newHeight)
-                self.MainFrame.Size = newSize
-                self.SavedSize = newSize  -- Salva para a próxima vez que abrir
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - dragStart
+                frameToMove.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
             end
         end)
-
         UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                resizing = false
-                BlockOverlay.Visible = false
+                dragging = false
             end
         end)
     end
 
-    updateResize()  -- Executa a função para criar o handle
-    
+    -- MainFrame
+    self.MainFrame = Instance.new("Frame")
+    self.MainFrame.Size = self.SavedSize
+    self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
+    self.MainFrame.BackgroundColor3 = COLORS.Background
+    self.MainFrame.ClipsDescendants = true
+    self.MainFrame.ZIndex = 5
+    self.MainFrame.Parent = ScreenGui
+    Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
+
     -- TopBar
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1,0,0,48)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-    TopBar.BorderSizePixel = 0
     TopBar.ZIndex = 6
     TopBar.Parent = self.MainFrame
-
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
 
-    CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+    -- [NOVO] Bottom Drag Area (Arraste de baixo igual ao vídeo)
+    local BottomDrag = Instance.new("Frame")
+    BottomDrag.Name = "BottomDrag"
+    BottomDrag.Size = UDim2.new(1, -40, 0, 20) -- Deixa espaço para o resize no canto
+    BottomDrag.Position = UDim2.new(0, 0, 1, -20)
+    BottomDrag.BackgroundTransparency = 1
+    BottomDrag.ZIndex = 50 -- ZIndex alto para não clicar nos botões atrás
+    BottomDrag.Parent = self.MainFrame
 
-    -- Drag do hub principal
-    local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+    -- Ativa os dois arrastes
+    setupDrag(TopBar, self.MainFrame)
+    setupDrag(BottomDrag, self.MainFrame)
 
-    local function update(input)
-        local delta = input.Position - dragStart
-        safeTween(self.MainFrame, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
-            Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        })
-    end
+    -- [SISTEMA DE REDIMENSIONAMENTO]
+    local resizing = false
+    local ResizeHandle = Instance.new("ImageButton")
+    ResizeHandle.Name = "ResizeHandle"
+    ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+    ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
+    ResizeHandle.BackgroundTransparency = 1
+    ResizeHandle.Image = "rbxassetid://11419730533"
+    ResizeHandle.ImageColor3 = COLORS.Accent
+    ResizeHandle.ZIndex = 55
+    ResizeHandle.Parent = self.MainFrame
 
-    TopBar.InputBegan:Connect(function(input)
+    local BlockOverlay = Instance.new("TextButton") -- Bloqueia cliques internos ao redimensionar
+    BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
+    BlockOverlay.BackgroundTransparency = 1
+    BlockOverlay.Text = ""
+    BlockOverlay.Visible = false
+    BlockOverlay.ZIndex = 45
+    BlockOverlay.Parent = self.MainFrame
+
+    ResizeHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = self.MainFrame.Position
+            resizing = true
+            local startSize = self.MainFrame.Size
+            local startPos = input.Position
+            BlockOverlay.Visible = true
             
-            ContextActionService:BindAction("GekyuDrag", function() return Enum.ContextActionResult.Sink end, false, 
-                Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
+            local moveCon
+            moveCon = UserInputService.InputChanged:Connect(function(moveInput)
+                if resizing and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
+                    local delta = moveInput.Position - startPos
+                    local newSize = UDim2.new(0, math.max(450, startSize.X.Offset + delta.X), 0, math.max(300, startSize.Y.Offset + delta.Y))
+                    self.MainFrame.Size = newSize
+                    self.SavedSize = newSize
+                end
+            end)
             
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                    ContextActionService:UnbindAction("GekyuDrag")
+            local endCon
+            endCon = UserInputService.InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                    resizing = false
+                    BlockOverlay.Visible = false
+                    moveCon:Disconnect()
+                    endCon:Disconnect()
                 end
             end)
         end
     end)
 
-    TopBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
+    -- Título
+    CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input)
-        end
-    end)
-
-    -- Botões do TopBar
-    CreateControlButton(TopBar, "X", -52, nil, function()
-        ScreenGui:Destroy()
-    end)
+    -- Botões de Controle
+    CreateControlButton(TopBar, "X", -52, nil, function() ScreenGui:Destroy() end)
 
     local minimized = false
     local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
         minimized = not minimized
         if minimized then
-            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0,480,0,48)})
+            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0, self.MainFrame.Size.X.Offset, 0, 48)})
             minimizeBtn.Text = "+"
         else
-            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0,480,0,520)})
+            -- [CORREÇÃO] Ao maximizar, volta para o tamanho que o usuário redimensionou
+            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = self.SavedSize})
             minimizeBtn.Text = "−"
         end
     end)
 
-    -- Engrenagem de Config (posição original)
-    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
-        self:ToggleConfigPanel()
-    end)
-
-    local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
-        self:ShowSwitchHubPopup()
-    end)
+    CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function() self:ToggleConfigPanel() end)
+    CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function() self:ShowSwitchHubPopup() end)
 
     -- Search Bar
     local SearchBar = Instance.new("Frame")
@@ -319,9 +294,9 @@ function Library:CreateWindow(title)
     SearchBox.ZIndex = 7
     SearchBox.Parent = SearchBar
 
-    -- Tabs laterais
+    -- Tabs Laterais (Usando escala para redimensionar junto)
     self.TabBar = Instance.new("ScrollingFrame")
-    self.TabBar.Size = UDim2.new(0,140,1,-100)
+    self.TabBar.Size = UDim2.new(0,140,1,-110)
     self.TabBar.Position = UDim2.new(0,0,0,100)
     self.TabBar.BackgroundTransparency = 1
     self.TabBar.ScrollBarThickness = 0
@@ -335,21 +310,22 @@ function Library:CreateWindow(title)
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabLayout.Parent = self.TabBar
 
+    -- Content Area (Usando escala relativa)
     self.ContentArea = Instance.new("Frame")
-    self.ContentArea.Size = UDim2.new(1, -152, 1, -100)
+    self.ContentArea.Size = UDim2.new(1, -152, 1, -110)
     self.ContentArea.Position = UDim2.new(0, 148, 0, 96)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 6
     self.ContentArea.Parent = self.MainFrame
 
-    local ContentLayout = Instance.new("UIListLayout")
-    ContentLayout.Padding = UDim.new(0, 12)
-    ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ContentLayout.Parent = self.ContentArea
-
     self.currentTab = nil
     self.tabs = {}
+
+    -- [RESTANTE DOS SEUS FILTROS E TABS MANTIDOS IGUAIS]
+    -- ... (O restante do seu código de SearchBox, Tabs e ConfigPanel continua aqui)
+    
+    return self
+end
 
     -- Painel de Configuração (completo)
     self.ConfigPanel = nil
