@@ -171,21 +171,57 @@ function Library:CreateWindow(title)
     BottomDrag.ZIndex = 15
     BottomDrag.Parent = self.MainFrame
 
+-- Ícone sutil no centro da base (indica que pode arrastar - estilo moderno)
+local DragIcon = Instance.new("Frame")
+DragIcon.Size = UDim2.new(0, 40, 0, 6)
+DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
+DragIcon.BackgroundColor3 = COLORS.TextDim
+DragIcon.BackgroundTransparency = 0.8
+DragIcon.ZIndex = 16
+DragIcon.Parent = BottomDrag
+
+-- Bordas arredondadas para ficar bonito
+local DragIconCorner = Instance.new("UICorner")
+DragIconCorner.CornerRadius = UDim.new(1, 0)
+DragIconCorner.Parent = DragIcon
+
+-- Efeito ao passar o mouse (brilha e fica mais visível)
+BottomDrag.MouseEnter:Connect(function()
+    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
+end)
+
+BottomDrag.MouseLeave:Connect(function()
+    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
+end)
+
     -- Redimensionamento (mantido igual)
     local function updateResize()
         local resizing = false
         local resizeStartPos
         local startSize
 
-        local ResizeHandle = Instance.new("ImageButton")
-        ResizeHandle.Name = "ResizeHandle"
-        ResizeHandle.Size = UDim2.new(0, 18, 0, 18)
-        ResizeHandle.Position = UDim2.new(1, -18, 1, -18)
-        ResizeHandle.BackgroundTransparency = 1
-        ResizeHandle.Image = "rbxassetid://11419730533"
-        ResizeHandle.ImageColor3 = COLORS.Accent
-        ResizeHandle.ZIndex = 20
-        ResizeHandle.Parent = self.MainFrame
+-- Resize Handle - Canto inferior direito (com ícone VISÍVEL e efeito hover)
+local ResizeHandle = Instance.new("ImageButton")
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 32, 0, 32)          -- maior para melhor clique
+ResizeHandle.Position = UDim2.new(1, -34, 1, -34)    -- ajustado para não ficar colado na borda
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Image = "rbxassetid://3926305904"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
+ResizeHandle.ImageColor3 = COLORS.Accent
+ResizeHandle.ImageTransparency = 0.4                 -- sutil quando não hover
+ResizeHandle.ZIndex = 25
+ResizeHandle.Parent = self.MainFrame
+
+-- Efeito ao passar o mouse (fica totalmente visível e gira levemente)
+ResizeHandle.MouseEnter:Connect(function()
+    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
+    safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})  -- gira 90° ao hover (legal)
+end)
+
+ResizeHandle.MouseLeave:Connect(function()
+    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
+    safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
+end)
 
         local BlockOverlay = Instance.new("TextButton")
         BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
