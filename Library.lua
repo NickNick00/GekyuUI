@@ -162,37 +162,37 @@ function Library:CreateWindow(title)
     uiStroke.Transparency = 0.65
     uiStroke.Parent = self.MainFrame
 
-    -- Área de drag inferior (invisível)
+    -- [CORREÇÃO: Drag Inferior fora do Hub e Estilizado]
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
-    BottomDrag.Size = UDim2.new(1, 0, 0, 24)
-    BottomDrag.Position = UDim2.new(0, 0, 1, -24)
+    BottomDrag.Size = UDim2.new(0, 80, 0, 20) -- Tamanho da área de clique
+    -- Posiciona logo abaixo do Hub
+    BottomDrag.Position = UDim2.new(0.5, -40, 1, 0) 
     BottomDrag.BackgroundTransparency = 1
-    BottomDrag.ZIndex = 15
+    BottomDrag.ZIndex = 20
     BottomDrag.Parent = self.MainFrame
 
--- Ícone sutil no centro da base (indica que pode arrastar - estilo moderno)
-local DragIcon = Instance.new("Frame")
-DragIcon.Size = UDim2.new(0, 40, 0, 6)
-DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
-DragIcon.BackgroundColor3 = COLORS.TextDim
-DragIcon.BackgroundTransparency = 0.8
-DragIcon.ZIndex = 16
-DragIcon.Parent = BottomDrag
+    -- Ícone visual (A pílula que você vê)
+    local DragIcon = Instance.new("Frame")
+    DragIcon.Size = UDim2.new(0, 60, 0, 8) -- Mais largo pros lados
+    DragIcon.Position = UDim2.new(0.5, -30, 0, 5) -- Fora do fundo principal
+    DragIcon.BackgroundColor3 = COLORS.Accent
+    DragIcon.BackgroundTransparency = 0.5
+    DragIcon.ZIndex = 21
+    DragIcon.Parent = BottomDrag
 
--- Bordas arredondadas para ficar bonito
-local DragIconCorner = Instance.new("UICorner")
-DragIconCorner.CornerRadius = UDim.new(1, 0)
-DragIconCorner.Parent = DragIcon
+    Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
+    local dragStroke = Instance.new("UIStroke", DragIcon)
+    dragStroke.Color = COLORS.Accent
+    dragStroke.Transparency = 0.8
 
--- Efeito ao passar o mouse (brilha e fica mais visível)
-BottomDrag.MouseEnter:Connect(function()
-    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
-end)
-
-BottomDrag.MouseLeave:Connect(function()
-    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
-end)
+    -- Efeito Hover
+    BottomDrag.MouseEnter:Connect(function()
+        safeTween(DragIcon, TweenInfo.new(0.2), {BackgroundTransparency = 0, Size = UDim2.new(0, 70, 0, 10), Position = UDim2.new(0.5, -35, 0, 4)})
+    end)
+    BottomDrag.MouseLeave:Connect(function()
+        safeTween(DragIcon, TweenInfo.new(0.2), {BackgroundTransparency = 0.5, Size = UDim2.new(0, 60, 0, 8), Position = UDim2.new(0.5, -30, 0, 5)})
+    end)
 
     -- Redimensionamento (mantido igual)
     local function updateResize()
@@ -273,7 +273,7 @@ end)
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-    -- Sistema de Drag (unificado para topo e base)
+     -- Sistema de Drag Unificado e Corrigido
     local dragging = false
     local dragStart = nil
     local startPos = nil
@@ -281,35 +281,41 @@ end)
     local function update(input)
         if not dragging then return end
         local delta = input.Position - dragStart
+        -- Move o MainFrame baseado no movimento do mouse
         self.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 
     local function setupDrag(dragObject)
         dragObject.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+                -- Verifica se não está tentando redimensionar
                 dragging = true
                 dragStart = input.Position
                 startPos = self.MainFrame.Position
                 
-                ContextActionService:BindAction("GekyuDrag", function() return Enum.ContextActionResult.Sink end, false, 
-                    Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
-                
-                local conn
-                conn = input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
+                local moveCon
+                local releaseCon
+
+                moveCon = UserInputService.InputChanged:Connect(function(input)
+                    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                        update(input)
+                    end
+                end)
+
+                releaseCon = UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         dragging = false
-                        ContextActionService:UnbindAction("GekyuDrag")
-                        conn:Disconnect()
+                        moveCon:Disconnect()
+                        releaseCon:Disconnect()
                     end
                 end)
             end
         end)
     end
 
-    -- Conecta o drag no TopBar e no BottomDrag
     setupDrag(TopBar)
     setupDrag(BottomDrag)
-
+    
     -- Atualiza posição durante movimento
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
