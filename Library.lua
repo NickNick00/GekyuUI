@@ -1,6 +1,6 @@
 -- Library.lua
--- GekyuUI - Versão FINAL corrigida (Config minimiza/maximiza, estado salvo, scroll por tab preservado, engrenagem original)
--- Kyuzzy - Atualizado 16/01/2026 (versão completa com todos componentes)
+-- GekyuUI - Versão FINAL com Arraste Duplo (Top + Bottom), Redimensionamento Dinâmico, Salvamento de Tamanho
+-- Kyuzzy - Atualizado 16/01/2026 (correções de drag, resize, organização)
 
 local Library = {}
 Library.__index = Library
@@ -43,13 +43,13 @@ local CORNERS = {
 -- Última posição salva do painel de config
 local lastConfigPosition = UDim2.new(0.5, -200, 0.5, -250)
 
--- Tween seguro (evita erros se objeto destruído)
+-- Tween seguro
 local function safeTween(obj, tweenInfo, properties)
     if not obj or not obj.Parent then return end
     TweenService:Create(obj, tweenInfo, properties):Play()
 end
 
--- TextLabel com ajuste automático de tamanho (bom para textos longos)
+-- TextLabel inteligente com truncate no final
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
     label.Size = size
@@ -62,7 +62,7 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     label.TextXAlignment = alignmentX or Enum.TextXAlignment.Left
     label.TextYAlignment = alignmentY or Enum.TextYAlignment.Center
     label.TextWrapped = true
-    label.TextTruncate = Enum.TextTruncate.SplitWord
+    label.TextTruncate = Enum.TextTruncate.AtEnd  -- Correção importante para dropdowns
     label.ZIndex = 10
     label.Parent = parent
 
@@ -85,7 +85,7 @@ local function LimitDropdownText(text)
     return text
 end
 
--- Botão de controle do TopBar (X, minimizar, config, switch)
+-- Botão de controle do TopBar
 local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0,42,0,42)
@@ -140,44 +140,54 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     return btn
 end
 
+-- Função de arraste (reutilizável para TopBar e BottomDrag)
+local function setupDrag(dragFrame, frameToMove)
+    local dragging, dragStart, startPos
+    
+    dragFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frameToMove.Position
+        end
+    end)
+    
+    local conn
+    conn = UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frameToMove.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    dragFrame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
-    -- Tamanho inicial salvo
-    self.SavedSize = UDim2.new(0, 550, 0, 350)
+    -- Tamanho salvo (inicial ou último usado)
+    self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
     
-    -- 1. FUNÇÃO DE ARRASTE UNIFICADA
-    local function setupDrag(dragFrame, frameToMove)
-        local dragging, dragStart, startPos
-        dragFrame.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragStart = input.Position
-                startPos = frameToMove.Position
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                frameToMove.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
-            end
-        end)
-    end
-
-    -- MainFrame
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
+    self.MainFrame.BorderSizePixel = 0
     self.MainFrame.ClipsDescendants = true
     self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
+
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
+
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = COLORS.Stroke
+    uiStroke.Transparency = 0.65
+    uiStroke.Parent = self.MainFrame
 
     -- TopBar
     local TopBar = Instance.new("Frame")
@@ -187,32 +197,32 @@ function Library:CreateWindow(title)
     TopBar.Parent = self.MainFrame
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
 
-    -- [NOVO] Bottom Drag Area (Arraste de baixo igual ao vídeo)
+    -- Bottom Drag Area (área invisível para arrastar de baixo)
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
-    BottomDrag.Size = UDim2.new(1, -40, 0, 20) -- Deixa espaço para o resize no canto
+    BottomDrag.Size = UDim2.new(1, -40, 0, 20)  -- Deixa espaço para o resize no canto direito
     BottomDrag.Position = UDim2.new(0, 0, 1, -20)
     BottomDrag.BackgroundTransparency = 1
-    BottomDrag.ZIndex = 50 -- ZIndex alto para não clicar nos botões atrás
+    BottomDrag.ZIndex = 50
     BottomDrag.Parent = self.MainFrame
 
-    -- Ativa os dois arrastes
+    -- Ativa arraste no TopBar e no BottomDrag
     setupDrag(TopBar, self.MainFrame)
-    setupDrag(BottomDrag, self.MainFrame)
+    setupDrag(BottomDrag, self.MainFrame)  -- Agora seguro, pois BottomDrag já existe
 
-    -- [SISTEMA DE REDIMENSIONAMENTO]
+    -- Redimensionamento (canto inferior direito)
     local resizing = false
     local ResizeHandle = Instance.new("ImageButton")
     ResizeHandle.Name = "ResizeHandle"
     ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
     ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
     ResizeHandle.BackgroundTransparency = 1
-    ResizeHandle.Image = "rbxassetid://11419730533"
+    ResizeHandle.Image = "rbxassetid://11419730533"  -- Ícone bonito
     ResizeHandle.ImageColor3 = COLORS.Accent
     ResizeHandle.ZIndex = 55
     ResizeHandle.Parent = self.MainFrame
 
-    local BlockOverlay = Instance.new("TextButton") -- Bloqueia cliques internos ao redimensionar
+    local BlockOverlay = Instance.new("TextButton")
     BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
     BlockOverlay.BackgroundTransparency = 1
     BlockOverlay.Text = ""
@@ -223,22 +233,22 @@ function Library:CreateWindow(title)
     ResizeHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             resizing = true
-            local startSize = self.MainFrame.Size
             local startPos = input.Position
+            local startSize = self.MainFrame.Size
             BlockOverlay.Visible = true
-            
-            local moveCon
-            moveCon = UserInputService.InputChanged:Connect(function(moveInput)
+
+            local moveCon = UserInputService.InputChanged:Connect(function(moveInput)
                 if resizing and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
                     local delta = moveInput.Position - startPos
-                    local newSize = UDim2.new(0, math.max(450, startSize.X.Offset + delta.X), 0, math.max(300, startSize.Y.Offset + delta.Y))
+                    local newWidth = math.max(450, startSize.X.Offset + delta.X)
+                    local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
+                    local newSize = UDim2.new(0, newWidth, 0, newHeight)
                     self.MainFrame.Size = newSize
-                    self.SavedSize = newSize
+                    self.SavedSize = newSize  -- Salva para próxima abertura
                 end
             end)
-            
-            local endCon
-            endCon = UserInputService.InputEnded:Connect(function(endInput)
+
+            local endCon = UserInputService.InputEnded:Connect(function(endInput)
                 if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
                     resizing = false
                     BlockOverlay.Visible = false
@@ -252,7 +262,7 @@ function Library:CreateWindow(title)
     -- Título
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-    -- Botões de Controle
+    -- Botões de controle
     CreateControlButton(TopBar, "X", -52, nil, function() ScreenGui:Destroy() end)
 
     local minimized = false
@@ -262,7 +272,6 @@ function Library:CreateWindow(title)
             safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0, self.MainFrame.Size.X.Offset, 0, 48)})
             minimizeBtn.Text = "+"
         else
-            -- [CORREÇÃO] Ao maximizar, volta para o tamanho que o usuário redimensionou
             safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = self.SavedSize})
             minimizeBtn.Text = "−"
         end
