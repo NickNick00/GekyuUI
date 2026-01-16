@@ -1,5 +1,5 @@
 -- Library.lua
--- GekyuUI - Versão com Config Panel corrigido (minimizar tabs + bordas + posição salva), InputNumber limitado, engrenagem no lugar
+-- GekyuUI - Versão completa com Config Panel funcional, scroll salvo por tab, componentes todos incluídos
 -- Kyuzzy - Atualizado 16/01/2026
 
 local Library = {}
@@ -40,10 +40,11 @@ local CORNERS = {
     Small  = UDim.new(0, 6),
 }
 
--- Variável para salvar a última posição do painel de config
+-- Variáveis para salvar estado do painel de config
 local lastConfigPosition = UDim2.new(0.5, -200, 0.5, -250)
+local lastConfigMinimized = false
 
--- Função auxiliar para textos inteligentes (sem limite forçado)
+-- Função auxiliar para textos inteligentes
 local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSize, alignmentX, alignmentY)
     local label = Instance.new("TextLabel")
     label.Size = size
@@ -132,9 +133,6 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     return btn
 end
 
--- =============================================
--- Criação da janela principal do hub
--- =============================================
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
@@ -166,7 +164,7 @@ function Library:CreateWindow(title)
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-    -- Drag system do hub principal
+    -- Drag do hub principal
     local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
     local function update(input)
@@ -206,7 +204,7 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Botões do TopBar (engrenagem e cadeado no lugar certo)
+    -- Botões do TopBar
     CreateControlButton(TopBar, "X", -52, nil, function()
         ScreenGui:Destroy()
     end)
@@ -223,13 +221,13 @@ function Library:CreateWindow(title)
         end
     end)
 
-    -- Engrenagem de Config (posição -152, perto do minimizar)
-    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()  -- ícone engrenagem
+    -- Engrenagem de Config (posição correta)
+    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
         self:ToggleConfigPanel()
     end)
 
-    -- Cadeado: Trocar Hub (posição -202)
-    local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()  -- ícone cadeado/troca
+    -- Cadeado: Trocar Hub
+    local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
         self:ShowSwitchHubPopup()
     end)
 
@@ -287,219 +285,12 @@ function Library:CreateWindow(title)
     ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ContentLayout.Parent = self.ContentArea
 
+    -- Mapa para salvar o scroll de cada tab
+    self.tabScrollPositions = {}
+
     self.currentTab = nil
     self.tabs = {}
 
-    -- =============================================
-    -- Painel de Configuração (com minimizar, X, tabs internas e posição salva)
-    -- =============================================
-    self.ConfigPanel = nil
-
-    function self:ToggleConfigPanel()
-        if self.ConfigPanel and self.ConfigPanel.Parent then
-            -- Fecha o painel
-            TweenService:Create(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1.5, 0, 0.5, -250)}):Play()
-            task.delay(0.3, function()
-                self.ConfigPanel:Destroy()
-                self.ConfigPanel = nil
-            end)
-        else
-            -- Cria e abre o painel na última posição salva
-            local panel = Instance.new("Frame")
-            panel.Name = "ConfigPanel"
-            panel.Size = UDim2.new(0, 400, 0, 500)
-            panel.Position = lastConfigPosition  -- Usa a posição salva
-            panel.BackgroundColor3 = COLORS.Background
-            panel.ZIndex = 50
-            panel.Parent = ScreenGui
-            Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
-
-            local stroke = Instance.new("UIStroke")
-            stroke.Color = COLORS.Stroke
-            stroke.Transparency = 0.5
-            stroke.Parent = panel
-
-            -- TopBar do painel
-            local configTopBar = Instance.new("Frame")
-            configTopBar.Size = UDim2.new(1,0,0,40)
-            configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-            configTopBar.ZIndex = 51
-            configTopBar.Parent = panel
-
-            Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
-
-            CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
-
-            -- Botão Minimizar
-            local configMinimizeBtn = Instance.new("TextButton")
-            configMinimizeBtn.Size = UDim2.new(0,30,0,30)
-            configMinimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
-            configMinimizeBtn.BackgroundTransparency = 1
-            configMinimizeBtn.Text = "−"
-            configMinimizeBtn.TextColor3 = COLORS.Text
-            configMinimizeBtn.Font = Enum.Font.GothamBold
-            configMinimizeBtn.TextSize = 20
-            configMinimizeBtn.ZIndex = 52
-            configMinimizeBtn.Parent = configTopBar
-
-            configMinimizeBtn.Activated:Connect(function()
-                TweenService:Create(panel, TweenInfo.new(0.3), {Size = UDim2.new(0,400,0,40)}):Play()
-            end)
-
-            -- Botão X para fechar
-            local configCloseBtn = Instance.new("TextButton")
-            configCloseBtn.Size = UDim2.new(0,30,0,30)
-            configCloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
-            configCloseBtn.BackgroundTransparency = 1
-            configCloseBtn.Text = "X"
-            configCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-            configCloseBtn.Font = Enum.Font.GothamBold
-            configCloseBtn.TextSize = 18
-            configCloseBtn.ZIndex = 52
-            configCloseBtn.Parent = configTopBar
-
-            configCloseBtn.Activated:Connect(function()
-                self:ToggleConfigPanel()  -- fecha
-            end)
-
-            -- Tabs internas do painel
-            local configTabBar = Instance.new("Frame")
-            configTabBar.Size = UDim2.new(1,0,0,40)
-            configTabBar.Position = UDim2.new(0,0,0,40)
-            configTabBar.BackgroundColor3 = COLORS.Element
-            configTabBar.ZIndex = 51
-            configTabBar.Parent = panel
-
-            Instance.new("UICorner", configTabBar).CornerRadius = CORNERS.Medium
-
-            local infoTabBtn = Instance.new("TextButton")
-            infoTabBtn.Size = UDim2.new(0.5,0,1,0)
-            infoTabBtn.BackgroundTransparency = 1
-            infoTabBtn.Text = "Info"
-            infoTabBtn.TextColor3 = COLORS.Accent
-            infoTabBtn.Font = Enum.Font.GothamBold
-            infoTabBtn.TextSize = 14
-            infoTabBtn.ZIndex = 52
-            infoTabBtn.Parent = configTabBar
-
-            local configTabBtn = Instance.new("TextButton")
-            configTabBtn.Size = UDim2.new(0.5,0,1,0)
-            configTabBtn.Position = UDim2.new(0.5,0,0,0)
-            configTabBtn.BackgroundTransparency = 1
-            configTabBtn.Text = "Config"
-            configTabBtn.TextColor3 = COLORS.TextDim
-            configTabBtn.Font = Enum.Font.GothamBold
-            configTabBtn.TextSize = 14
-            configTabBtn.ZIndex = 52
-            configTabBtn.Parent = configTabBar
-
-            -- Conteúdo das tabs internas
-            local infoContent = Instance.new("Frame")
-            infoContent.Size = UDim2.new(1,0,1,-80)
-            infoContent.Position = UDim2.new(0,0,0,80)
-            infoContent.BackgroundTransparency = 1
-            infoContent.ZIndex = 51
-            infoContent.Visible = true
-            infoContent.Parent = panel
-
-            CreateSmartTextLabel(infoContent, UDim2.new(1,-20,1,-20), UDim2.new(0,10,0,10), "GekyuUI v1.0\nFeito por Kyuzzy\nPremium Dark Theme", COLORS.Text, Enum.Font.Gotham, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-
-            local configContent = Instance.new("Frame")
-            configContent.Size = UDim2.new(1,0,1,-80)
-            configContent.Position = UDim2.new(0,0,0,80)
-            configContent.BackgroundTransparency = 1
-            configContent.ZIndex = 51
-            configContent.Visible = false
-            configContent.Parent = panel
-
-            CreateSmartTextLabel(configContent, UDim2.new(1,-20,0,30), UDim2.new(0,10,0,10), "Configurações Gerais", COLORS.Accent, Enum.Font.GothamBold, 16, Enum.TextXAlignment.Left)
-
-            -- Alternar tabs internas
-            infoTabBtn.Activated:Connect(function()
-                infoContent.Visible = true
-                configContent.Visible = false
-                infoTabBtn.TextColor3 = COLORS.Accent
-                configTabBtn.TextColor3 = COLORS.TextDim
-            end)
-
-            configTabBtn.Activated:Connect(function()
-                infoContent.Visible = false
-                configContent.Visible = true
-                infoTabBtn.TextColor3 = COLORS.TextDim
-                configTabBtn.TextColor3 = COLORS.Accent
-            end)
-
-            -- Drag do painel de config
-            local configDragging, configDragInput, configDragStart, configStartPos = false, nil, nil, nil
-
-            local function configUpdate(input)
-                local delta = input.Position - configDragStart
-                TweenService:Create(panel, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
-                    Position = UDim2.new(configStartPos.X.Scale, configStartPos.X.Offset + delta.X, configStartPos.Y.Scale, configStartPos.Y.Offset + delta.Y)
-                }):Play()
-            end
-
-            configTopBar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    configDragging = true
-                    configDragStart = input.Position
-                    configStartPos = panel.Position
-                    
-                    ContextActionService:BindAction("DisableCameraConfig", function() return Enum.ContextActionResult.Sink end, false, 
-                        Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
-                    
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            configDragging = false
-                            ContextActionService:UnbindAction("DisableCameraConfig")
-                            -- Salva a posição final
-                            lastConfigPosition = panel.Position
-                        end
-                    end)
-                end
-            end)
-
-            configTopBar.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                    configDragInput = input
-                end
-            end)
-
-            UserInputService.InputChanged:Connect(function(input)
-                if configDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    configUpdate(input)
-                end
-            end)
-
-            -- Animação de abertura suave
-            TweenService:Create(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = lastConfigPosition}):Play()
-
-            self.ConfigPanel = panel
-        end
-    end
-
-    -- Popup de confirmação para trocar de hub
-    function self:ShowSwitchHubPopup()
-        Library.Popup(
-            "Trocar de Hub",
-            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
-            function()  -- Confirmar
-                -- Coloque aqui o loadstring do seu outro hub
-                -- Exemplo:
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/OutroHub.lua"))()
-                
-                -- Fecha o atual
-                ScreenGui:Destroy()
-            end,
-            function()  -- Cancelar
-                -- Nada
-            end
-        )
-    end
-
-    -- =============================================
-    -- Criação de Tabs do hub principal
-    -- =============================================
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
@@ -524,11 +315,14 @@ function Library:CreateWindow(title)
         indicator.Parent = button
         Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
         
-        local content = Instance.new("Frame")
+        local content = Instance.new("ScrollingFrame")
         content.Size = UDim2.new(1,0,1,0)
         content.BackgroundTransparency = 1
         content.Visible = false
         content.ZIndex = 6
+        content.ScrollBarThickness = 4
+        content.ScrollBarImageColor3 = COLORS.Accent
+        content.CanvasSize = UDim2.new(0,0,0,0)
         content.Parent = self.ContentArea
         
         local list = Instance.new("UIListLayout")
@@ -561,6 +355,8 @@ function Library:CreateWindow(title)
         
         button.Activated:Connect(function()
             if self.currentTab then
+                -- Salva scroll da tab atual
+                self.tabScrollPositions[self.currentTab.name] = self.currentTab.content.CanvasPosition
                 self.currentTab.content.Visible = false
                 TweenService:Create(self.currentTab.indicator, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
                 self.currentTab.textLabel.TextColor3 = COLORS.TextDim
@@ -568,6 +364,14 @@ function Library:CreateWindow(title)
             end
             
             content.Visible = true
+            
+            -- Restaura scroll salvo ou vai pro topo
+            if self.tabScrollPositions[name:upper()] then
+                content.CanvasPosition = self.tabScrollPositions[name:upper()]
+            else
+                content.CanvasPosition = Vector2.new(0, 0)
+            end
+            
             TweenService:Create(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0,4,0.95,0)}):Play()
             textLabel.TextColor3 = COLORS.Text
             TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-12,0,50)}):Play()
@@ -576,13 +380,18 @@ function Library:CreateWindow(title)
             end)
             TweenService:Create(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover}):Play()
             
-            self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
+            self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel, name = name:upper()}
+        end)
+        
+        -- Atualiza CanvasSize automaticamente
+        list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 20)
         end)
         
         return content
     end
 
-    -- Filtro de busca (mantido)
+    -- Filtro de busca
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower()
         if query == "" then
@@ -623,7 +432,206 @@ function Library:CreateWindow(title)
     end)
 
     -- =============================================
-    -- COMPONENTES (mantidos)
+    -- Painel de Configuração (com minimizar/desminimizar corrigido)
+    -- =============================================
+    self.ConfigPanel = nil
+
+    function self:ToggleConfigPanel()
+        if self.ConfigPanel and self.ConfigPanel.Parent then
+            -- Salva estado antes de fechar
+            lastConfigPosition = self.ConfigPanel.Position
+            lastConfigMinimized = (self.ConfigPanel.Size.Y.Offset == 40)
+            
+            TweenService:Create(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1.5, 0, 0.5, -250)}):Play()
+            task.delay(0.3, function()
+                self.ConfigPanel:Destroy()
+                self.ConfigPanel = nil
+            end)
+        else
+            -- Cria painel com estado salvo
+            local panel = Instance.new("Frame")
+            panel.Name = "ConfigPanel"
+            panel.BackgroundColor3 = COLORS.Background
+            panel.ZIndex = 50
+            panel.Parent = ScreenGui
+            Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
+
+            local stroke = Instance.new("UIStroke")
+            stroke.Color = COLORS.Stroke
+            stroke.Transparency = 0.5
+            stroke.Parent = panel
+
+            -- TopBar
+            local configTopBar = Instance.new("Frame")
+            configTopBar.Size = UDim2.new(1,0,0,40)
+            configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+            configTopBar.ZIndex = 51
+            configTopBar.Parent = panel
+
+            Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
+
+            CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
+
+            -- Minimizar / Desminimizar
+            local configMinimizeBtn = Instance.new("TextButton")
+            configMinimizeBtn.Size = UDim2.new(0,30,0,30)
+            configMinimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
+            configMinimizeBtn.BackgroundTransparency = 1
+            configMinimizeBtn.Text = "−"
+            configMinimizeBtn.TextColor3 = COLORS.Text
+            configMinimizeBtn.Font = Enum.Font.GothamBold
+            configMinimizeBtn.TextSize = 20
+            configMinimizeBtn.ZIndex = 52
+            configMinimizeBtn.Parent = configTopBar
+
+            configMinimizeBtn.Activated:Connect(function()
+                if panel.Size.Y.Offset == 40 then
+                    -- Desminimiza
+                    TweenService:Create(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,500)}):Play()
+                else
+                    -- Minimiza
+                    TweenService:Create(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,40)}):Play()
+                end
+            end)
+
+            -- X para fechar
+            local configCloseBtn = Instance.new("TextButton")
+            configCloseBtn.Size = UDim2.new(0,30,0,30)
+            configCloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
+            configCloseBtn.BackgroundTransparency = 1
+            configCloseBtn.Text = "X"
+            configCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+            configCloseBtn.Font = Enum.Font.GothamBold
+            configCloseBtn.TextSize = 18
+            configCloseBtn.ZIndex = 52
+            configCloseBtn.Parent = configTopBar
+
+            configCloseBtn.Activated:Connect(function()
+                self:ToggleConfigPanel()
+            end)
+
+            -- Tabs internas
+            local configTabBar = Instance.new("Frame")
+            configTabBar.Size = UDim2.new(1,0,0,40)
+            configTabBar.Position = UDim2.new(0,0,0,40)
+            configTabBar.BackgroundColor3 = COLORS.Element
+            configTabBar.ZIndex = 51
+            configTabBar.Parent = panel
+
+            Instance.new("UICorner", configTabBar).CornerRadius = CORNERS.Medium
+
+            local infoTabBtn = Instance.new("TextButton")
+            infoTabBtn.Size = UDim2.new(0.5,0,1,0)
+            infoTabBtn.BackgroundTransparency = 1
+            infoTabBtn.Text = "Info"
+            infoTabBtn.TextColor3 = COLORS.Accent
+            infoTabBtn.Font = Enum.Font.GothamBold
+            infoTabBtn.TextSize = 14
+            infoTabBtn.ZIndex = 52
+            infoTabBtn.Parent = configTabBar
+
+            local configTabBtn = Instance.new("TextButton")
+            configTabBtn.Size = UDim2.new(0.5,0,1,0)
+            configTabBtn.Position = UDim2.new(0.5,0,0,0)
+            configTabBtn.BackgroundTransparency = 1
+            configTabBtn.Text = "Config"
+            configTabBtn.TextColor3 = COLORS.TextDim
+            configTabBtn.Font = Enum.Font.GothamBold
+            configTabBtn.TextSize = 14
+            configTabBtn.ZIndex = 52
+            configTabBtn.Parent = configTabBar
+
+            local infoContent = Instance.new("Frame")
+            infoContent.Size = UDim2.new(1,0,1,-80)
+            infoContent.Position = UDim2.new(0,0,0,80)
+            infoContent.BackgroundTransparency = 1
+            infoContent.ZIndex = 51
+            infoContent.Visible = true
+            infoContent.Parent = panel
+
+            CreateSmartTextLabel(infoContent, UDim2.new(1,-20,1,-20), UDim2.new(0,10,0,10), "GekyuUI v1.0\nFeito por Kyuzzy\nPremium Dark Theme", COLORS.Text, Enum.Font.Gotham, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+
+            local configContent = Instance.new("Frame")
+            configContent.Size = UDim2.new(1,0,1,-80)
+            configContent.Position = UDim2.new(0,0,0,80)
+            configContent.BackgroundTransparency = 1
+            configContent.ZIndex = 51
+            configContent.Visible = false
+            configContent.Parent = panel
+
+            CreateSmartTextLabel(configContent, UDim2.new(1,-20,0,30), UDim2.new(0,10,0,10), "Configurações Gerais", COLORS.Accent, Enum.Font.GothamBold, 16, Enum.TextXAlignment.Left)
+
+            infoTabBtn.Activated:Connect(function()
+                infoContent.Visible = true
+                configContent.Visible = false
+                infoTabBtn.TextColor3 = COLORS.Accent
+                configTabBtn.TextColor3 = COLORS.TextDim
+            end)
+
+            configTabBtn.Activated:Connect(function()
+                infoContent.Visible = false
+                configContent.Visible = true
+                infoTabBtn.TextColor3 = COLORS.TextDim
+                configTabBtn.TextColor3 = COLORS.Accent
+            end)
+
+            -- Drag
+            local configDragging, configDragInput, configDragStart, configStartPos = false, nil, nil, nil
+
+            local function configUpdate(input)
+                local delta = input.Position - configDragStart
+                TweenService:Create(panel, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
+                    Position = UDim2.new(configStartPos.X.Scale, configStartPos.X.Offset + delta.X, configStartPos.Y.Scale, configStartPos.Y.Offset + delta.Y)
+                }):Play()
+            end
+
+            configTopBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    configDragging = true
+                    configDragStart = input.Position
+                    configStartPos = panel.Position
+                    
+                    ContextActionService:BindAction("DisableCameraConfig", function() return Enum.ContextActionResult.Sink end, false, 
+                        Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
+                    
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            configDragging = false
+                            ContextActionService:UnbindAction("DisableCameraConfig")
+                            lastConfigPosition = panel.Position
+                        end
+                    end)
+                end
+            end)
+
+            configTopBar.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    configDragInput = input
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if configDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    configUpdate(input)
+                end
+            end)
+
+            -- Aplica estado salvo
+            panel.Position = lastConfigPosition
+            if lastConfigMinimized then
+                panel.Size = UDim2.new(0,400,0,40)
+            else
+                panel.Size = UDim2.new(0,400,0,500)
+            end
+
+            TweenService:Create(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = lastConfigPosition}):Play()
+
+            self.ConfigPanel = panel
+        end
+    end
+
+    -- =============================================
+    -- COMPONENTES COMPLETOS
     -- =============================================
 
     function Library.Button(parent, text, callback, options)
@@ -680,7 +688,6 @@ function Library:CreateWindow(title)
         return button
     end
 
-    -- Toggle simples
     function Library.Toggle(parent, text, default, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
@@ -737,7 +744,6 @@ function Library:CreateWindow(title)
         return container
     end
 
-    -- ToggleWithCheckboxes
     function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 48)
@@ -862,7 +868,6 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Slider
     function Library.Slider(parent, text, min, max, default, callback)
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0.95, 0, 0, 62)
@@ -945,7 +950,6 @@ function Library:CreateWindow(title)
         end)
     end
 
-    -- Dropdown (limite 30 chars)
     function Library.Dropdown(parent, text, options, defaultIndex, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
@@ -1041,7 +1045,6 @@ function Library:CreateWindow(title)
         selectBtn.Activated:Connect(toggle)
     end
 
-    -- DropdownMulti (limite 30 chars)
     function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
         local container = Instance.new("Frame")
         container.Size = UDim2.new(0.95, 0, 0, 40)
@@ -1194,7 +1197,6 @@ function Library:CreateWindow(title)
         updatePreview()
     end
 
-    -- InputNumber com limite de texto (não deixa ultrapassar a caixa)
     function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
 
@@ -1230,7 +1232,6 @@ function Library:CreateWindow(title)
         valueBox.ZIndex = 9
         valueBox.Parent = inputFrame
 
-        -- Limite de texto: corta se ultrapassar a caixa
         valueBox:GetPropertyChangedSignal("Text"):Connect(function()
             local currentText = valueBox.Text
             if valueBox.TextBounds.X > valueBox.AbsoluteSize.X - 10 then
@@ -1295,7 +1296,7 @@ function Library:CreateWindow(title)
         updateValue(default)
     end
 
-    -- Notify com texto maior
+    -- Notify
     local activeNotifications = {}
 
     function Library.Notify(message, duration, color)
@@ -1421,91 +1422,3 @@ function Library:CreateWindow(title)
 
         local topBar = Instance.new("Frame")
         topBar.Size = UDim2.new(1,0,0,52)
-        topBar.BackgroundColor3 = COLORS.Element
-        topBar.ZIndex = 204
-        topBar.Parent = popup
-
-        Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
-
-        CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
-
-        local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-        content.ZIndex = 205
-
-        local cancelBtn = Instance.new("TextButton")
-        cancelBtn.Size = UDim2.new(0, 158, 0, 52)
-        cancelBtn.Position = UDim2.new(0.5, -168, 1, -80)
-        cancelBtn.BackgroundColor3 = COLORS.Element
-        cancelBtn.Text = "Cancelar"
-        cancelBtn.TextColor3 = COLORS.TextDim
-        cancelBtn.Font = Enum.Font.GothamBold
-        cancelBtn.TextSize = 15
-        cancelBtn.ZIndex = 206
-        cancelBtn.Parent = popup
-
-        Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
-
-        local confirmBtn = Instance.new("TextButton")
-        confirmBtn.Size = UDim2.new(0, 158, 0, 52)
-        confirmBtn.Position = UDim2.new(0.5, 10, 1, -80)
-        confirmBtn.BackgroundColor3 = COLORS.Accent
-        confirmBtn.Text = "Confirmar"
-        confirmBtn.TextColor3 = Color3.new(1,1,1)
-        confirmBtn.Font = Enum.Font.GothamBold
-        confirmBtn.TextSize = 15
-        confirmBtn.ZIndex = 206
-        confirmBtn.Parent = popup
-
-        Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
-
-        local function closePopup()
-            TweenService:Create(popup, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(0, 340, 0, 210)
-            }):Play()
-            
-            TweenService:Create(overlay, TweenInfo.new(0.28), {BackgroundTransparency = 1}):Play()
-            
-            task.delay(0.3, function()
-                popupHolder:Destroy()
-            end)
-        end
-
-        cancelBtn.MouseEnter:Connect(function()
-            TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover}):Play()
-        end)
-        
-        cancelBtn.MouseLeave:Connect(function()
-            TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Element}):Play()
-        end)
-
-        confirmBtn.MouseEnter:Connect(function()
-            TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress}):Play()
-        end)
-        
-        confirmBtn.MouseLeave:Connect(function()
-            TweenService:Create(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Accent}):Play()
-        end)
-
-        cancelBtn.Activated:Connect(function()
-            if onCancel then onCancel() end
-            closePopup()
-        end)
-
-        confirmBtn.Activated:Connect(function()
-            if onConfirm then onConfirm() end
-            closePopup()
-        end)
-    end
-
-    task.delay(0.1, function()
-        local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
-        if firstTab then firstTab.Activated:Fire() end
-    end)
-
-    return self
-end
-
-print("[GekyuUI] Atualização: Config Panel minimiza tabs + bordas | Posição salva | InputNumber limitado | Engrenagem no lugar")
-
-return Library
