@@ -68,6 +68,7 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
 
     task.spawn(function()
         task.wait()
+        if not label or not label.Parent then return end
         local maxWidth = label.AbsoluteSize.X - 20
         if maxWidth > 10 and label.TextBounds.X > maxWidth then
             local scale = maxWidth / label.TextBounds.X
@@ -146,12 +147,17 @@ function Library:CreateWindow(title)
     -- Tamanho inicial salvo
     self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
     
-    self.MainFrame.Active = true
+    -- --- CORREÇÃO AQUI ---
+    -- Criamos o Frame PRIMEIRO
+    self.MainFrame = Instance.new("Frame")
+    
+    -- Definimos as propriedades DEPOIS
+    self.MainFrame.Active = true -- Anti-Clickthrough
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.ClipsDescendants = false
+    self.MainFrame.ClipsDescendants = false -- Permite Drag/Resize fora
     self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
 
@@ -162,66 +168,65 @@ function Library:CreateWindow(title)
     uiStroke.Transparency = 0.65
     uiStroke.Parent = self.MainFrame
 
-    -- Área de drag inferior (invisível)
+    -- Área de drag inferior (Bottom Drag)
     local BottomDrag = Instance.new("Frame")
-BottomDrag.Name = "BottomDrag"
-BottomDrag.Size = UDim2.new(1, 0, 0, 20) -- Altura fina
-BottomDrag.Position = UDim2.new(0, 0, 1, 2) -- FICA EMBAIXO (FORA) DO HUB
-BottomDrag.BackgroundTransparency = 1
-BottomDrag.ZIndex = 15
-BottomDrag.Parent = self.MainFrame
+    BottomDrag.Name = "BottomDrag"
+    BottomDrag.Size = UDim2.new(1, 0, 0, 20) -- Altura fina
+    BottomDrag.Position = UDim2.new(0, 0, 1, 2) -- FICA EMBAIXO (FORA) DO HUB
+    BottomDrag.BackgroundTransparency = 1
+    BottomDrag.ZIndex = 15
+    BottomDrag.Parent = self.MainFrame
 
--- Ícone sutil no centro da base (indica que pode arrastar - estilo moderno)
-local DragIcon = Instance.new("Frame")
-DragIcon.Size = UDim2.new(0, 40, 0, 6)
-DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
-DragIcon.BackgroundColor3 = COLORS.TextDim
-DragIcon.BackgroundTransparency = 0.8
-DragIcon.ZIndex = 16
-DragIcon.Parent = BottomDrag
+    -- Ícone sutil no centro da base
+    local DragIcon = Instance.new("Frame")
+    DragIcon.Size = UDim2.new(0, 40, 0, 6)
+    DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
+    DragIcon.BackgroundColor3 = COLORS.TextDim
+    DragIcon.BackgroundTransparency = 0.8
+    DragIcon.ZIndex = 16
+    DragIcon.Parent = BottomDrag
 
--- Bordas arredondadas para ficar bonito
-local DragIconCorner = Instance.new("UICorner")
-DragIconCorner.CornerRadius = UDim.new(1, 0)
-DragIconCorner.Parent = DragIcon
+    -- Bordas arredondadas
+    local DragIconCorner = Instance.new("UICorner")
+    DragIconCorner.CornerRadius = UDim.new(1, 0)
+    DragIconCorner.Parent = DragIcon
 
--- Efeito ao passar o mouse (brilha e fica mais visível)
-BottomDrag.MouseEnter:Connect(function()
-    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
-end)
+    -- Efeito ao passar o mouse
+    BottomDrag.MouseEnter:Connect(function()
+        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
+    end)
 
-BottomDrag.MouseLeave:Connect(function()
-    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
-end)
+    BottomDrag.MouseLeave:Connect(function()
+        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
+    end)
 
-    -- Redimensionamento (mantido igual)
+    -- Redimensionamento
     local function updateResize()
         local resizing = false
         local resizeStartPos
         local startSize
 
--- Resize Handle - Canto inferior direito (com ícone VISÍVEL e efeito hover)
-local ResizeHandle = Instance.new("ImageButton")
-ResizeHandle.Name = "ResizeHandle"
-ResizeHandle.Size = UDim2.new(0, 24, 0, 24)
-ResizeHandle.Position = UDim2.new(1, 4, 1, 4) -- FICA FORA, NO CANTO DIREITO
-ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Image = "rbxassetid://7733715400"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
-ResizeHandle.ImageColor3 = COLORS.Accent
-ResizeHandle.ImageTransparency = 0.4                 -- sutil quando não hover
-ResizeHandle.ZIndex = 25
-ResizeHandle.Parent = self.MainFrame
+        -- Resize Handle - FORA do frame
+        local ResizeHandle = Instance.new("ImageButton")
+        ResizeHandle.Name = "ResizeHandle"
+        ResizeHandle.Size = UDim2.new(0, 24, 0, 24)
+        ResizeHandle.Position = UDim2.new(1, 4, 1, 4) -- FICA FORA, NO CANTO DIREITO
+        ResizeHandle.BackgroundTransparency = 1
+        ResizeHandle.Image = "rbxassetid://7733715400"
+        ResizeHandle.ImageColor3 = COLORS.Accent
+        ResizeHandle.ImageTransparency = 0.4
+        ResizeHandle.ZIndex = 25
+        ResizeHandle.Parent = self.MainFrame
 
--- Efeito ao passar o mouse (fica totalmente visível e gira levemente)
-ResizeHandle.MouseEnter:Connect(function()
-    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
-    safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})  -- gira 90° ao hover (legal)
-end)
+        ResizeHandle.MouseEnter:Connect(function()
+            safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
+            safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})
+        end)
 
-ResizeHandle.MouseLeave:Connect(function()
-    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
-    safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
-end)
+        ResizeHandle.MouseLeave:Connect(function()
+            safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
+            safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
+        end)
 
         local BlockOverlay = Instance.new("TextButton")
         BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -240,7 +245,7 @@ end)
             end
         end)
 
-        local resizeConnection = UserInputService.InputChanged:Connect(function(input)
+        UserInputService.InputChanged:Connect(function(input)
             if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 local delta = input.Position - resizeStartPos
                 local newWidth = math.max(450, startSize.X.Offset + delta.X)
@@ -324,35 +329,43 @@ end)
 
     local minimized = false
     local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
-    minimized = not minimized
-    if minimized then
-        -- ESCONDE TUDO QUE ESTÁ FORA
-        BottomDrag.Visible = false
-        local handle = self.MainFrame:FindFirstChild("ResizeHandle")
-        if handle then handle.Visible = false end
-        
-        safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0, self.SavedSize.X.Offset, 0, 48)})
-        minimizeBtn.Text = "+"
-        
-        -- Esconde conteúdo para garantir
-        if self.TabBar then self.TabBar.Visible = false end
-        if self.ContentArea then self.ContentArea.Visible = false end
-    else
-        -- MOSTRA DE VOLTA
-        safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = self.SavedSize})
-        minimizeBtn.Text = "−"
-        
-        task.delay(0.2, function()
-            BottomDrag.Visible = true
+        minimized = not minimized
+        if minimized then
+            -- ESCONDE TUDO QUE ESTÁ FORA
+            BottomDrag.Visible = false
             local handle = self.MainFrame:FindFirstChild("ResizeHandle")
-            if handle then handle.Visible = true end
-            if self.TabBar then self.TabBar.Visible = true end
-            if self.ContentArea then self.ContentArea.Visible = true end
-        end)
-    end
-end)
+            if handle then handle.Visible = false end
+            
+            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0, self.SavedSize.X.Offset, 0, 48)})
+            minimizeBtn.Text = "+"
+            
+            -- Esconde conteúdo
+            if self.TabBar then self.TabBar.Visible = false end
+            if self.ContentArea then self.ContentArea.Visible = false end
+        else
+            -- MOSTRA DE VOLTA
+            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = self.SavedSize})
+            minimizeBtn.Text = "−"
+            
+            task.delay(0.2, function()
+                BottomDrag.Visible = true
+                local handle = self.MainFrame:FindFirstChild("ResizeHandle")
+                if handle then handle.Visible = true end
+                if self.TabBar then self.TabBar.Visible = true end
+                if self.ContentArea then self.ContentArea.Visible = true end
+            end)
+        end
+    end)
+    
+    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
+        self:ToggleConfigPanel()
+    end)
 
-    -- Search Bar (continua igual)
+    local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
+        self:ShowSwitchHubPopup()
+    end)
+
+    -- Search Bar
     local SearchBar = Instance.new("Frame")
     SearchBar.Size = UDim2.new(0,140-12,0,32)
     SearchBar.Position = UDim2.new(0,6,0,48+8)
@@ -375,7 +388,7 @@ end)
     SearchBox.ZIndex = 7
     SearchBox.Parent = SearchBar
 
-    -- Tabs e Content (continua igual)
+    -- Tabs e Content
     self.TabBar = Instance.new("ScrollingFrame")
     self.TabBar.Size = UDim2.new(0,140,1,-100)
     self.TabBar.Position = UDim2.new(0,0,0,100)
@@ -396,6 +409,7 @@ end)
     self.ContentArea.Position = UDim2.new(0, 148, 0, 96)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 6
+    self.ContentArea.ClipsDescendants = true -- Conteúdo interno deve ser cortado
     self.ContentArea.Parent = self.MainFrame
 
     local ContentLayout = Instance.new("UIListLayout")
@@ -407,7 +421,7 @@ end)
     self.currentTab = nil
     self.tabs = {}
 
-    -- Painel de Configuração (completo)
+    -- Painel de Configuração
     self.ConfigPanel = nil
     self.ConfigMinimized = false
 
@@ -426,6 +440,7 @@ end)
             panel.Size = self.ConfigMinimized and UDim2.new(0,400,0,40) or UDim2.new(0,400,0,500)
             panel.Position = lastConfigPosition
             panel.BackgroundColor3 = COLORS.Background
+            panel.Active = true -- Anti-Clickthrough no config
             panel.ZIndex = 50
             panel.Parent = ScreenGui
             Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
