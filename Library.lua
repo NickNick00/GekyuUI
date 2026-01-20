@@ -146,12 +146,12 @@ function Library:CreateWindow(title)
     -- Tamanho inicial salvo
     self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
     
-    self.MainFrame.Active = true
+    self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.ClipsDescendants = false
+    self.MainFrame.ClipsDescendants = true
     self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
 
@@ -164,12 +164,12 @@ function Library:CreateWindow(title)
 
     -- Área de drag inferior (invisível)
     local BottomDrag = Instance.new("Frame")
-BottomDrag.Name = "BottomDrag"
-BottomDrag.Size = UDim2.new(1, 0, 0, 20) -- Altura fina
-BottomDrag.Position = UDim2.new(0, 0, 1, 2) -- FICA EMBAIXO (FORA) DO HUB
-BottomDrag.BackgroundTransparency = 1
-BottomDrag.ZIndex = 15
-BottomDrag.Parent = self.MainFrame
+    BottomDrag.Name = "BottomDrag"
+    BottomDrag.Size = UDim2.new(1, 0, 0, 24)
+    BottomDrag.Position = UDim2.new(0, 0, 1, -24)
+    BottomDrag.BackgroundTransparency = 1
+    BottomDrag.ZIndex = 15
+    BottomDrag.Parent = self.MainFrame
 
 -- Ícone sutil no centro da base (indica que pode arrastar - estilo moderno)
 local DragIcon = Instance.new("Frame")
@@ -203,8 +203,8 @@ end)
 -- Resize Handle - Canto inferior direito (com ícone VISÍVEL e efeito hover)
 local ResizeHandle = Instance.new("ImageButton")
 ResizeHandle.Name = "ResizeHandle"
-ResizeHandle.Size = UDim2.new(0, 24, 0, 24)
-ResizeHandle.Position = UDim2.new(1, 4, 1, 4) -- FICA FORA, NO CANTO DIREITO
+ResizeHandle.Size = UDim2.new(0, 32, 0, 32)          -- maior para melhor clique
+ResizeHandle.Position = UDim2.new(1, -34, 1, -34)    -- ajustado para não ficar colado na borda
 ResizeHandle.BackgroundTransparency = 1
 ResizeHandle.Image = "rbxassetid://7733715400"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
 ResizeHandle.ImageColor3 = COLORS.Accent
@@ -324,33 +324,23 @@ end)
 
     local minimized = false
     local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
-    minimized = not minimized
-    if minimized then
-        -- ESCONDE TUDO QUE ESTÁ FORA
-        BottomDrag.Visible = false
-        local handle = self.MainFrame:FindFirstChild("ResizeHandle")
-        if handle then handle.Visible = false end
-        
-        safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0, self.SavedSize.X.Offset, 0, 48)})
-        minimizeBtn.Text = "+"
-        
-        -- Esconde conteúdo para garantir
-        if self.TabBar then self.TabBar.Visible = false end
-        if self.ContentArea then self.ContentArea.Visible = false end
-    else
-        -- MOSTRA DE VOLTA
-        safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = self.SavedSize})
-        minimizeBtn.Text = "−"
-        
-        task.delay(0.2, function()
-            BottomDrag.Visible = true
-            local handle = self.MainFrame:FindFirstChild("ResizeHandle")
-            if handle then handle.Visible = true end
-            if self.TabBar then self.TabBar.Visible = true end
-            if self.ContentArea then self.ContentArea.Visible = true end
-        end)
-    end
-end)
+        minimized = not minimized
+        if minimized then
+            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0, self.SavedSize.X.Offset, 0, 48)})
+            minimizeBtn.Text = "+"
+        else
+            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = self.SavedSize})
+            minimizeBtn.Text = "−"
+        end
+    end)
+
+    local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
+        self:ToggleConfigPanel()
+    end)
+
+    local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
+        self:ShowSwitchHubPopup()
+    end)
 
     -- Search Bar (continua igual)
     local SearchBar = Instance.new("Frame")
