@@ -159,14 +159,19 @@ function Library:CreateWindow(title)
  
 
     -- [PARTE 1] Barra de Rodapé e Hitbox do Drag reduzido
-    local BottomBar = Instance.new("Frame")
-    BottomBar.Name = "BottomBar"
-    BottomBar.Size = UDim2.new(1, 0, 0, 26)
-    BottomBar.Position = UDim2.new(0, 0, 1, -26)
-    BottomBar.BackgroundColor3 = COLORS.Background
-    BottomBar.BorderSizePixel = 0
-    BottomBar.ZIndex = 50
-    BottomBar.Parent = self.MainFrame
+    -- [PARTE 1] Ajuste de simetria da barra inferior
+local BottomBar = Instance.new("Frame")
+BottomBar.Name = "BottomBar"
+BottomBar.Size = UDim2.new(1, 0, 0, 26) -- Mantenha 26 para ambos os lados
+BottomBar.Position = UDim2.new(0, 0, 1, -26)
+BottomBar.BackgroundColor3 = COLORS.Background
+BottomBar.BorderSizePixel = 0
+BottomBar.ZIndex = 50
+BottomBar.Parent = self.MainFrame
+
+-- Importante: Remova qualquer ClipseDescendants do MainFrame 
+-- se a borda parecer cortada em um dos lados.
+
 
     local BBCCorner = Instance.new("UICorner")
     BBCCorner.CornerRadius = CORNERS.Large
@@ -400,7 +405,7 @@ function Library:CreateWindow(title)
     -- Aumente o padding inferior do ContentArea para empurrar os tabs para cima
  local contentPadding = Instance.new("UIPadding")
 contentPadding.PaddingTop = UDim.new(0, 5)
-contentPadding.PaddingBottom = UDim.new(0, 35)         -- mais espaço na base para evitar invasão
+contentPadding.PaddingBottom = UDim.new(0, 0)         -- mais espaço na base para evitar invasão
 contentPadding.PaddingLeft = UDim.new(0, 10)
 contentPadding.PaddingRight = UDim.new(0, 10)          -- mais espaço no resize
 contentPadding.Parent = self.ContentArea
