@@ -159,7 +159,7 @@ function Library:CreateWindow(title)
 
     local uiStroke = Instance.new("UIStroke")
     uiStroke.Color = COLORS.Stroke
-    uiStroke.Transparency = 0.65
+    uiStroke.Transparency = 1
     uiStroke.Parent = self.MainFrame
 
     -- Área de drag inferior (invisível)
