@@ -146,19 +146,21 @@ function Library:CreateWindow(title)
     -- Tamanho inicial salvo
     self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
     
-    self.MainFrame = Instance.new("Frame")
+   self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
-    self.MainFrame.BorderSizePixel = 0
+    self.MainFrame.BorderSizePixel = 1                          -- ativa borda nativa
+    self.MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)       -- preto sólido na borda
     self.MainFrame.ClipsDescendants = true
     self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
 
+    -- NÃO crie UIStroke no MainFrame (remova se ainda tiver)
 
-    -- Área de drag inferior (invisível)
+    -- Área de drag inferior
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
     BottomDrag.Size = UDim2.new(1, 0, 0, 24)
@@ -167,39 +169,28 @@ function Library:CreateWindow(title)
     BottomDrag.ZIndex = 15
     BottomDrag.Parent = self.MainFrame
 
-local DragIcon = Instance.new("Frame")
-DragIcon.Size = UDim2.new(0, 40, 0, 6)
-DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
-DragIcon.BackgroundColor3 = COLORS.TextDim
-DragIcon.BackgroundTransparency = 0.8
-DragIcon.ZIndex = 16
-DragIcon.Parent = BottomDrag
+    local DragIcon = Instance.new("Frame")
+    DragIcon.Size = UDim2.new(0, 40, 0, 6)
+    DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
+    DragIcon.BackgroundColor3 = COLORS.TextDim
+    DragIcon.BackgroundTransparency = 0.8
+    DragIcon.ZIndex = 16
+    DragIcon.Parent = BottomDrag
 
--- Bordas arredondadas para ficar bonito
-local DragIconCorner = Instance.new("UICorner")
-DragIconCorner.CornerRadius = UDim.new(1, 0)
-DragIconCorner.Parent = DragIcon
+    local DragIconCorner = Instance.new("UICorner")
+    DragIconCorner.CornerRadius = UDim.new(1, 0)
+    DragIconCorner.Parent = DragIcon
 
--- Efeito ao passar o mouse (brilha e fica mais visível)
-BottomDrag.MouseEnter:Connect(function()
-    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
-end)
+    BottomDrag.MouseEnter:Connect(function()
+        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
+    end)
 
-BottomDrag.MouseLeave:Connect(function()
-    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
-end)
+    BottomDrag.MouseLeave:Connect(function()
+        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
+    end)
 
--- Borda preta sólida (funcionava nas partes anteriores - preta 100% opaca)
-local BottomBorder = Instance.new("Frame")
-BottomBorder.Name = "BottomBorder"
-BottomBorder.Size = UDim2.new(1, 0, 0, 2)           -- altura fina (2 pixels)
-BottomBorder.Position = UDim2.new(0, 0, 1, -26)     -- exatamente acima do drag (-24 do drag - 2 da borda)
-BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- preto puro
-BottomBorder.BorderSizePixel = 0
-BottomBorder.BackgroundTransparency = 0             -- 0 = totalmente opaco (sem transparência)
-BottomBorder.ZIndex = 14                            -- acima do conteúdo (Z6-7), abaixo do drag/resize (Z15-25)
-BottomBorder.Parent = self.MainFrame
-    
+    -- Remova o BottomBorder (não precisa mais — a borda nativa do MainFrame faz o trabalho)
+    -- local BottomBorder = ... (delete ou comente todo o bloco do BottomBorder) 
     
     -- Redimensionamento (mantido igual)
     local function updateResize()
