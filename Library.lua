@@ -171,23 +171,18 @@ function Library:CreateWindow(title)
     BottomDrag.ZIndex = 15
     BottomDrag.Parent = self.MainFrame
 
--- Borda preta sólida entre o conteúdo e o drag inferior (estilo NITF/Foxname)
+-- Borda preta sólida (100% opaca, sem gradiente, sem transparência)
 local BottomBorder = Instance.new("Frame")
 BottomBorder.Name = "BottomBorder"
-BottomBorder.Size = UDim2.new(1, 0, 0, 2)           -- altura fina (2 pixels)
-BottomBorder.Position = UDim2.new(0, 0, 1, -26)     -- logo acima do drag (-24 - 2)
-BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- preto puro
+BottomBorder.Size = UDim2.new(1, 0, 0, 2)           -- 2 pixels de altura (fina como no exemplo)
+BottomBorder.Position = UDim2.new(0, 0, 1, -26)     -- logo acima do drag inferior
+BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- preto absoluto
 BottomBorder.BorderSizePixel = 0
-BottomBorder.Transparency = 0                       -- 0 = totalmente opaco
-BottomBorder.ZIndex = 14                            -- entre conteúdo e drag/resize
+BottomBorder.BackgroundTransparency = 0             -- 0 = totalmente opaco (preto sólido)
+BottomBorder.ZIndex = 14                            -- acima do conteúdo, abaixo do drag/resize
 BottomBorder.Parent = self.MainFrame
 
--- Remova ou comente o UIGradient se estiver usando (não precisa mais)
--- local borderGradient = Instance.new("UIGradient")  -- comente ou delete tudo abaixo
--- borderGradient.Color = ...
--- borderGradient.Transparency = ...
--- borderGradient.Parent = BottomBorder
--- Ícone sutil no centro da base (indica que pode arrastar - estilo moderno)
+-- NÃO adicione UIGradient aqui! Remova qualquer linha de gradiente para essa borda
     
 local DragIcon = Instance.new("Frame")
 DragIcon.Size = UDim2.new(0, 40, 0, 6)
