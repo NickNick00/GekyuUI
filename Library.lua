@@ -158,69 +158,65 @@ function Library:CreateWindow(title)
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
  
 
--- Área de drag inferior (Agora funciona como o rodapé que sobrepõe as abas)
-local BottomDrag = Instance.new("Frame")
-BottomDrag.Name = "BottomDrag"
-BottomDrag.Size = UDim2.new(1, 0, 0, 25)              -- Altura do rodapé
-BottomDrag.Position = UDim2.new(0, 0, 1, -25)
-BottomDrag.BackgroundColor3 = COLORS.Background       -- Cor igual ao fundo para esconder os itens
-BottomDrag.BorderSizePixel = 0
-BottomDrag.ZIndex = 50                                -- Maior que as Tabs (6) e Content (6)
-BottomDrag.Parent = self.MainFrame
+    -- [PARTE 1] Criando a Barra de Rodapé Sólida
+    local BottomBar = Instance.new("Frame")
+    BottomBar.Name = "BottomBar"
+    BottomBar.Size = UDim2.new(1, 0, 0, 26) -- Altura da borda
+    BottomBar.Position = UDim2.new(0, 0, 1, -26)
+    BottomBar.BackgroundColor3 = COLORS.Background -- Esconde as tabs atrás dela
+    BottomBar.BorderSizePixel = 0
+    BottomBar.ZIndex = 50 -- ZIndex alto para ficar por cima das abas
+    BottomBar.Parent = self.MainFrame
 
--- Arredondamento apenas nos cantos inferiores para manter o design
-local BottomCorner = Instance.new("UICorner")
-BottomCorner.CornerRadius = CORNERS.Large
-BottomCorner.Parent = BottomDrag
+    -- Arredondamento inferior para casar com o MainFrame
+    local BBCCorner = Instance.new("UICorner")
+    BBCCorner.CornerRadius = CORNERS.Large
+    BBCCorner.Parent = BottomBar
 
-local DragIcon = Instance.new("Frame")
-DragIcon.Size = UDim2.new(0, 40, 0, 4)
-DragIcon.Position = UDim2.new(0.5, -20, 0.5, 2)
-DragIcon.BackgroundColor3 = COLORS.TextDim
-DragIcon.BackgroundTransparency = 0.8
-DragIcon.ZIndex = 52
-DragIcon.Parent = BottomDrag
+    -- A Linha Preta decorativa no topo do rodapé
+    local BottomLine = Instance.new("Frame")
+    BottomLine.Name = "BottomLine"
+    BottomLine.Size = UDim2.new(1, 0, 0, 1)
+    BottomLine.Position = UDim2.new(0, 0, 0, 0)
+    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BottomLine.BorderSizePixel = 0
+    BottomLine.ZIndex = 51
+    BottomLine.Parent = BottomBar
 
-Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
-    
-    
--- Linha preta decorativa no topo do rodapé
-local BottomLine = Instance.new("Frame")
-BottomLine.Name = "BottomLine"
-BottomLine.Size = UDim2.new(1, 0, 0, 1)               -- Linha de 1 pixel
-BottomLine.Position = UDim2.new(0, 0, 0, 0)           -- No topo do BottomDrag
-BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Sua linha preta
-BottomLine.BorderSizePixel = 0
-BottomLine.ZIndex = 51                                -- Acima do próprio rodapé
-BottomLine.Parent = BottomDrag
+    -- Ícone visual do Drag (a barrinha cinza)
+    local DragIcon = Instance.new("Frame")
+    DragIcon.Size = UDim2.new(0, 40, 0, 4)
+    DragIcon.Position = UDim2.new(0.5, -20, 0.5, 2)
+    DragIcon.BackgroundColor3 = COLORS.TextDim
+    DragIcon.BackgroundTransparency = 0.8
+    DragIcon.ZIndex = 52
+    DragIcon.Parent = BottomBar
+    Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
 
     local function updateResize()
         local resizing = false
         local resizeStartPos
         local startSize
 
--- Resize Handle - Canto inferior direito (com ícone VISÍVEL e efeito hover)
-local ResizeHandle = Instance.new("ImageButton")
-ResizeHandle.Name = "ResizeHandle"
-ResizeHandle.Size = UDim2.new(0, 32, 0, 32)          -- maior para melhor clique
-ResizeHandle.Position = UDim2.new(1, -34, 1, -34)    -- ajustado para não ficar colado na borda
-ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Image = "rbxassetid://7733715400"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
-ResizeHandle.ImageColor3 = COLORS.Accent
-ResizeHandle.ImageTransparency = 0.4                 -- sutil quando não hover
-ResizeHandle.ZIndex = 25
-ResizeHandle.Parent = self.MainFrame
+    -- [PARTE 2] Ícone de Redimensionar (Flutuando acima da borda)
+    local ResizeHandle = Instance.new("ImageButton")
+    ResizeHandle.Name = "ResizeHandle"
+    ResizeHandle.Size = UDim2.new(0, 22, 0, 22)
+    ResizeHandle.Position = UDim2.new(1, -25, 1, -25) -- Posição no cantinho
+    ResizeHandle.BackgroundTransparency = 1
+    ResizeHandle.Image = "rbxassetid://7733715400" -- Ícone padrão
+    ResizeHandle.ImageColor3 = COLORS.Accent
+    ResizeHandle.ZIndex = 60 -- O maior ZIndex para nunca sumir
+    ResizeHandle.Parent = self.MainFrame
 
--- Efeito ao passar o mouse (fica totalmente visível e gira levemente)
-ResizeHandle.MouseEnter:Connect(function()
-    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
-    safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})  -- gira 90° ao hover (legal)
-end)
+    -- Efeitos de Hover
+    ResizeHandle.MouseEnter:Connect(function()
+        safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0, Rotation = 90})
+    end)
+    ResizeHandle.MouseLeave:Connect(function()
+        safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.3, Rotation = 0})
+    end)
 
-ResizeHandle.MouseLeave:Connect(function()
-    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
-    safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
-end)
 
         local BlockOverlay = Instance.new("TextButton")
         BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -306,8 +302,12 @@ end)
     end
 
     -- Conecta o drag no TopBar e no BottomDrag
+        -- [PARTE 3] Ajuste nas conexões
+    -- No seu código, procure onde você chama o setupDrag e mude para:
     setupDrag(TopBar)
-    setupDrag(BottomDrag)
+    setupDrag(BottomBar)
+
+
 
     -- Atualiza posição durante movimento
     UserInputService.InputChanged:Connect(function(input)
