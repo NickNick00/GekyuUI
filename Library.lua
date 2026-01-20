@@ -186,16 +186,19 @@ function Library:CreateWindow(title)
         safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
     end)
 
-    -- Linha preta sólida (corrigida para NÃO ter linha extra/sombra interna)
+    -- Linha preta sólida corrigida
     local BottomLine = Instance.new("Frame")
     BottomLine.Name = "BottomLine"
-    BottomLine.Size = UDim2.new(1, -60, 0, 1)              -- 1 pixel de altura (fina), -60 na direita para espaço no resize
-    BottomLine.Position = UDim2.new(0, 30, 1, -25)         -- começa 30 da esquerda, -25 para ficar acima do drag sem encostar no corner
+    -- Largura: 100% menos 140 (menu lateral) e menos 40 (espaço do resize no final)
+    BottomLine.Size = UDim2.new(1, -180, 0, 1) 
+    -- Posição: Começa em 140 (depois do TabBar) e fica na altura -25
+    BottomLine.Position = UDim2.new(0, 140, 1, -25) 
     BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     BottomLine.BorderSizePixel = 0
-    BottomLine.BackgroundTransparency = 0
-    BottomLine.ZIndex = 10                                 -- acima do conteúdo (6-7), abaixo do drag (15) → não invade tabs
+    BottomLine.BackgroundTransparency = 0.5 -- Um pouco de transparência ajuda a mesclar melhor
+    BottomLine.ZIndex = 5 -- Abaixo do TabBar (6) e do ContentArea (6)
     BottomLine.Parent = self.MainFrame
+
     
     local function updateResize()
         local resizing = false
