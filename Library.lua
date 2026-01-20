@@ -186,18 +186,17 @@ function Library:CreateWindow(title)
         safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
     end)
 
-    -- Linha preta sólida (corrigida: não invade tabs, sem sombreamento interno)
+    -- Linha preta sólida (corrigida para NÃO ter linha extra/sombra interna)
     local BottomLine = Instance.new("Frame")
     BottomLine.Name = "BottomLine"
-    BottomLine.Size = UDim2.new(1, -40, 0, 2)              -- -40 na direita para não encostar no resize
-    BottomLine.Position = UDim2.new(0, 20, 1, -26)         -- começa 20 da esquerda, acima do drag
+    BottomLine.Size = UDim2.new(1, -60, 0, 1)              -- 1 pixel de altura (fina), -60 na direita para espaço no resize
+    BottomLine.Position = UDim2.new(0, 30, 1, -25)         -- começa 30 da esquerda, -25 para ficar acima do drag sem encostar no corner
     BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     BottomLine.BorderSizePixel = 0
     BottomLine.BackgroundTransparency = 0
-    BottomLine.ZIndex = 8                                  -- abaixo do drag (15), mas acima do conteúdo (6-7) → NÃO invade tabs
+    BottomLine.ZIndex = 10                                 -- acima do conteúdo (6-7), abaixo do drag (15) → não invade tabs
     BottomLine.Parent = self.MainFrame
-
-    -- Redimensionamento (mantido igual)
+    
     local function updateResize()
         local resizing = false
         local resizeStartPos
@@ -392,12 +391,12 @@ end)
     self.ContentArea.Parent = self.MainFrame
 
     -- Aumente o padding inferior do ContentArea para empurrar os tabs para cima
-    local contentPadding = Instance.new("UIPadding")
-    contentPadding.PaddingTop = UDim.new(0, 10)
-    contentPadding.PaddingBottom = UDim.new(0, 30)         -- espaço maior na base para evitar invasão
-    contentPadding.PaddingLeft = UDim.new(0, 14)
-    contentPadding.PaddingRight = UDim.new(0, 48)          -- espaço pro resize
-    contentPadding.Parent = self.ContentArea
+ local contentPadding = Instance.new("UIPadding")
+contentPadding.PaddingTop = UDim.new(0, 10)
+contentPadding.PaddingBottom = UDim.new(0, 35)         -- mais espaço na base para evitar invasão
+contentPadding.PaddingLeft = UDim.new(0, 14)
+contentPadding.PaddingRight = UDim.new(0, 60)          -- mais espaço no resize
+contentPadding.Parent = self.ContentArea
     
     local ContentLayout = Instance.new("UIListLayout")
     ContentLayout.Padding = UDim.new(0, 12)
