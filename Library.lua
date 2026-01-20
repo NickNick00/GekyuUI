@@ -1,6 +1,6 @@
 -- Library.lua
--- GekyuUI - Versão FINAL com borda NITF-style + padding seguro
--- Kyuzzy - Atualizado 20/01/2026
+-- GekyuUI - Versão FINAL corrigida + DRAG DUPLO (topo + base)
+-- Kyuzzy - Atualizado 16/01/2026
 
 local Library = {}
 Library.__index = Library
@@ -22,7 +22,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = CoreGui
 
--- Cores globais (mantidas originais + Stroke ajustado para NITF)
+-- Cores globais
 local COLORS = {
     Background    = Color3.fromRGB(10, 10, 16),
     Accent        = Color3.fromRGB(90, 170, 255),
@@ -31,7 +31,7 @@ local COLORS = {
     ElementHover  = Color3.fromRGB(28, 28, 44),
     Text          = Color3.fromRGB(235, 235, 245),
     TextDim       = Color3.fromRGB(150, 150, 175),
-    Stroke        = Color3.fromRGB(60, 140, 255),     -- cor glow NITF
+    Stroke        = Color3.fromRGB(50, 50, 75),
 }
 
 local CORNERS = {
@@ -68,10 +68,10 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
 
     task.spawn(function()
         task.wait()
-        local maxWidth = label.AbsoluteSize.X - 24
+        local maxWidth = label.AbsoluteSize.X - 20
         if maxWidth > 10 and label.TextBounds.X > maxWidth then
             local scale = maxWidth / label.TextBounds.X
-            label.TextSize = math.max(9, math.floor(label.TextSize * scale * 0.9))
+            label.TextSize = math.max(8, math.floor(label.TextSize * scale * 0.92))
         end
     end)
 
@@ -85,41 +85,7 @@ local function LimitDropdownText(text)
     return text
 end
 
--- Borda NITF-style (glow + gradient sutil)
-local function ApplyNITFBorder(frame, thickness, color, transparency)
-    local stroke = Instance.new("UIStroke")
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Color = color or COLORS.Stroke
-    stroke.Transparency = transparency or 0.42
-    stroke.Thickness = thickness or 1.8
-    stroke.LineJoinMode = Enum.LineJoinMode.Round
-    stroke.Parent = frame
-
-    local grad = Instance.new("UIGradient")
-    grad.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, color or COLORS.Stroke),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(140, 200, 255)),
-        ColorSequenceKeypoint.new(1, color or COLORS.Stroke)
-    }
-    grad.Rotation = 90
-    grad.Transparency = NumberSequence.new{
-        NumberSequenceKeypoint.new(0, 0.25),
-        NumberSequenceKeypoint.new(1, 0.65)
-    }
-    grad.Parent = stroke
-end
-
--- Padding seguro (protege drag inferior e resize handle)
-local function AddSafePadding(frame)
-    local pad = Instance.new("UIPadding")
-    pad.PaddingTop    = UDim.new(0, 10)
-    pad.PaddingBottom = UDim.new(0, 38)   -- espaço pro drag inferior
-    pad.PaddingLeft   = UDim.new(0, 14)
-    pad.PaddingRight  = UDim.new(0, 48)   -- espaço pro resize handle
-    pad.Parent = frame
-end
-
--- Botão de controle do TopBar (com borda NITF)
+-- Botão de controle do TopBar
 local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0,42,0,42)
@@ -133,8 +99,7 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
     btn.ZIndex = 10
     btn.Parent = parent
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
-    ApplyNITFBorder(btn, 1.4, COLORS.Stroke, 0.55)
-
+    
     local icon
     if iconAssetId then
         icon = Instance.new("ImageLabel")
@@ -147,17 +112,17 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
         icon.ZIndex = 11
         icon.Parent = btn
     end
-
+    
     btn.MouseEnter:Connect(function()
         safeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress})
         if icon then safeTween(icon, TweenInfo.new(0.8, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {Rotation = 360}) end
     end)
-
+    
     btn.MouseLeave:Connect(function()
         safeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 15, 21)})
         if icon then safeTween(icon, TweenInfo.new(0.3), {Rotation = 0}) end
     end)
-
+    
     btn.Activated:Connect(function()
         safeTween(btn, TweenInfo.new(0.08), {BackgroundColor3 = COLORS.Accent})
         if icon then
@@ -171,15 +136,16 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
         end)
         callback()
     end)
-
+    
     return btn
 end
 
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
-
+    
+    -- Tamanho inicial salvo
     self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
-
+    
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
@@ -190,9 +156,13 @@ function Library:CreateWindow(title)
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
-    ApplyNITFBorder(self.MainFrame, 2.2, COLORS.Stroke, 0.35)  -- borda principal glow
 
-    -- Área de drag inferior
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = COLORS.Stroke
+    uiStroke.Transparency = 0.65
+    uiStroke.Parent = self.MainFrame
+
+    -- Área de drag inferior (invisível)
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
     BottomDrag.Size = UDim2.new(1, 0, 0, 24)
@@ -201,49 +171,80 @@ function Library:CreateWindow(title)
     BottomDrag.ZIndex = 15
     BottomDrag.Parent = self.MainFrame
 
-    local DragIcon = Instance.new("Frame")
-    DragIcon.Size = UDim2.new(0, 40, 0, 6)
-    DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
-    DragIcon.BackgroundColor3 = COLORS.TextDim
-    DragIcon.BackgroundTransparency = 0.8
-    DragIcon.ZIndex = 16
-    DragIcon.Parent = BottomDrag
-    Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
+-- Borda preta fina horizontal entre o conteúdo e o drag inferior (estilo NITF/Foxname)
+local BottomBorder = Instance.new("Frame")
+BottomBorder.Name = "BottomBorder"
+BottomBorder.Size = UDim2.new(1, 0, 0, 2)          -- altura fina (2 pixels)
+BottomBorder.Position = UDim2.new(0, 0, 1, -26)    -- logo acima do drag (24 + 2 de margem)
+BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- preto puro
+BottomBorder.BorderSizePixel = 0
+BottomBorder.ZIndex = 14                           -- acima do conteúdo, abaixo do drag/resize
+BottomBorder.Parent = self.MainFrame
 
-    BottomDrag.MouseEnter:Connect(function()
-        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
-    end)
+-- Opcional: leve gradiente ou transparência para ficar mais bonito
+local borderGradient = Instance.new("UIGradient")
+borderGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 40)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 0, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 40))
+}
+borderGradient.Transparency = NumberSequence.new{
+    NumberSequenceKeypoint.new(0, 0.4),
+    NumberSequenceKeypoint.new(1, 0.4)
+}
+borderGradient.Parent = BottomBorder
 
-    BottomDrag.MouseLeave:Connect(function()
-        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
-    end)
+-- Ícone sutil no centro da base (indica que pode arrastar - estilo moderno)
+local DragIcon = Instance.new("Frame")
+DragIcon.Size = UDim2.new(0, 40, 0, 6)
+DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
+DragIcon.BackgroundColor3 = COLORS.TextDim
+DragIcon.BackgroundTransparency = 0.8
+DragIcon.ZIndex = 16
+DragIcon.Parent = BottomDrag
 
-    -- Redimensionamento
+-- Bordas arredondadas para ficar bonito
+local DragIconCorner = Instance.new("UICorner")
+DragIconCorner.CornerRadius = UDim.new(1, 0)
+DragIconCorner.Parent = DragIcon
+
+-- Efeito ao passar o mouse (brilha e fica mais visível)
+BottomDrag.MouseEnter:Connect(function()
+    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
+end)
+
+BottomDrag.MouseLeave:Connect(function()
+    safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
+end)
+
+    -- Redimensionamento (mantido igual)
     local function updateResize()
         local resizing = false
         local resizeStartPos
         local startSize
 
-        local ResizeHandle = Instance.new("ImageButton")
-        ResizeHandle.Name = "ResizeHandle"
-        ResizeHandle.Size = UDim2.new(0, 32, 0, 32)
-        ResizeHandle.Position = UDim2.new(1, -34, 1, -34)
-        ResizeHandle.BackgroundTransparency = 1
-        ResizeHandle.Image = "rbxassetid://7733715400"
-        ResizeHandle.ImageColor3 = COLORS.Accent
-        ResizeHandle.ImageTransparency = 0.4
-        ResizeHandle.ZIndex = 25
-        ResizeHandle.Parent = self.MainFrame
+-- Resize Handle - Canto inferior direito (com ícone VISÍVEL e efeito hover)
+local ResizeHandle = Instance.new("ImageButton")
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 32, 0, 32)          -- maior para melhor clique
+ResizeHandle.Position = UDim2.new(1, -34, 1, -34)    -- ajustado para não ficar colado na borda
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Image = "rbxassetid://7733715400"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
+ResizeHandle.ImageColor3 = COLORS.Accent
+ResizeHandle.ImageTransparency = 0.4                 -- sutil quando não hover
+ResizeHandle.ZIndex = 25
+ResizeHandle.Parent = self.MainFrame
 
-        ResizeHandle.MouseEnter:Connect(function()
-            safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
-            safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})
-        end)
+-- Efeito ao passar o mouse (fica totalmente visível e gira levemente)
+ResizeHandle.MouseEnter:Connect(function()
+    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
+    safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})  -- gira 90° ao hover (legal)
+end)
 
-        ResizeHandle.MouseLeave:Connect(function()
-            safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
-            safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
-        end)
+ResizeHandle.MouseLeave:Connect(function()
+    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
+    safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
+end)
 
         local BlockOverlay = Instance.new("TextButton")
         BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -292,7 +293,6 @@ function Library:CreateWindow(title)
     TopBar.Parent = self.MainFrame
 
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
-    ApplyNITFBorder(TopBar, 1.8, COLORS.Stroke, 0.5)  -- borda glow no topbar
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
@@ -329,16 +329,18 @@ function Library:CreateWindow(title)
         end)
     end
 
+    -- Conecta o drag no TopBar e no BottomDrag
     setupDrag(TopBar)
     setupDrag(BottomDrag)
 
+    -- Atualiza posição durante movimento
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update(input)
         end
     end)
 
-    -- Botões do TopBar (já com borda aplicada na função CreateControlButton)
+    -- Botões do TopBar
     CreateControlButton(TopBar, "X", -52, nil, function()
         ScreenGui:Destroy()
     end)
@@ -363,7 +365,7 @@ function Library:CreateWindow(title)
         self:ShowSwitchHubPopup()
     end)
 
-    -- Search Bar
+    -- Search Bar (continua igual)
     local SearchBar = Instance.new("Frame")
     SearchBar.Size = UDim2.new(0,140-12,0,32)
     SearchBar.Position = UDim2.new(0,6,0,48+8)
@@ -371,7 +373,6 @@ function Library:CreateWindow(title)
     SearchBar.ZIndex = 6
     SearchBar.Parent = self.MainFrame
     Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
-    ApplyNITFBorder(SearchBar, 1.6, COLORS.Stroke, 0.55)  -- glow na search
 
     local SearchBox = Instance.new("TextBox")
     SearchBox.Size = UDim2.new(1,-12,1,-8)
@@ -387,7 +388,7 @@ function Library:CreateWindow(title)
     SearchBox.ZIndex = 7
     SearchBox.Parent = SearchBar
 
-    -- Tabs e Content
+    -- Tabs e Content (continua igual)
     self.TabBar = Instance.new("ScrollingFrame")
     self.TabBar.Size = UDim2.new(0,140,1,-100)
     self.TabBar.Position = UDim2.new(0,0,0,100)
@@ -409,7 +410,6 @@ function Library:CreateWindow(title)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 6
     self.ContentArea.Parent = self.MainFrame
-    AddSafePadding(self.ContentArea)  -- padding anti-sobreposição aqui
 
     local ContentLayout = Instance.new("UIListLayout")
     ContentLayout.Padding = UDim.new(0, 12)
@@ -420,7 +420,7 @@ function Library:CreateWindow(title)
     self.currentTab = nil
     self.tabs = {}
 
-    -- Painel de Configuração (completo + borda NITF)
+    -- Painel de Configuração (completo)
     self.ConfigPanel = nil
     self.ConfigMinimized = false
 
@@ -442,7 +442,6 @@ function Library:CreateWindow(title)
             panel.ZIndex = 50
             panel.Parent = ScreenGui
             Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
-            ApplyNITFBorder(panel, 2.0, COLORS.Stroke, 0.4)  -- glow no config panel
 
             local stroke = Instance.new("UIStroke")
             stroke.Color = COLORS.Stroke
@@ -456,7 +455,6 @@ function Library:CreateWindow(title)
             configTopBar.Parent = panel
 
             Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
-            ApplyNITFBorder(configTopBar, 1.6, COLORS.Stroke, 0.55)
 
             CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
 
@@ -505,7 +503,6 @@ function Library:CreateWindow(title)
             configTabBar.Parent = panel
 
             Instance.new("UICorner", configTabBar).CornerRadius = CORNERS.Medium
-            ApplyNITFBorder(configTabBar, 1.4, COLORS.Stroke, 0.6)
 
             local infoTabBtn = Instance.new("TextButton")
             infoTabBtn.Size = UDim2.new(0.5,0,1,0)
@@ -535,7 +532,6 @@ function Library:CreateWindow(title)
             infoContent.ZIndex = 51
             infoContent.Visible = true
             infoContent.Parent = panel
-            AddSafePadding(infoContent)  -- padding no conteúdo
 
             CreateSmartTextLabel(infoContent, UDim2.new(1,-20,1,-20), UDim2.new(0,10,0,10), "GekyuUI v1.0\nFeito por Kyuzzy\nPremium Dark Theme", COLORS.Text, Enum.Font.Gotham, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
 
@@ -546,7 +542,6 @@ function Library:CreateWindow(title)
             configContent.ZIndex = 51
             configContent.Visible = false
             configContent.Parent = panel
-            AddSafePadding(configContent)
 
             CreateSmartTextLabel(configContent, UDim2.new(1,-20,0,30), UDim2.new(0,10,0,10), "Configurações Gerais", COLORS.Accent, Enum.Font.GothamBold, 16, Enum.TextXAlignment.Left)
 
@@ -583,13 +578,11 @@ function Library:CreateWindow(title)
                     ContextActionService:BindAction("ConfigDrag", function() return Enum.ContextActionResult.Sink end, false, 
                         Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
                     
-                    local conn
-                    conn = input.Changed:Connect(function()
+                    input.Changed:Connect(function()
                         if input.UserInputState == Enum.UserInputState.End then
                             configDragging = false
                             ContextActionService:UnbindAction("ConfigDrag")
                             lastConfigPosition = panel.Position
-                            conn:Disconnect()
                         end
                     end)
                 end
@@ -621,7 +614,7 @@ function Library:CreateWindow(title)
         )
     end
 
-    -- Criação de Tabs com scroll individual + borda sutil nos botões de tab
+    -- Criação de Tabs com scroll individual
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
@@ -633,8 +626,7 @@ function Library:CreateWindow(title)
         button.ClipsDescendants = true
         button.Parent = self.TabBar
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(button, 1.4, COLORS.StrokeDim, 0.65)  -- glow sutil nos tabs
-
+        
         local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
         
         local indicator = Instance.new("Frame")
@@ -663,8 +655,6 @@ function Library:CreateWindow(title)
         list.HorizontalAlignment = Enum.HorizontalAlignment.Center
         list.SortOrder = Enum.SortOrder.LayoutOrder
         list.Parent = content
-
-        AddSafePadding(content)  -- padding seguro dentro do conteúdo da tab
 
         local lastScrollPos = Vector2.new(0, 0)
         
@@ -768,7 +758,7 @@ function Library:CreateWindow(title)
     end)
 
     -- =============================================
-    -- COMPONENTES COMPLETOS (todos com borda NITF + padding)
+    -- COMPONENTES COMPLETOS
     -- =============================================
 
     function Library.Button(parent, text, callback, options)
@@ -782,8 +772,6 @@ function Library:CreateWindow(title)
         button.Parent = parent
         
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(button, 1.6, COLORS.StrokeDim, 0.6)
-        AddSafePadding(button)
 
         local label = CreateSmartTextLabel(button, UDim2.new(1, options.icon and -60 or 0, 1, 0), UDim2.new(0, options.icon and 16 or 0, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, options.textSize or 15, Enum.TextXAlignment.Left)
 
@@ -835,8 +823,6 @@ function Library:CreateWindow(title)
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(container, 1.6, COLORS.StrokeDim, 0.58)
-        AddSafePadding(container)
 
         local hitbox = Instance.new("TextButton")
         hitbox.Size = UDim2.new(1, 0, 1, 0)
@@ -894,8 +880,6 @@ function Library:CreateWindow(title)
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(container, 1.6, COLORS.StrokeDim, 0.58)
-        AddSafePadding(container)
 
         local header = Instance.new("Frame")
         header.Size = UDim2.new(1, 0, 0, 48)
@@ -935,7 +919,6 @@ function Library:CreateWindow(title)
         checkboxesContainer.BackgroundTransparency = 1
         checkboxesContainer.ZIndex = 8
         checkboxesContainer.Parent = container
-        AddSafePadding(checkboxesContainer)  -- padding nos checkboxes
 
         local checkListLayout = Instance.new("UIListLayout")
         checkListLayout.Padding = UDim.new(0, 8)
@@ -970,7 +953,6 @@ function Library:CreateWindow(title)
             checkBoxVisual.Parent = checkHitbox
             
             Instance.new("UICorner", checkBoxVisual).CornerRadius = UDim.new(0, 5)
-            ApplyNITFBorder(checkBoxVisual, 1.2, COLORS.StrokeDim, 0.7)
 
             local checkMark = Instance.new("TextLabel")
             checkMark.Size = UDim2.new(1, 0, 1, 0)
@@ -1021,8 +1003,6 @@ function Library:CreateWindow(title)
         frame.Parent = parent
         
         Instance.new("UICorner", frame).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(frame, 1.6, COLORS.StrokeDim, 0.58)
-        AddSafePadding(frame)
 
         CreateSmartTextLabel(frame, UDim2.new(0.68, 0, 0, 26), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
@@ -1036,7 +1016,6 @@ function Library:CreateWindow(title)
         bar.Parent = frame
         
         Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
-        ApplyNITFBorder(bar, 1.2, COLORS.StrokeDim, 0.7)
 
         local fill = Instance.new("Frame")
         fill.Size = UDim2.new(math.clamp((default - min)/(max-min), 0, 1), 0, 1, 0)
@@ -1064,7 +1043,6 @@ function Library:CreateWindow(title)
         knob.Parent = knobArea
         
         Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
-        ApplyNITFBorder(knob, 1.2, COLORS.Accent, 0.6)
 
         local dragging = false
 
@@ -1107,8 +1085,6 @@ function Library:CreateWindow(title)
         container.ZIndex = 7
         container.Parent = parent
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(container, 1.6, COLORS.StrokeDim, 0.58)
-        AddSafePadding(container)
 
         local header = Instance.new("Frame")
         header.Size = UDim2.new(1, 0, 0, 40)
@@ -1174,10 +1150,9 @@ function Library:CreateWindow(title)
             btn.Parent = optionsFrame
             
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
-            ApplyNITFBorder(btn, 1.2, COLORS.StrokeDim, 0.7)  -- glow sutil nas opções
 
-            local label = CreateSmartTextLabel(btn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
-            label.TextTruncate = Enum.TextTruncate.AtEnd
+           local label = CreateSmartTextLabel(btn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+label.TextTruncate = Enum.TextTruncate.AtEnd
 
             btn.Activated:Connect(function()
                 selectedText.Text = limitedOpt
@@ -1206,8 +1181,6 @@ function Library:CreateWindow(title)
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(container, 1.6, COLORS.StrokeDim, 0.58)
-        AddSafePadding(container)
 
         local header = Instance.new("Frame")
         header.Size = UDim2.new(1, 0, 0, 40)
@@ -1256,7 +1229,6 @@ function Library:CreateWindow(title)
         optionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
         optionsContainer.ZIndex = 9
         optionsContainer.Parent = container
-        AddSafePadding(optionsContainer)
 
         local optionsLayout = Instance.new("UIListLayout")
         optionsLayout.Padding = UDim.new(0, 4)
@@ -1303,10 +1275,9 @@ function Library:CreateWindow(title)
             optionBtn.Parent = optionsContainer
             
             Instance.new("UICorner", optionBtn).CornerRadius = CORNERS.Small
-            ApplyNITFBorder(optionBtn, 1.2, COLORS.StrokeDim, 0.7)
 
             local label = CreateSmartTextLabel(optionBtn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
-            label.TextTruncate = Enum.TextTruncate.AtEnd
+label.TextTruncate = Enum.TextTruncate.AtEnd
 
             local checkMark = Instance.new("TextLabel")
             checkMark.Size = UDim2.new(0, 24, 0, 24)
@@ -1361,8 +1332,6 @@ function Library:CreateWindow(title)
         container.Parent = parent
         
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(container, 1.6, COLORS.StrokeDim, 0.58)
-        AddSafePadding(container)
 
         CreateSmartTextLabel(container, UDim2.new(0.6, 0, 0, 24), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
 
@@ -1374,7 +1343,6 @@ function Library:CreateWindow(title)
         inputFrame.Parent = container
         
         Instance.new("UICorner", inputFrame).CornerRadius = CORNERS.Small
-        ApplyNITFBorder(inputFrame, 1.4, COLORS.StrokeDim, 0.65)
 
         local valueBox = Instance.new("TextBox")
         valueBox.Size = UDim2.new(0, 80, 0.8, 0)
@@ -1514,7 +1482,6 @@ function Library:CreateWindow(title)
         notif.Parent = holder
         
         Instance.new("UICorner", notif).CornerRadius = CORNERS.Medium
-        ApplyNITFBorder(notif, 1.8, color or COLORS.Accent, 0.4)
 
         local stroke = Instance.new("UIStroke")
         stroke.Color = color
@@ -1567,7 +1534,6 @@ function Library:CreateWindow(title)
         popup.Parent = popupHolder
         
         Instance.new("UICorner", popup).CornerRadius = CORNERS.Large
-        ApplyNITFBorder(popup, 2.2, COLORS.Stroke, 0.35)
 
         local stroke = Instance.new("UIStroke")
         stroke.Color = COLORS.Stroke
@@ -1581,13 +1547,11 @@ function Library:CreateWindow(title)
         topBar.Parent = popup
 
         Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
-        ApplyNITFBorder(topBar, 1.6, COLORS.StrokeDim, 0.55)
 
         CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
         local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
         content.ZIndex = 205
-        AddSafePadding(content)
 
         local cancelBtn = Instance.new("TextButton")
         cancelBtn.Size = UDim2.new(0, 158, 0, 52)
@@ -1601,7 +1565,6 @@ function Library:CreateWindow(title)
         cancelBtn.Parent = popup
 
         Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
-        ApplyNITFBorder(cancelBtn, 1.4, COLORS.StrokeDim, 0.6)
 
         local confirmBtn = Instance.new("TextButton")
         confirmBtn.Size = UDim2.new(0, 158, 0, 52)
@@ -1615,7 +1578,6 @@ function Library:CreateWindow(title)
         confirmBtn.Parent = popup
 
         Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
-        ApplyNITFBorder(confirmBtn, 1.4, COLORS.Accent, 0.5)
 
         local function closePopup()
             safeTween(popup, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
@@ -1665,6 +1627,6 @@ function Library:CreateWindow(title)
     return self
 end
 
-print("[GekyuUI] Versão COMPLETA com borda NITF-style + padding seguro - 20/01/2026 - Config minimiza, scroll por tab, todos componentes incluídos")
+print("[GekyuUI] Versão COMPLETA e corrigida - 16/01/2026 - Config minimiza, scroll por tab, todos componentes incluídos")
 
 return Library
