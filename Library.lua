@@ -141,7 +141,7 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
 end
 
 function Library:CreateWindow(title)
-    local v = setmetatable({}, Library)
+    local self = setmetatable({}, Library)
     
     -- Tamanho inicial salvo
     self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
@@ -194,33 +194,34 @@ BottomDrag.MouseLeave:Connect(function()
     safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
 end)
 
-    -- Redimensionamento CORRIGIDO
+    -- Redimensionamento (mantido igual)
     local function updateResize()
         local resizing = false
         local resizeStartPos
         local startSize
 
-        -- Resize Handle - Canto inferior direito
-        local ResizeHandle = Instance.new("ImageButton")
-        ResizeHandle.Name = "ResizeHandle"
-        ResizeHandle.Size = UDim2.new(0, 32, 0, 32)
-        ResizeHandle.Position = UDim2.new(1, -34, 1, -34)
-        ResizeHandle.BackgroundTransparency = 1
-        ResizeHandle.Image = "rbxassetid://7733715400"
-        ResizeHandle.ImageColor3 = COLORS.Accent
-        ResizeHandle.ImageTransparency = 0.4
-        ResizeHandle.ZIndex = 25
-        ResizeHandle.Parent = self.MainFrame
+-- Resize Handle - Canto inferior direito (com ícone VISÍVEL e efeito hover)
+local ResizeHandle = Instance.new("ImageButton")
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 32, 0, 32)          -- maior para melhor clique
+ResizeHandle.Position = UDim2.new(1, -34, 1, -34)    -- ajustado para não ficar colado na borda
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Image = "rbxassetid://7733715400"       -- Ícone de "engrenagem" padrão do Roblox (sempre carrega)
+ResizeHandle.ImageColor3 = COLORS.Accent
+ResizeHandle.ImageTransparency = 0.4                 -- sutil quando não hover
+ResizeHandle.ZIndex = 25
+ResizeHandle.Parent = self.MainFrame
 
-        ResizeHandle.MouseEnter:Connect(function()
-            safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
-            safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})
-        end)
+-- Efeito ao passar o mouse (fica totalmente visível e gira levemente)
+ResizeHandle.MouseEnter:Connect(function()
+    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0})
+    safeTween(ResizeHandle, TweenInfo.new(0.4), {Rotation = 90})  -- gira 90° ao hover (legal)
+end)
 
-        ResizeHandle.MouseLeave:Connect(function()
-            safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
-            safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
-        end)
+ResizeHandle.MouseLeave:Connect(function()
+    safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.4})
+    safeTween(ResizeHandle, TweenInfo.new(0.3), {Rotation = 0})
+end)
 
         local BlockOverlay = Instance.new("TextButton")
         BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -233,20 +234,13 @@ end)
         ResizeHandle.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 resizing = true
-                -- A CORREÇÃO: Força o dragging a ser falso para o hub não mover
-                dragging = false 
                 resizeStartPos = input.Position
                 startSize = self.MainFrame.Size
                 BlockOverlay.Visible = true
-                
-                -- Impede que o Drag inicie enquanto redimensiona
-                ContextActionService:BindAction("PreventDrag", function() 
-                    return Enum.ContextActionResult.Sink 
-                end, false, Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
             end
         end)
 
-        UserInputService.InputChanged:Connect(function(input)
+        local resizeConnection = UserInputService.InputChanged:Connect(function(input)
             if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 local delta = input.Position - resizeStartPos
                 local newWidth = math.max(450, startSize.X.Offset + delta.X)
@@ -259,15 +253,11 @@ end)
 
         UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                if resizing then
-                    resizing = false
-                    BlockOverlay.Visible = false
-                    ContextActionService:UnbindAction("PreventDrag")
-                end
+                resizing = false
+                BlockOverlay.Visible = false
             end
         end)
     end
-
 
     updateResize()
 
