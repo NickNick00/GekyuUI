@@ -399,9 +399,9 @@ function Library:CreateWindow(title)
 
     -- Aumente o padding inferior do ContentArea para empurrar os tabs para cima
  local contentPadding = Instance.new("UIPadding")
-contentPadding.PaddingTop = UDim.new(0, 10)
+contentPadding.PaddingTop = UDim.new(0, 5)
 contentPadding.PaddingBottom = UDim.new(0, 35)         -- mais espaço na base para evitar invasão
-contentPadding.PaddingLeft = UDim.new(0, 14)
+contentPadding.PaddingLeft = UDim.new(0, 10)
 contentPadding.PaddingRight = UDim.new(0, 10)          -- mais espaço no resize
 contentPadding.Parent = self.ContentArea
     
