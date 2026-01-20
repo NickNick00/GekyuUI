@@ -171,19 +171,6 @@ function Library:CreateWindow(title)
     BottomDrag.ZIndex = 15
     BottomDrag.Parent = self.MainFrame
 
--- Borda preta sólida (100% opaca, sem gradiente, sem transparência)
-local BottomBorder = Instance.new("Frame")
-BottomBorder.Name = "BottomBorder"
-BottomBorder.Size = UDim2.new(1, 0, 0, 2)           -- 2 pixels de altura (fina como no exemplo)
-BottomBorder.Position = UDim2.new(0, 0, 1, -26)     -- logo acima do drag inferior
-BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- preto absoluto
-BottomBorder.BorderSizePixel = 0
-BottomBorder.BackgroundTransparency = 0             -- 0 = totalmente opaco (preto sólido)
-BottomBorder.ZIndex = 14                            -- acima do conteúdo, abaixo do drag/resize
-BottomBorder.Parent = self.MainFrame
-
--- NÃO adicione UIGradient aqui! Remova qualquer linha de gradiente para essa borda
-    
 local DragIcon = Instance.new("Frame")
 DragIcon.Size = UDim2.new(0, 40, 0, 6)
 DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
@@ -206,6 +193,18 @@ BottomDrag.MouseLeave:Connect(function()
     safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
 end)
 
+-- Borda preta sólida (funcionava nas partes anteriores - preta 100% opaca)
+local BottomBorder = Instance.new("Frame")
+BottomBorder.Name = "BottomBorder"
+BottomBorder.Size = UDim2.new(1, 0, 0, 2)           -- altura fina (2 pixels)
+BottomBorder.Position = UDim2.new(0, 0, 1, -26)     -- exatamente acima do drag (-24 do drag - 2 da borda)
+BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- preto puro
+BottomBorder.BorderSizePixel = 0
+BottomBorder.BackgroundTransparency = 0             -- 0 = totalmente opaco (sem transparência)
+BottomBorder.ZIndex = 14                            -- acima do conteúdo (Z6-7), abaixo do drag/resize (Z15-25)
+BottomBorder.Parent = self.MainFrame
+    
+    
     -- Redimensionamento (mantido igual)
     local function updateResize()
         local resizing = false
