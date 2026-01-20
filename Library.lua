@@ -141,10 +141,9 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
 end
 
 function Library:CreateWindow(title)
-    local v = setmetatable({}, Library)
+    local v = setmetatable({}, Library
     
-    -- 1. CRIAÇÃO DA BORDA INVISÍVEL (ExternalFrame)
-    -- Ela é 20 pixels maior que o Hub para criar a borda de 10px em cada lado
+    -- 1. CONTAINER DA BORDA (ExternalFrame)
     local ExternalFrame = Instance.new("Frame")
     ExternalFrame.Name = "ExternalContainer"
     ExternalFrame.Size = UDim2.new(0, 520, 0, 320)
@@ -153,117 +152,119 @@ function Library:CreateWindow(title)
     ExternalFrame.BorderSizePixel = 0
     ExternalFrame.Parent = ScreenGui
 
-    -- 2. CRIAÇÃO DO HUB PRINCIPAL (MainFrame)
-    -- Agora ele é FILHO do ExternalFrame
+    -- 2. HUB PRINCIPAL
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Name = "MainFrame"
-    self.MainFrame.Size = UDim2.new(1, -20, 1, -20) -- Ocupa tudo menos a borda
-    self.MainFrame.Position = UDim2.new(0, 10, 0, 10) -- Centralizado na borda
+    self.MainFrame.Size = UDim2.new(1, -20, 1, -20)
+    self.MainFrame.Position = UDim2.new(0, 10, 0, 10)
     self.MainFrame.BackgroundColor3 = COLORS.Background
-    self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.ClipsDescendants = true
     self.MainFrame.Parent = ExternalFrame
+    self.SavedSize = self.MainFrame.Size -- Para o sistema de minimizar
 
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 8)
-    MainCorner.Parent = self.MainFrame
-
-    local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = COLORS.Accent
-    MainStroke.Thickness = 1.2
-    MainStroke.Transparency = 0.8
-    MainStroke.Parent = self.MainFrame
-
-    -- VARIÁVEIS DE CONTROLE PARA BLOQUEIO
+    -- Variáveis de estado
     local isDragging = false
     local isResizing = false
 
-    -- 3. SISTEMA DE ARRASTAR (PELA BORDA INVISÍVEL)
-    local function setupSmartDrag()
-        ExternalFrame.InputBegan:Connect(function(input)
-            -- Só arrasta se o redimensionar NÃO estiver ativo
-            if not isResizing and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch) then
+    -- 3. DRAG DO TOPBAR (Arrasta o container inteiro)
+    local function setupTopBarDrag(TopBarObj)
+        TopBarObj.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch then
                 isDragging = true
                 local dragStart = input.Position
                 local startPos = ExternalFrame.Position
 
-                local moveConnection
-                moveConnection = UserInputService.InputChanged:Connect(function(moveInput)
+                local moveCon
+                moveCon = UserInputService.InputChanged:Connect(function(moveInput)
                     if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType.Touch then
                         local delta = moveInput.Position - dragStart
-                        ExternalFrame.Position = UDim2.new(
-                            startPos.X.Scale, startPos.X.Offset + delta.X,
-                            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                        )
+                        ExternalFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
                     end
                 end)
 
                 input.Changed:Connect(function()
                     if input.UserInputState == Enum.UserInputState.End then
                         isDragging = false
-                        if moveConnection then moveConnection:Disconnect() end
+                        if moveCon then moveCon:Disconnect() end
                     end
                 end)
             end
         end)
     end
 
-    -- 4. SISTEMA DE REDIMENSIONAR (BOTÃO NO CANTO DA BORDA)
-    local function setupSmartResize()
-        local ResizeHandle = Instance.new("ImageButton")
-        ResizeHandle.Name = "ResizeHandle"
-        ResizeHandle.Size = UDim2.new(0, 25, 0, 25)
-        ResizeHandle.Position = UDim2.new(1, -25, 1, -25) -- Canto inferior direito da borda
-        ResizeHandle.BackgroundTransparency = 1
-        ResizeHandle.Image = "rbxassetid://7733715400"
-        ResizeHandle.ImageColor3 = COLORS.Accent
-        ResizeHandle.ZIndex = 100
-        ResizeHandle.Parent = ExternalFrame
+    -- 4. DRAG DA BORDA INFERIOR E REDIMENSIONAR
+    -- Vamos criar uma área invisível apenas na parte de baixo
+    local BottomDragArea = Instance.new("Frame")
+    BottomDragArea.Name = "BottomDragArea"
+    BottomDragArea.Size = UDim2.new(1, 0, 0, 20)
+    BottomDragArea.Position = UDim2.new(0, 0, 1, -20)
+    BottomDragArea.BackgroundTransparency = 1
+    BottomDragArea.Parent = ExternalFrame
 
-        ResizeHandle.InputBegan:Connect(function(input)
-            -- Só redimensiona se o arrastar NÃO estiver ativo
-            if not isDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch) then
-                isResizing = true
-                local dragStart = input.Position
-                local startSize = ExternalFrame.Size
+    -- Lógica de Arrastar pela borda de baixo
+    BottomDragArea.InputBegan:Connect(function(input)
+        if not isResizing and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch) then
+            isDragging = true
+            local dragStart = input.Position
+            local startPos = ExternalFrame.Position
+            
+            local moveCon
+            moveCon = UserInputService.InputChanged:Connect(function(moveInput)
+                if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType.Touch then
+                    local delta = moveInput.Position - dragStart
+                    ExternalFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                end
+            end)
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    isDragging = false
+                    if moveCon then moveCon:Disconnect() end
+                end
+            end)
+        end
+    end)
 
-                local resizeConnection
-                resizeConnection = UserInputService.InputChanged:Connect(function(moveInput)
-                    if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType.Touch then
-                        local delta = moveInput.Position - dragStart
-                        -- Limites mínimos para o Hub (400x250)
-                        local newWidth = math.max(400, startSize.X.Offset + delta.X)
-                        local newHeight = math.max(250, startSize.Y.Offset + delta.Y)
-                        ExternalFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
-                    end
-                end)
+    -- Botão de Redimensionar (No canto da borda de baixo)
+    local ResizeHandle = Instance.new("ImageButton")
+    ResizeHandle.Size = UDim2.new(0, 25, 0, 25)
+    ResizeHandle.Position = UDim2.new(1, -25, 1, -25)
+    ResizeHandle.BackgroundTransparency = 1
+    ResizeHandle.Image = "rbxassetid://7733715400"
+    ResizeHandle.ZIndex = 100
+    ResizeHandle.Parent = ExternalFrame
 
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        isResizing = false
-                        if resizeConnection then resizeConnection:Disconnect() end
-                    end
-                end)
-            end
-        end)
-    end
+    ResizeHandle.InputBegan:Connect(function(input)
+        if not isDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch) then
+            isResizing = true
+            local dragStart = input.Position
+            local startSize = ExternalFrame.Size
+            
+            local resizeCon
+            resizeCon = UserInputService.InputChanged:Connect(function(moveInput)
+                if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType.Touch then
+                    local delta = moveInput.Position - dragStart
+                    ExternalFrame.Size = UDim2.new(0, math.max(400, startSize.X.Offset + delta.X), 0, math.max(250, startSize.Y.Offset + delta.Y))
+                end
+            end)
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    isResizing = false
+                    if resizeCon then resizeCon:Disconnect() end
+                end
+            end)
+        end
+    end)
 
-    setupSmartDrag()
-    setupSmartResize()
-
-    -- [A PARTIR DAQUI CONTINUA O RESTO DO SEU SCRIPT: TABBAR, TOPBAR, ETC]
-
-
-
-    -- TopBar
+    -- Criar TopBar e aplicar o drag nela
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1,0,0,48)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-    TopBar.BorderSizePixel = 0
-    TopBar.ZIndex = 6
     TopBar.Parent = self.MainFrame
-
     Instance.new("UICorner", TopBar).CornerRadius = CORNERS.Large
+    
+    setupTopBarDrag(TopBar) -- Ativa o drag no topo
+
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
