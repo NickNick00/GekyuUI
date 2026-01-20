@@ -402,7 +402,7 @@ function Library:CreateWindow(title)
 contentPadding.PaddingTop = UDim.new(0, 10)
 contentPadding.PaddingBottom = UDim.new(0, 35)         -- mais espaço na base para evitar invasão
 contentPadding.PaddingLeft = UDim.new(0, 14)
-contentPadding.PaddingRight = UDim.new(0, 60)          -- mais espaço no resize
+contentPadding.PaddingRight = UDim.new(0, 10)          -- mais espaço no resize
 contentPadding.Parent = self.ContentArea
     
     local ContentLayout = Instance.new("UIListLayout")
