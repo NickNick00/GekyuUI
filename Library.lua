@@ -145,20 +145,16 @@ function Library:CreateWindow(title)
     
     -- Tamanho inicial salvo
     self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
-    
-   self.MainFrame = Instance.new("Frame")
+    self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
-    self.MainFrame.BorderSizePixel = 1                          -- ativa borda nativa
-    self.MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)       -- preto sólido na borda
-    self.MainFrame.ClipsDescendants = true
+    self.MainFrame.BorderSizePixel = 0                  -- sem borda nativa (evita interferência)
+    self.MainFrame.ClipsDescendants = false             -- teste com false para ver a borda aparecer (depois volte para true se precisar cortar filhos)
     self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
-
-    -- NÃO crie UIStroke no MainFrame (remova se ainda tiver)
 
     -- Área de drag inferior
     local BottomDrag = Instance.new("Frame")
@@ -189,9 +185,19 @@ function Library:CreateWindow(title)
         safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
     end)
 
-    -- Remova o BottomBorder (não precisa mais — a borda nativa do MainFrame faz o trabalho)
-    -- local BottomBorder = ... (delete ou comente todo o bloco do BottomBorder) 
-    
+    -- Borda preta sólida (agora com altura maior para teste e ZIndex alto)
+    local BottomBorder = Instance.new("Frame")
+    BottomBorder.Name = "BottomBorder"
+    BottomBorder.Size = UDim2.new(1, 0, 0, 3)           -- aumentei para 3 pixels para ficar mais visível e evitar corte
+    BottomBorder.Position = UDim2.new(0, 0, 1, -27)     -- -24 (drag) - 3 (borda)
+    BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BottomBorder.BorderSizePixel = 0
+    BottomBorder.BackgroundTransparency = 0
+    BottomBorder.ZIndex = 16                            -- mesmo ZIndex do DragIcon para ficar por cima do conteúdo
+    BottomBorder.Parent = self.MainFrame
+
+    -- Se ainda não aparecer, teste com ZIndex 17 ou 18
+
     -- Redimensionamento (mantido igual)
     local function updateResize()
         local resizing = false
