@@ -157,48 +157,41 @@ function Library:CreateWindow(title)
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
  
--- Área de drag inferior
-    local BottomDrag = Instance.new("Frame")
-    BottomDrag.Name = "BottomDrag"
-    BottomDrag.Size = UDim2.new(1, 0, 0, 24)
-    BottomDrag.Position = UDim2.new(0, 0, 1, -24)
-    BottomDrag.BackgroundTransparency = 1
-    BottomDrag.ZIndex = 15
-    BottomDrag.Parent = self.MainFrame
 
-    local DragIcon = Instance.new("Frame")
-    DragIcon.Size = UDim2.new(0, 40, 0, 6)
-    DragIcon.Position = UDim2.new(0.5, -20, 0.5, -3)
-    DragIcon.BackgroundColor3 = COLORS.TextDim
-    DragIcon.BackgroundTransparency = 0.8
-    DragIcon.ZIndex = 16
-    DragIcon.Parent = BottomDrag
+-- Área de drag inferior (Agora funciona como o rodapé que sobrepõe as abas)
+local BottomDrag = Instance.new("Frame")
+BottomDrag.Name = "BottomDrag"
+BottomDrag.Size = UDim2.new(1, 0, 0, 25)              -- Altura do rodapé
+BottomDrag.Position = UDim2.new(0, 0, 1, -25)
+BottomDrag.BackgroundColor3 = COLORS.Background       -- Cor igual ao fundo para esconder os itens
+BottomDrag.BorderSizePixel = 0
+BottomDrag.ZIndex = 50                                -- Maior que as Tabs (6) e Content (6)
+BottomDrag.Parent = self.MainFrame
 
-    local DragIconCorner = Instance.new("UICorner")
-    DragIconCorner.CornerRadius = UDim.new(1, 0)
-    DragIconCorner.Parent = DragIcon
+-- Arredondamento apenas nos cantos inferiores para manter o design
+local BottomCorner = Instance.new("UICorner")
+BottomCorner.CornerRadius = CORNERS.Large
+BottomCorner.Parent = BottomDrag
 
-    BottomDrag.MouseEnter:Connect(function()
-        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.3, BackgroundColor3 = COLORS.Accent})
-    end)
+-- Linha preta decorativa no topo do rodapé
+local BottomLine = Instance.new("Frame")
+BottomLine.Name = "BottomLine"
+BottomLine.Size = UDim2.new(1, 0, 0, 1)               -- Linha de 1 pixel
+BottomLine.Position = UDim2.new(0, 0, 0, 0)           -- No topo do BottomDrag
+BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Sua linha preta
+BottomLine.BorderSizePixel = 0
+BottomLine.ZIndex = 51                                -- Acima do próprio rodapé
+BottomLine.Parent = BottomDrag
 
-    BottomDrag.MouseLeave:Connect(function()
-        safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
-    end)
+local DragIcon = Instance.new("Frame")
+DragIcon.Size = UDim2.new(0, 40, 0, 4)
+DragIcon.Position = UDim2.new(0.5, -20, 0.5, 2)
+DragIcon.BackgroundColor3 = COLORS.TextDim
+DragIcon.BackgroundTransparency = 0.8
+DragIcon.ZIndex = 52
+DragIcon.Parent = BottomDrag
 
-    -- Linha preta sólida corrigida
-    local BottomLine = Instance.new("Frame")
-    BottomLine.Name = "BottomLine"
-    -- Largura: 100% menos 140 (menu lateral) e menos 40 (espaço do resize no final)
-    BottomLine.Size = UDim2.new(1, -180, 0, 1) 
-    -- Posição: Começa em 140 (depois do TabBar) e fica na altura -25
-    BottomLine.Position = UDim2.new(0, 140, 1, -25) 
-    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    BottomLine.BorderSizePixel = 0
-    BottomLine.BackgroundTransparency = 0.5 -- Um pouco de transparência ajuda a mesclar melhor
-    BottomLine.ZIndex = 5 -- Abaixo do TabBar (6) e do ContentArea (6)
-    BottomLine.Parent = self.MainFrame
-
+Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
     
     local function updateResize()
         local resizing = false
