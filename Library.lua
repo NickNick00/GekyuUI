@@ -158,61 +158,66 @@ function Library:CreateWindow(title)
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
  
 
-  -- [PARTE 1] Barra de Rodapé com área de drag limitada
-local BottomBar = Instance.new("Frame")
-BottomBar.Name = "BottomBar"
-BottomBar.Size = UDim2.new(1, 0, 0, 26)
-BottomBar.Position = UDim2.new(0, 0, 1, -26)
-BottomBar.BackgroundColor3 = COLORS.Background -- Esconde o que passa por trás
-BottomBar.BorderSizePixel = 0
-BottomBar.ZIndex = 50 -- Abaixo do ícone de resize, acima das tabs
-BottomBar.Parent = self.MainFrame
+    -- [PARTE 1] Barra de Rodapé e Hitbox do Drag reduzido
+    local BottomBar = Instance.new("Frame")
+    BottomBar.Name = "BottomBar"
+    BottomBar.Size = UDim2.new(1, 0, 0, 26)
+    BottomBar.Position = UDim2.new(0, 0, 1, -26)
+    BottomBar.BackgroundColor3 = COLORS.Background
+    BottomBar.BorderSizePixel = 0
+    BottomBar.ZIndex = 50
+    BottomBar.Parent = self.MainFrame
 
-local BBCCorner = Instance.new("UICorner")
-BBCCorner.CornerRadius = CORNERS.Large
-BBCCorner.Parent = BottomBar
+    local BBCCorner = Instance.new("UICorner")
+    BBCCorner.CornerRadius = CORNERS.Large
+    BBCCorner.Parent = BottomBar
 
-local BottomLine = Instance.new("Frame")
-BottomLine.Name = "BottomLine"
-BottomLine.Size = UDim2.new(1, 0, 0, 1)
-BottomLine.Position = UDim2.new(0, 0, 0, 0)
-BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Sua linha preta
-BottomLine.BorderSizePixel = 0
-BottomLine.ZIndex = 51
-BottomLine.Parent = BottomBar
+    -- Linha preta superior
+    local BottomLine = Instance.new("Frame")
+    BottomLine.Name = "BottomLine"
+    BottomLine.Size = UDim2.new(1, 0, 0, 1)
+    BottomLine.Position = UDim2.new(0, 0, 0, 0)
+    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BottomLine.BorderSizePixel = 0
+    BottomLine.ZIndex = 51
+    BottomLine.Parent = BottomBar
 
--- Área de arrastar (Drag) limitada para não interferir no Resize
-local BottomDragArea = Instance.new("Frame")
-BottomDragArea.Name = "BottomDragArea"
-BottomDragArea.Size = UDim2.new(1, -40, 1, 0) -- Deixa 40 pixels livres no canto direito
-BottomDragArea.BackgroundTransparency = 1
-BottomDragArea.ZIndex = 52
-BottomDragArea.Parent = BottomBar
+    -- HITBOX REDUZIDO: Apenas no centro para arrastar
+    local BottomDragArea = Instance.new("Frame")
+    BottomDragArea.Name = "BottomDragArea"
+    BottomDragArea.Size = UDim2.new(0, 100, 1, 0) -- Apenas 100 pixels de largura no centro
+    BottomDragArea.Position = UDim2.new(0.5, -50, 0, 0)
+    BottomDragArea.BackgroundTransparency = 1
+    BottomDragArea.ZIndex = 55
+    BottomDragArea.Parent = BottomBar
 
-local DragIcon = Instance.new("Frame")
-DragIcon.Size = UDim2.new(0, 40, 0, 4)
-DragIcon.Position = UDim2.new(0.5, -20, 0.5, 2)
-DragIcon.BackgroundColor3 = COLORS.TextDim
-DragIcon.BackgroundTransparency = 0.8
-DragIcon.ZIndex = 53
-DragIcon.Parent = BottomBar
-Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
+    local DragIcon = Instance.new("Frame")
+    DragIcon.Size = UDim2.new(0, 40, 0, 4)
+    DragIcon.Position = UDim2.new(0.5, -20, 0.5, 2)
+    DragIcon.BackgroundColor3 = COLORS.TextDim
+    DragIcon.BackgroundTransparency = 0.8
+    DragIcon.ZIndex = 52
+    DragIcon.Parent = BottomBar
+    Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
+
 
     local function updateResize()
         local resizing = false
         local resizeStartPos
         local startSize
 
--- [PARTE 2] Ícone de Resize (Filho direto do MainFrame)
-local ResizeHandle = Instance.new("ImageButton")
-ResizeHandle.Name = "ResizeHandle"
-ResizeHandle.Size = UDim2.new(0, 22, 0, 22)
-ResizeHandle.Position = UDim2.new(1, -25, 1, -25) -- Fica no canto sobre a borda
-ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Image = "rbxassetid://7733715400"
-ResizeHandle.ImageColor3 = COLORS.Accent
-ResizeHandle.ZIndex = 60 -- O maior ZIndex para ficar no topo
-ResizeHandle.Parent = self.MainFrame
+    -- [PARTE 2] Ícone de Resize com Âncora Fixa
+    local ResizeHandle = Instance.new("ImageButton")
+    ResizeHandle.Name = "ResizeHandle"
+    ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+    ResizeHandle.AnchorPoint = Vector2.new(1, 1) -- Trava o ponto de origem no canto inferior direito
+    ResizeHandle.Position = UDim2.new(1, -10, 1, -5) -- Posição fixa relativa ao canto
+    ResizeHandle.BackgroundTransparency = 1
+    ResizeHandle.Image = "rbxassetid://7733715400"
+    ResizeHandle.ImageColor3 = COLORS.Accent
+    ResizeHandle.ZIndex = 60
+    ResizeHandle.Parent = self.MainFrame
+
 
 
     -- Efeitos de Hover
@@ -307,10 +312,9 @@ ResizeHandle.Parent = self.MainFrame
         end)
     end
 
-    -- [PARTE 3] Conectando o Drag corretamente
--- Certifique-se de que a função setupDrag é chamada para a área de baixo assim:
-setupDrag(TopBar)
-setupDrag(BottomDragArea) -- Use o 'BottomDragArea' que criamos na Parte 1, NÃO o ícone ou a barra toda
+    -- [PARTE 3] Conectar o Drag apenas na área central pequena
+    setupDrag(TopBar)
+    setupDrag(BottomDragArea) -- Agora só arrasta se clicar perto do ícone central
 
 
 
