@@ -142,8 +142,12 @@ end
 
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
-self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = self.SavedSize
+    
+    -- Defina SavedSize ANTES de usar
+    self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
+    
+    self.MainFrame = Instance.new("Frame")
+    self.MainFrame.Size = self.SavedSize  -- agora está definido
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
@@ -152,7 +156,6 @@ self.MainFrame = Instance.new("Frame")
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
-
     -- Área de drag inferior
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
