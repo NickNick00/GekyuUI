@@ -156,7 +156,8 @@ function Library:CreateWindow(title)
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
-    -- Área de drag inferior
+ 
+-- Área de drag inferior
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
     BottomDrag.Size = UDim2.new(1, 0, 0, 24)
@@ -185,15 +186,15 @@ function Library:CreateWindow(title)
         safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
     end)
 
-    -- BORDA PRETA SÓLIDA (exatamente como no exemplo)
-local BottomLine = Instance.new("Frame")
+    -- Linha preta sólida (corrigida: não invade tabs, sem sombreamento interno)
+    local BottomLine = Instance.new("Frame")
     BottomLine.Name = "BottomLine"
-    BottomLine.Size = UDim2.new(1, -40, 0, 2)              -- -40 pixels na direita (diminui o espaço)
-    BottomLine.Position = UDim2.new(0, 20, 1, -26)         -- começa 20 pixels da esquerda + ajustado para centralizar
+    BottomLine.Size = UDim2.new(1, -40, 0, 2)              -- -40 na direita para não encostar no resize
+    BottomLine.Position = UDim2.new(0, 20, 1, -26)         -- começa 20 da esquerda, acima do drag
     BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     BottomLine.BorderSizePixel = 0
     BottomLine.BackgroundTransparency = 0
-    BottomLine.ZIndex = 14
+    BottomLine.ZIndex = 8                                  -- abaixo do drag (15), mas acima do conteúdo (6-7) → NÃO invade tabs
     BottomLine.Parent = self.MainFrame
 
     -- Redimensionamento (mantido igual)
@@ -390,14 +391,13 @@ end)
     self.ContentArea.ZIndex = 6
     self.ContentArea.Parent = self.MainFrame
 
--- Adicione UIPadding no ContentArea para criar espaço na base
+    -- Aumente o padding inferior do ContentArea para empurrar os tabs para cima
     local contentPadding = Instance.new("UIPadding")
     contentPadding.PaddingTop = UDim.new(0, 10)
-    contentPadding.PaddingBottom = UDim.new(0, 28)      -- espaço maior para a linha preta + drag
+    contentPadding.PaddingBottom = UDim.new(0, 30)         -- espaço maior na base para evitar invasão
     contentPadding.PaddingLeft = UDim.new(0, 14)
-    contentPadding.PaddingRight = UDim.new(0, 48)       -- espaço para resize handle
+    contentPadding.PaddingRight = UDim.new(0, 48)          -- espaço pro resize
     contentPadding.Parent = self.ContentArea
-
     
     local ContentLayout = Instance.new("UIListLayout")
     ContentLayout.Padding = UDim.new(0, 12)
