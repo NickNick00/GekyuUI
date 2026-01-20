@@ -142,20 +142,23 @@ end
 
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
-    
-    -- Tamanho inicial salvo
-    self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
-    self.MainFrame = Instance.new("Frame")
+self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
-    self.MainFrame.BorderSizePixel = 0                  -- sem borda nativa (evita interferência)
-    self.MainFrame.ClipsDescendants = false             -- teste com false para ver a borda aparecer (depois volte para true se precisar cortar filhos)
+    self.MainFrame.BorderSizePixel = 0                  -- desativa borda nativa padrão
+    self.MainFrame.ClipsDescendants = true
     self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
 
+    -- UIStroke do MainFrame: MANTENHA se quiser glow geral, mas com transparência alta
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = COLORS.Stroke
+    uiStroke.Transparency = 0.8                         -- sutil, não interfere na base
+    uiStroke.Parent = self.MainFrame
+    
     -- Área de drag inferior
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
@@ -185,18 +188,16 @@ function Library:CreateWindow(title)
         safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
     end)
 
-    -- Borda preta sólida (agora com altura maior para teste e ZIndex alto)
-    local BottomBorder = Instance.new("Frame")
-    BottomBorder.Name = "BottomBorder"
-    BottomBorder.Size = UDim2.new(1, 0, 0, 3)           -- aumentei para 3 pixels para ficar mais visível e evitar corte
-    BottomBorder.Position = UDim2.new(0, 0, 1, -27)     -- -24 (drag) - 3 (borda)
-    BottomBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    BottomBorder.BorderSizePixel = 0
-    BottomBorder.BackgroundTransparency = 0
-    BottomBorder.ZIndex = 16                            -- mesmo ZIndex do DragIcon para ficar por cima do conteúdo
-    BottomBorder.Parent = self.MainFrame
-
-    -- Se ainda não aparecer, teste com ZIndex 17 ou 18
+    -- Linha preta sólida na base (agora com altura 1 pixel para precisão)
+    local BottomLine = Instance.new("Frame")
+    BottomLine.Name = "BottomLine"
+    BottomLine.Size = UDim2.new(1, 0, 0, 1)             -- 1 pixel para ficar fina e nítida
+    BottomLine.Position = UDim2.new(0, 0, 1, -25)       -- exatamente acima do drag (-24 drag -1 linha)
+    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BottomLine.BorderSizePixel = 0
+    BottomLine.BackgroundTransparency = 0
+    BottomLine.ZIndex = 17                              -- alto para ficar por cima do conteúdo
+    BottomLine.Parent = self.MainFrame
 
     -- Redimensionamento (mantido igual)
     local function updateResize()
@@ -392,6 +393,15 @@ end)
     self.ContentArea.ZIndex = 6
     self.ContentArea.Parent = self.MainFrame
 
+-- Adicione UIPadding no ContentArea para criar espaço na base
+    local contentPadding = Instance.new("UIPadding")
+    contentPadding.PaddingTop = UDim.new(0, 10)
+    contentPadding.PaddingBottom = UDim.new(0, 28)      -- espaço maior para a linha preta + drag
+    contentPadding.PaddingLeft = UDim.new(0, 14)
+    contentPadding.PaddingRight = UDim.new(0, 48)       -- espaço para resize handle
+    contentPadding.Parent = self.ContentArea
+
+    
     local ContentLayout = Instance.new("UIListLayout")
     ContentLayout.Padding = UDim.new(0, 12)
     ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
