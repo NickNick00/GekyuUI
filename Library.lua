@@ -24,7 +24,7 @@ ScreenGui.Parent = CoreGui
 
 -- Cores globais
 local COLORS = {
-    Background    = Color3.fromRGB(10, 10, 16),
+    Background    = Color3.fromRGB(5, 5, 10),
     Accent        = Color3.fromRGB(90, 170, 255),
     AccentPress   = Color3.fromRGB(110, 190, 255),
     Element       = Color3.fromRGB(18, 18, 28),
@@ -157,10 +157,6 @@ function Library:CreateWindow(title)
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
 
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = COLORS.Stroke
-    uiStroke.Transparency = 1
-    uiStroke.Parent = self.MainFrame
 
     -- Área de drag inferior (invisível)
     local BottomDrag = Instance.new("Frame")
