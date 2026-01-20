@@ -186,14 +186,14 @@ function Library:CreateWindow(title)
     end)
 
     -- BORDA PRETA SÓLIDA (exatamente como no exemplo)
-    local BottomLine = Instance.new("Frame")
+local BottomLine = Instance.new("Frame")
     BottomLine.Name = "BottomLine"
-    BottomLine.Size = UDim2.new(1, -4, 0, 2)              -- -4 para não encostar nas bordas arredondadas
-    BottomLine.Position = UDim2.new(0, 2, 1, -26)         -- centralizado e acima do drag
-    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- preto puro
+    BottomLine.Size = UDim2.new(1, -40, 0, 2)              -- -40 pixels na direita (diminui o espaço)
+    BottomLine.Position = UDim2.new(0, 20, 1, -26)         -- começa 20 pixels da esquerda + ajustado para centralizar
+    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     BottomLine.BorderSizePixel = 0
-    BottomLine.BackgroundTransparency = 0                 -- 0 = opaco total
-    BottomLine.ZIndex = 14                                -- acima do conteúdo, abaixo do drag
+    BottomLine.BackgroundTransparency = 0
+    BottomLine.ZIndex = 14
     BottomLine.Parent = self.MainFrame
 
     -- Redimensionamento (mantido igual)
