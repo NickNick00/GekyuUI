@@ -173,16 +173,6 @@ local BottomCorner = Instance.new("UICorner")
 BottomCorner.CornerRadius = CORNERS.Large
 BottomCorner.Parent = BottomDrag
 
--- Linha preta decorativa no topo do rodapé
-local BottomLine = Instance.new("Frame")
-BottomLine.Name = "BottomLine"
-BottomLine.Size = UDim2.new(1, 0, 0, 1)               -- Linha de 1 pixel
-BottomLine.Position = UDim2.new(0, 0, 0, 0)           -- No topo do BottomDrag
-BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Sua linha preta
-BottomLine.BorderSizePixel = 0
-BottomLine.ZIndex = 51                                -- Acima do próprio rodapé
-BottomLine.Parent = BottomDrag
-
 local DragIcon = Instance.new("Frame")
 DragIcon.Size = UDim2.new(0, 40, 0, 4)
 DragIcon.Position = UDim2.new(0.5, -20, 0.5, 2)
@@ -193,6 +183,17 @@ DragIcon.Parent = BottomDrag
 
 Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
     
+    
+-- Linha preta decorativa no topo do rodapé
+local BottomLine = Instance.new("Frame")
+BottomLine.Name = "BottomLine"
+BottomLine.Size = UDim2.new(1, 0, 0, 1)               -- Linha de 1 pixel
+BottomLine.Position = UDim2.new(0, 0, 0, 0)           -- No topo do BottomDrag
+BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Sua linha preta
+BottomLine.BorderSizePixel = 0
+BottomLine.ZIndex = 51                                -- Acima do próprio rodapé
+BottomLine.Parent = BottomDrag
+
     local function updateResize()
         local resizing = false
         local resizeStartPos
