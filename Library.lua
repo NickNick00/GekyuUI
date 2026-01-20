@@ -146,19 +146,13 @@ self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = self.SavedSize
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
-    self.MainFrame.BorderSizePixel = 0                  -- desativa borda nativa padrão
+    self.MainFrame.BorderSizePixel = 0
     self.MainFrame.ClipsDescendants = true
     self.MainFrame.ZIndex = 5
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
 
-    -- UIStroke do MainFrame: MANTENHA se quiser glow geral, mas com transparência alta
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = COLORS.Stroke
-    uiStroke.Transparency = 0.8                         -- sutil, não interfere na base
-    uiStroke.Parent = self.MainFrame
-    
     -- Área de drag inferior
     local BottomDrag = Instance.new("Frame")
     BottomDrag.Name = "BottomDrag"
@@ -188,15 +182,15 @@ self.MainFrame = Instance.new("Frame")
         safeTween(DragIcon, TweenInfo.new(0.25), {BackgroundTransparency = 0.8, BackgroundColor3 = COLORS.TextDim})
     end)
 
-    -- Linha preta sólida na base (agora com altura 1 pixel para precisão)
+    -- BORDA PRETA SÓLIDA (exatamente como no exemplo)
     local BottomLine = Instance.new("Frame")
     BottomLine.Name = "BottomLine"
-    BottomLine.Size = UDim2.new(1, 0, 0, 1)             -- 1 pixel para ficar fina e nítida
-    BottomLine.Position = UDim2.new(0, 0, 1, -25)       -- exatamente acima do drag (-24 drag -1 linha)
-    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BottomLine.Size = UDim2.new(1, -4, 0, 2)              -- -4 para não encostar nas bordas arredondadas
+    BottomLine.Position = UDim2.new(0, 2, 1, -26)         -- centralizado e acima do drag
+    BottomLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- preto puro
     BottomLine.BorderSizePixel = 0
-    BottomLine.BackgroundTransparency = 0
-    BottomLine.ZIndex = 17                              -- alto para ficar por cima do conteúdo
+    BottomLine.BackgroundTransparency = 0                 -- 0 = opaco total
+    BottomLine.ZIndex = 14                                -- acima do conteúdo, abaixo do drag
     BottomLine.Parent = self.MainFrame
 
     -- Redimensionamento (mantido igual)
