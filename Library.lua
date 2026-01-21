@@ -219,6 +219,9 @@ BottomBar.Parent = self.MainFrame
 
     -- [PARTE 2] Ícone de Resize com Âncora Fixa
     -- 1. Criação do Ícone (Fora de funções para ser global na CreateWindow)
+    -- [PARTE 2] Ícone de Resize e Lógica (CORRIGIDO)
+    
+    -- 1. Criação do Ícone (Global para a CreateWindow)
     local ResizeHandle = Instance.new("ImageButton")
     ResizeHandle.Name = "ResizeHandle"
     ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
@@ -227,6 +230,7 @@ BottomBar.Parent = self.MainFrame
     ResizeHandle.BackgroundTransparency = 1
     ResizeHandle.Image = "rbxassetid://7733715400"
     ResizeHandle.ImageColor3 = COLORS.Accent
+    ResizeHandle.ImageTransparency = 0.3
     ResizeHandle.ZIndex = 60
     ResizeHandle.Parent = self.MainFrame
 
@@ -238,7 +242,7 @@ BottomBar.Parent = self.MainFrame
         safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.3, Rotation = 0})
     end)
 
-    -- 3. Lógica de Redimensionamento (Reconstruída)
+    -- 3. Variáveis de Controle
     local resizing = false
     local resizeStartPos
     local startSize
@@ -246,15 +250,16 @@ BottomBar.Parent = self.MainFrame
     -- Overlay invisível para o mouse não "fugir" do ícone durante o arraste
     local BlockOverlay = Instance.new("TextButton")
     BlockOverlay.Name = "ResizeOverlay"
-    BlockOverlay.Size = UDim2.new(1, 500, 1, 500) -- Cobre uma área maior que a tela
+    BlockOverlay.Size = UDim2.new(1, 1000, 1, 1000) -- Área de segurança
     BlockOverlay.Position = UDim2.new(0.5, 0, 0.5, 0)
     BlockOverlay.AnchorPoint = Vector2.new(0.5, 0.5)
     BlockOverlay.BackgroundTransparency = 1
     BlockOverlay.Text = ""
     BlockOverlay.Visible = false
     BlockOverlay.ZIndex = 999
-    BlockOverlay.Parent = ScreenGui -- Parent no ScreenGui para capturar tudo
+    BlockOverlay.Parent = ScreenGui 
 
+    -- 4. Eventos de Input
     ResizeHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             resizing = true
@@ -267,6 +272,7 @@ BottomBar.Parent = self.MainFrame
     UserInputService.InputChanged:Connect(function(input)
         if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - resizeStartPos
+            
             -- Define limites mínimos para não quebrar a UI
             local newWidth = math.max(450, startSize.X.Offset + delta.X)
             local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
@@ -283,9 +289,6 @@ BottomBar.Parent = self.MainFrame
             BlockOverlay.Visible = false
         end
     end)
-
-
-    
 
 -- Search Bar (Barra de Pesquisa)
 local SearchBar = Instance.new("Frame")
