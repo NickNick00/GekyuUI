@@ -218,16 +218,17 @@ BottomBar.Parent = self.MainFrame
         local startSize
 
     -- [PARTE 2] Ícone de Resize com Âncora Fixa
-    local ResizeHandle = Instance.new("ImageButton")
-    ResizeHandle.Name = "ResizeHandle"
-    ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
-    ResizeHandle.AnchorPoint = Vector2.new(1, 1) -- Trava o ponto de origem no canto inferior direito
-    ResizeHandle.Position = UDim2.new(1, -10, 1, -5) -- Posição fixa relativa ao canto
-    ResizeHandle.BackgroundTransparency = 1
-    ResizeHandle.Image = "rbxassetid://7733715400"
-    ResizeHandle.ImageColor3 = COLORS.Accent
-    ResizeHandle.ZIndex = 60
-    ResizeHandle.Parent = self.MainFrame
+local ResizeHandle = Instance.new("ImageButton")
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+ResizeHandle.AnchorPoint = Vector2.new(1, 1) -- Trava o ponto de origem no canto
+ResizeHandle.Position = UDim2.new(1, -10, 1, -5) 
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Image = "rbxassetid://7733715400"
+ResizeHandle.ImageColor3 = COLORS.Accent
+ResizeHandle.ZIndex = 60 -- ZIndex alto para ficar visível sobre o conteúdo
+ResizeHandle.Parent = self.MainFrame
+
 
 
 
@@ -343,22 +344,24 @@ BottomBar.Parent = self.MainFrame
     end)
 
         local minimized = false
-    local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
-        minimized = not minimized
-        local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
-        local targetVisible = not minimized
+local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
+    minimized = not minimized
+    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
+    local targetVisible = not minimized
 
-        safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = targetSize})
-        
-        -- Garante que a borda e o conteúdo sumam para não ficarem flutuando
-        BottomBar.Visible = targetVisible
-        self.TabBar.Visible = targetVisible
-        self.ContentArea.Visible = targetVisible
-        SearchBar.Visible = targetVisible
-        ResizeHandle.Visible = targetVisible
-        
-        minimizeBtn.Text = minimized and "+" or "−"
-    end)
+    -- Tween da moldura principal
+    safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = targetSize})
+    
+    -- Controle de visibilidade dos elementos (Correção aqui)
+    BottomBar.Visible = targetVisible
+    self.TabBar.Visible = targetVisible
+    self.ContentArea.Visible = targetVisible
+    SearchBar.Visible = targetVisible      -- Agora some ao minimizar
+    ResizeHandle.Visible = targetVisible   -- Agora some ao minimizar
+    
+    minimizeBtn.Text = minimized and "+" or "−"
+end)
+
 
 
     local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
@@ -369,14 +372,15 @@ BottomBar.Parent = self.MainFrame
         self:ShowSwitchHubPopup()
     end)
 
-    -- Search Bar (continua igual)
-    local SearchBar = Instance.new("Frame")
-    SearchBar.Size = UDim2.new(0,140-12,0,32)
-    SearchBar.Position = UDim2.new(0,6,0,48+8)
-    SearchBar.BackgroundColor3 = COLORS.Element
-    SearchBar.ZIndex = 6
-    SearchBar.Parent = self.MainFrame
-    Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
+-- Search Bar (Barra de Pesquisa)
+local SearchBar = Instance.new("Frame")
+SearchBar.Name = "SearchBar"
+SearchBar.Size = UDim2.new(0, 128, 0, 32)
+SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
+SearchBar.BackgroundColor3 = COLORS.Element
+SearchBar.ZIndex = 10
+SearchBar.Parent = self.MainFrame
+Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
 
     local SearchBox = Instance.new("TextBox")
     SearchBox.Size = UDim2.new(1,-12,1,-8)
@@ -392,15 +396,16 @@ BottomBar.Parent = self.MainFrame
     SearchBox.ZIndex = 7
     SearchBox.Parent = SearchBar
 
-    -- Tabs e Content (continua igual)
-    self.TabBar = Instance.new("ScrollingFrame")
-    self.TabBar.Size = UDim2.new(0, 140, 1, -74) -- Ajustado de -100 para -74
-    self.TabBar.Position = UDim2.new(0, 0, 0, 48) -- Começa logo após o TopBar
-    self.TabBar.BackgroundTransparency = 1
-    self.TabBar.ScrollBarThickness = 0
-    self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    self.TabBar.ZIndex = 6
-    self.TabBar.Parent = self.MainFrame
+-- TabBar (Lista de Abas)
+self.TabBar = Instance.new("ScrollingFrame")
+-- Altura calculada: Tamanho total menos (TopBar + Search + Espaçamentos + BottomBar)
+self.TabBar.Size = UDim2.new(0, 140, 1, -120) 
+self.TabBar.Position = UDim2.new(0, 0, 0, 94) -- Começa exatamente onde a busca termina (54 + 32 + 8)
+self.TabBar.BackgroundTransparency = 1
+self.TabBar.ScrollBarThickness = 0
+self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+self.TabBar.ZIndex = 6
+self.TabBar.Parent = self.MainFrame
 
     local TabLayout = Instance.new("UIListLayout")
     TabLayout.Padding = UDim.new(0,8)
