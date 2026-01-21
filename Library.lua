@@ -80,7 +80,8 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
             label.TextSize = math.max(8, math.floor(label.TextSize * scale * 0.92))
         end
     end)
-
+return label
+end
 
 
 local function LimitDropdownText(text)
