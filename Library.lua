@@ -343,24 +343,34 @@ ResizeHandle.Parent = self.MainFrame
         ScreenGui:Destroy()
     end)
 
-        local minimized = false
+ local minimized = false
 local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     minimized = not minimized
+    
+    -- Define o tamanho alvo
     local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
     local targetVisible = not minimized
 
-    -- Tween da moldura principal
+    -- Animação da moldura principal
     safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = targetSize})
     
-    -- Controle de visibilidade dos elementos (Correção aqui)
+    -- CORREÇÃO DEFINITIVA DE VISIBILIDADE:
     BottomBar.Visible = targetVisible
     self.TabBar.Visible = targetVisible
     self.ContentArea.Visible = targetVisible
-    SearchBar.Visible = targetVisible      -- Agora some ao minimizar
-    ResizeHandle.Visible = targetVisible   -- Agora some ao minimizar
+    
+    -- Força o sumiço da barra de busca e do ícone de redimensionar
+    if SearchBar then SearchBar.Visible = targetVisible end
+    if ResizeHandle then ResizeHandle.Visible = targetVisible end
+    
+    -- Garante que o conteúdo das abas também suma para não bugar o visual
+    if self.currentTab and self.currentTab.content then
+        self.currentTab.content.Visible = targetVisible
+    end
     
     minimizeBtn.Text = minimized and "+" or "−"
 end)
+
 
 
 
