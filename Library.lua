@@ -1,5 +1,4 @@
-A caixinha continua aparecendo do pesquisar ao minimizar, o icone do redimensionar nao sumiu, continoou no mesmo lugar.
--- Library.lua
+
 -- GekyuUI - Versão FINAL corrigida + DRAG DUPLO (topo + base)
 -- Kyuzzy - Atualizado 16/01/2026
 
