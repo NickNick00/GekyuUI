@@ -277,7 +277,7 @@ ResizeHandle.Parent = self.MainFrame
         end)
     end
 
-    updateResize()
+    
 
 -- Search Bar (Barra de Pesquisa)
 local SearchBar = Instance.new("Frame")
