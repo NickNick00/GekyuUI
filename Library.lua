@@ -66,8 +66,14 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     label.ZIndex = 10
     label.Parent = parent
 
-    task.spawn(function()
-        task.wait()
+     task.spawn(function()
+        -- Aguarda o objeto ser realmente desenhado na tela
+        while label.Parent and label.AbsoluteSize.X == 0 do
+            task.wait()
+        end
+        
+        if not label.Parent then return end -- Evita erro se o objeto foi destruído
+        
         local maxWidth = label.AbsoluteSize.X - 20
         if maxWidth > 10 and label.TextBounds.X > maxWidth then
             local scale = maxWidth / label.TextBounds.X
@@ -75,8 +81,6 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
         end
     end)
 
-    return label
-end
 
 local function LimitDropdownText(text)
     if #text > 30 then
@@ -336,17 +340,24 @@ BottomBar.Parent = self.MainFrame
         ScreenGui:Destroy()
     end)
 
-    local minimized = false
+        local minimized = false
     local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
         minimized = not minimized
-        if minimized then
-            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = UDim2.new(0, self.SavedSize.X.Offset, 0, 48)})
-            minimizeBtn.Text = "+"
-        else
-            safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = self.SavedSize})
-            minimizeBtn.Text = "−"
-        end
+        local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
+        local targetVisible = not minimized
+
+        safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = targetSize})
+        
+        -- Garante que a borda e o conteúdo sumam para não ficarem flutuando
+        BottomBar.Visible = targetVisible
+        self.TabBar.Visible = targetVisible
+        self.ContentArea.Visible = targetVisible
+        SearchBar.Visible = targetVisible
+        ResizeHandle.Visible = targetVisible
+        
+        minimizeBtn.Text = minimized and "+" or "−"
     end)
+
 
     local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
         self:ToggleConfigPanel()
@@ -381,8 +392,8 @@ BottomBar.Parent = self.MainFrame
 
     -- Tabs e Content (continua igual)
     self.TabBar = Instance.new("ScrollingFrame")
-    self.TabBar.Size = UDim2.new(0,140,1,-100)
-    self.TabBar.Position = UDim2.new(0,0,0,100)
+    self.TabBar.Size = UDim2.new(0, 140, 1, -74) -- Ajustado de -100 para -74
+    self.TabBar.Position = UDim2.new(0, 0, 0, 48) -- Começa logo após o TopBar
     self.TabBar.BackgroundTransparency = 1
     self.TabBar.ScrollBarThickness = 0
     self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -395,9 +406,9 @@ BottomBar.Parent = self.MainFrame
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabLayout.Parent = self.TabBar
 
-    self.ContentArea = Instance.new("Frame")
-    self.ContentArea.Size = UDim2.new(1, -152, 1, -100)
-    self.ContentArea.Position = UDim2.new(0, 148, 0, 96)
+    self.ContentArea = Instance.new("Frame") 
+    self.ContentArea.Size = UDim2.new(1, -152, 1, -74) -- Mesma altura das Tabs (-74)
+    self.ContentArea.Position = UDim2.new(0, 148, 0, 48)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 6
     self.ContentArea.Parent = self.MainFrame
@@ -1321,7 +1332,7 @@ label.TextTruncate = Enum.TextTruncate.AtEnd
         updatePreview()
     end
 
-    function Library.InputNumber(parent, text, min, max, default, step, callback)
+        function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
 
         local container = Instance.new("Frame")
@@ -1329,22 +1340,22 @@ label.TextTruncate = Enum.TextTruncate.AtEnd
         container.BackgroundColor3 = COLORS.Element
         container.ZIndex = 7
         container.Parent = parent
-        
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
 
-        CreateSmartTextLabel(container, UDim2.new(0.6, 0, 0, 24), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        -- Ajustado: TextTruncate e tamanho para não colidir
+        local label = CreateSmartTextLabel(container, UDim2.new(1, -160, 0, 24), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+        label.TextTruncate = Enum.TextTruncate.AtEnd 
 
         local inputFrame = Instance.new("Frame")
         inputFrame.Size = UDim2.new(0, 140, 0, 34)
-        inputFrame.Position = UDim2.new(1, -154, 0, 9)
+        inputFrame.Position = UDim2.new(1, -154, 0.5, -17) -- Centralizado verticalmente
         inputFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
         inputFrame.ZIndex = 8
         inputFrame.Parent = container
-        
         Instance.new("UICorner", inputFrame).CornerRadius = CORNERS.Small
 
         local valueBox = Instance.new("TextBox")
-        valueBox.Size = UDim2.new(0, 80, 0.8, 0)
+        valueBox.Size = UDim2.new(1, -60, 0.8, 0)
         valueBox.Position = UDim2.new(0.5, 0, 0.5, 0)
         valueBox.AnchorPoint = Vector2.new(0.5, 0.5)
         valueBox.BackgroundTransparency = 1
@@ -1352,16 +1363,11 @@ label.TextTruncate = Enum.TextTruncate.AtEnd
         valueBox.TextColor3 = COLORS.Accent
         valueBox.Font = Enum.Font.GothamBold
         valueBox.TextSize = 16
-        valueBox.TextXAlignment = Enum.TextXAlignment.Center
         valueBox.ZIndex = 9
         valueBox.Parent = inputFrame
 
-        valueBox:GetPropertyChangedSignal("Text"):Connect(function()
-            local currentText = valueBox.Text
-            if valueBox.TextBounds.X > valueBox.AbsoluteSize.X - 10 then
-                valueBox.Text = currentText:sub(1, #currentText - 1)
-            end
-        end)
+        -- Resto da lógica de minusBtn/plusBtn continua igual...
+
 
         local minusBtn = Instance.new("TextButton")
         minusBtn.Size = UDim2.new(0, 28, 0, 28)
