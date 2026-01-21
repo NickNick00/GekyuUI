@@ -1,3 +1,4 @@
+A caixinha continua aparecendo do pesquisar ao minimizar, o icone do redimensionar nao sumiu, continoou no mesmo lugar.
 -- Library.lua
 -- GekyuUI - Versão FINAL corrigida + DRAG DUPLO (topo + base)
 -- Kyuzzy - Atualizado 16/01/2026
@@ -279,30 +280,6 @@ ResizeHandle.Parent = self.MainFrame
 
     updateResize()
 
--- Search Bar (Barra de Pesquisa)
-local SearchBar = Instance.new("Frame")
-SearchBar.Name = "SearchBar"
-SearchBar.Size = UDim2.new(0, 128, 0, 32)
-SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
-SearchBar.BackgroundColor3 = COLORS.Element
-SearchBar.ZIndex = 10
-SearchBar.Parent = self.MainFrame
-Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
-
-    local SearchBox = Instance.new("TextBox")
-    SearchBox.Size = UDim2.new(1,-12,1,-8)
-    SearchBox.Position = UDim2.new(0,6,0,4)
-    SearchBox.BackgroundTransparency = 1
-    SearchBox.Text = ""
-    SearchBox.PlaceholderText = "Search..."
-    SearchBox.PlaceholderColor3 = COLORS.TextDim
-    SearchBox.TextColor3 = COLORS.Text
-    SearchBox.Font = Enum.Font.GothamBold
-    SearchBox.TextSize = 14
-    SearchBox.ClearTextOnFocus = false
-    SearchBox.ZIndex = 7
-    SearchBox.Parent = SearchBar
-    
     -- TopBar
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1,0,0,48)
@@ -367,34 +344,24 @@ Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
         ScreenGui:Destroy()
     end)
 
- local minimized = false
+        local minimized = false
 local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     minimized = not minimized
-    
-    -- Define o tamanho alvo
     local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
     local targetVisible = not minimized
 
-    -- Animação da moldura principal
+    -- Tween da moldura principal
     safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = targetSize})
     
-    -- CORREÇÃO DEFINITIVA DE VISIBILIDADE:
+    -- Controle de visibilidade dos elementos (Correção aqui)
     BottomBar.Visible = targetVisible
     self.TabBar.Visible = targetVisible
     self.ContentArea.Visible = targetVisible
-    
-    -- Força o sumiço da barra de busca e do ícone de redimensionar
-    if SearchBar then SearchBar.Visible = targetVisible end
-    if ResizeHandle then ResizeHandle.Visible = targetVisible end
-    
-    -- Garante que o conteúdo das abas também suma para não bugar o visual
-    if self.currentTab and self.currentTab.content then
-        self.currentTab.content.Visible = targetVisible
-    end
+    SearchBar.Visible = targetVisible      -- Agora some ao minimizar
+    ResizeHandle.Visible = targetVisible   -- Agora some ao minimizar
     
     minimizeBtn.Text = minimized and "+" or "−"
 end)
-
 
 
 
@@ -405,6 +372,30 @@ end)
     local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
         self:ShowSwitchHubPopup()
     end)
+
+-- Search Bar (Barra de Pesquisa)
+local SearchBar = Instance.new("Frame")
+SearchBar.Name = "SearchBar"
+SearchBar.Size = UDim2.new(0, 128, 0, 32)
+SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
+SearchBar.BackgroundColor3 = COLORS.Element
+SearchBar.ZIndex = 10
+SearchBar.Parent = self.MainFrame
+Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
+
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Size = UDim2.new(1,-12,1,-8)
+    SearchBox.Position = UDim2.new(0,6,0,4)
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.Text = ""
+    SearchBox.PlaceholderText = "Search..."
+    SearchBox.PlaceholderColor3 = COLORS.TextDim
+    SearchBox.TextColor3 = COLORS.Text
+    SearchBox.Font = Enum.Font.GothamBold
+    SearchBox.TextSize = 14
+    SearchBox.ClearTextOnFocus = false
+    SearchBox.ZIndex = 7
+    SearchBox.Parent = SearchBar
 
 -- TabBar (Lista de Abas)
 self.TabBar = Instance.new("ScrollingFrame")
