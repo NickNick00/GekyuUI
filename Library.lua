@@ -217,6 +217,30 @@ BottomBar.Parent = self.MainFrame
         local resizeStartPos
         local startSize
 
+-- Search Bar (Barra de Pesquisa)
+local SearchBar = Instance.new("Frame")
+SearchBar.Name = "SearchBar"
+SearchBar.Size = UDim2.new(0, 128, 0, 32)
+SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
+SearchBar.BackgroundColor3 = COLORS.Element
+SearchBar.ZIndex = 10
+SearchBar.Parent = self.MainFrame
+Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
+
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Size = UDim2.new(1,-12,1,-8)
+    SearchBox.Position = UDim2.new(0,6,0,4)
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.Text = ""
+    SearchBox.PlaceholderText = "Search..."
+    SearchBox.PlaceholderColor3 = COLORS.TextDim
+    SearchBox.TextColor3 = COLORS.Text
+    SearchBox.Font = Enum.Font.GothamBold
+    SearchBox.TextSize = 14
+    SearchBox.ClearTextOnFocus = false
+    SearchBox.ZIndex = 7
+    SearchBox.Parent = SearchBar
+        
     -- [PARTE 2] Ícone de Resize com Âncora Fixa
 local ResizeHandle = Instance.new("ImageButton")
 ResizeHandle.Name = "ResizeHandle"
@@ -372,29 +396,7 @@ end)
         self:ShowSwitchHubPopup()
     end)
 
--- Search Bar (Barra de Pesquisa)
-local SearchBar = Instance.new("Frame")
-SearchBar.Name = "SearchBar"
-SearchBar.Size = UDim2.new(0, 128, 0, 32)
-SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
-SearchBar.BackgroundColor3 = COLORS.Element
-SearchBar.ZIndex = 10
-SearchBar.Parent = self.MainFrame
-Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
 
-    local SearchBox = Instance.new("TextBox")
-    SearchBox.Size = UDim2.new(1,-12,1,-8)
-    SearchBox.Position = UDim2.new(0,6,0,4)
-    SearchBox.BackgroundTransparency = 1
-    SearchBox.Text = ""
-    SearchBox.PlaceholderText = "Search..."
-    SearchBox.PlaceholderColor3 = COLORS.TextDim
-    SearchBox.TextColor3 = COLORS.Text
-    SearchBox.Font = Enum.Font.GothamBold
-    SearchBox.TextSize = 14
-    SearchBox.ClearTextOnFocus = false
-    SearchBox.ZIndex = 7
-    SearchBox.Parent = SearchBar
 
 -- TabBar (Lista de Abas)
 self.TabBar = Instance.new("ScrollingFrame")
