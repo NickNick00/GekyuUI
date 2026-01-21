@@ -66,7 +66,7 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     label.ZIndex = 10
     label.Parent = parent
 
-     task.spawn(function()
+    task.spawn(function()
         -- Aguarda o objeto ser realmente desenhado na tela
         while label.Parent and label.AbsoluteSize.X == 0 do
             task.wait()
@@ -80,6 +80,7 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
             label.TextSize = math.max(8, math.floor(label.TextSize * scale * 0.92))
         end
     end)
+
 
 
 local function LimitDropdownText(text)
