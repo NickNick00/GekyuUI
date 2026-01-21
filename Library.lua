@@ -218,23 +218,21 @@ BottomBar.Parent = self.MainFrame
         local startSize
 
     -- [PARTE 2] Ícone de Resize com Âncora Fixa
-    -- 1. Criação do Ícone (Fora de funções para ser global na CreateWindow)
-    -- [PARTE 2] Ícone de Resize e Lógica (CORRIGIDO)
-    
-    -- 1. Criação do Ícone (Global para a CreateWindow)
-    local ResizeHandle = Instance.new("ImageButton")
-    ResizeHandle.Name = "ResizeHandle"
-    ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
-    ResizeHandle.AnchorPoint = Vector2.new(1, 1)
-    ResizeHandle.Position = UDim2.new(1, -10, 1, -5) 
-    ResizeHandle.BackgroundTransparency = 1
-    ResizeHandle.Image = "rbxassetid://7733715400"
-    ResizeHandle.ImageColor3 = COLORS.Accent
-    ResizeHandle.ImageTransparency = 0.3
-    ResizeHandle.ZIndex = 60
-    ResizeHandle.Parent = self.MainFrame
+local ResizeHandle = Instance.new("ImageButton")
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+ResizeHandle.AnchorPoint = Vector2.new(1, 1) -- Trava o ponto de origem no canto
+ResizeHandle.Position = UDim2.new(1, -10, 1, -5) 
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Image = "rbxassetid://7733715400"
+ResizeHandle.ImageColor3 = COLORS.Accent
+ResizeHandle.ZIndex = 60 -- ZIndex alto para ficar visível sobre o conteúdo
+ResizeHandle.Parent = self.MainFrame
 
-    -- 2. Efeitos Visuais do Ícone
+
+
+
+    -- Efeitos de Hover
     ResizeHandle.MouseEnter:Connect(function()
         safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0, Rotation = 90})
     end)
@@ -242,53 +240,44 @@ BottomBar.Parent = self.MainFrame
         safeTween(ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.3, Rotation = 0})
     end)
 
-    -- 3. Variáveis de Controle
-    local resizing = false
-    local resizeStartPos
-    local startSize
 
-    -- Overlay invisível para o mouse não "fugir" do ícone durante o arraste
-    local BlockOverlay = Instance.new("TextButton")
-    BlockOverlay.Name = "ResizeOverlay"
-    BlockOverlay.Size = UDim2.new(1, 1000, 1, 1000) -- Área de segurança
-    BlockOverlay.Position = UDim2.new(0.5, 0, 0.5, 0)
-    BlockOverlay.AnchorPoint = Vector2.new(0.5, 0.5)
-    BlockOverlay.BackgroundTransparency = 1
-    BlockOverlay.Text = ""
-    BlockOverlay.Visible = false
-    BlockOverlay.ZIndex = 999
-    BlockOverlay.Parent = ScreenGui 
+        local BlockOverlay = Instance.new("TextButton")
+        BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
+        BlockOverlay.BackgroundTransparency = 1
+        BlockOverlay.Text = ""
+        BlockOverlay.Visible = false
+        BlockOverlay.ZIndex = 19
+        BlockOverlay.Parent = self.MainFrame
 
-    -- 4. Eventos de Input
-    ResizeHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            resizing = true
-            resizeStartPos = input.Position
-            startSize = self.MainFrame.Size
-            BlockOverlay.Visible = true
-        end
-    end)
+        ResizeHandle.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                resizing = true
+                resizeStartPos = input.Position
+                startSize = self.MainFrame.Size
+                BlockOverlay.Visible = true
+            end
+        end)
 
-    UserInputService.InputChanged:Connect(function(input)
-        if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - resizeStartPos
-            
-            -- Define limites mínimos para não quebrar a UI
-            local newWidth = math.max(450, startSize.X.Offset + delta.X)
-            local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
-            
-            local newSize = UDim2.new(0, newWidth, 0, newHeight)
-            self.MainFrame.Size = newSize
-            self.SavedSize = newSize -- Salva para o minimizar saber o tamanho original
-        end
-    end)
+        local resizeConnection = UserInputService.InputChanged:Connect(function(input)
+            if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - resizeStartPos
+                local newWidth = math.max(450, startSize.X.Offset + delta.X)
+                local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
+                local newSize = UDim2.new(0, newWidth, 0, newHeight)
+                self.MainFrame.Size = newSize
+                self.SavedSize = newSize
+            end
+        end)
 
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            resizing = false
-            BlockOverlay.Visible = false
-        end
-    end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                resizing = false
+                BlockOverlay.Visible = false
+            end
+        end)
+    end
+
+    updateResize()
 
 -- Search Bar (Barra de Pesquisa)
 local SearchBar = Instance.new("Frame")
