@@ -277,6 +277,42 @@ ResizeHandle.Parent = self.MainFrame
 
     updateResize()
 
+-- Search Bar (Barra de Pesquisa)
+local SearchBar = Instance.new("Frame")
+SearchBar.Name = "SearchBar"
+SearchBar.Size = UDim2.new(0, 128, 0, 32)
+SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
+SearchBar.BackgroundColor3 = COLORS.Element
+SearchBar.ZIndex = 10
+SearchBar.Parent = self.MainFrame
+Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
+
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Size = UDim2.new(1,-12,1,-8)
+    SearchBox.Position = UDim2.new(0,6,0,4)
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.Text = ""
+    SearchBox.PlaceholderText = "Search..."
+    SearchBox.PlaceholderColor3 = COLORS.TextDim
+    SearchBox.TextColor3 = COLORS.Text
+    SearchBox.Font = Enum.Font.GothamBold
+    SearchBox.TextSize = 14
+    SearchBox.ClearTextOnFocus = false
+    SearchBox.ZIndex = 7
+    SearchBox.Parent = SearchBar
+
+    -- TabBar (Lista de Abas)
+self.TabBar = Instance.new("ScrollingFrame")
+-- Altura calculada: Tamanho total menos (TopBar + Search + Espaçamentos + BottomBar)
+self.TabBar.Size = UDim2.new(0, 140, 1, -120) 
+self.TabBar.Position = UDim2.new(0, 0, 0, 94) -- Começa exatamente onde a busca termina (54 + 32 + 8)
+self.TabBar.BackgroundTransparency = 1
+self.TabBar.ScrollBarThickness = 0
+self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+self.TabBar.ZIndex = 6
+self.TabBar.Parent = self.MainFrame
+
+    
     -- TopBar
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1,0,0,48)
@@ -369,41 +405,6 @@ end)
     local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
         self:ShowSwitchHubPopup()
     end)
-
--- Search Bar (Barra de Pesquisa)
-local SearchBar = Instance.new("Frame")
-SearchBar.Name = "SearchBar"
-SearchBar.Size = UDim2.new(0, 128, 0, 32)
-SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
-SearchBar.BackgroundColor3 = COLORS.Element
-SearchBar.ZIndex = 10
-SearchBar.Parent = self.MainFrame
-Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
-
-    local SearchBox = Instance.new("TextBox")
-    SearchBox.Size = UDim2.new(1,-12,1,-8)
-    SearchBox.Position = UDim2.new(0,6,0,4)
-    SearchBox.BackgroundTransparency = 1
-    SearchBox.Text = ""
-    SearchBox.PlaceholderText = "Search..."
-    SearchBox.PlaceholderColor3 = COLORS.TextDim
-    SearchBox.TextColor3 = COLORS.Text
-    SearchBox.Font = Enum.Font.GothamBold
-    SearchBox.TextSize = 14
-    SearchBox.ClearTextOnFocus = false
-    SearchBox.ZIndex = 7
-    SearchBox.Parent = SearchBar
-
--- TabBar (Lista de Abas)
-self.TabBar = Instance.new("ScrollingFrame")
--- Altura calculada: Tamanho total menos (TopBar + Search + Espaçamentos + BottomBar)
-self.TabBar.Size = UDim2.new(0, 140, 1, -120) 
-self.TabBar.Position = UDim2.new(0, 0, 0, 94) -- Começa exatamente onde a busca termina (54 + 32 + 8)
-self.TabBar.BackgroundTransparency = 1
-self.TabBar.ScrollBarThickness = 0
-self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
-self.TabBar.ZIndex = 6
-self.TabBar.Parent = self.MainFrame
 
     local TabLayout = Instance.new("UIListLayout")
     TabLayout.Padding = UDim.new(0,8)
