@@ -386,12 +386,14 @@ local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     -- Tween da moldura principal
     safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = targetSize})
     
-    -- Controle de visibilidade dos elementos (Correção aqui)
+    -- Controle de visibilidade dos elementos
     BottomBar.Visible = targetVisible
     self.TabBar.Visible = targetVisible
     self.ContentArea.Visible = targetVisible
-    SearchBar.Visible = targetVisible      -- Agora some ao minimizar
-    ResizeHandle.Visible = targetVisible   -- Agora some ao minimizar
+    
+    -- ESTAS LINHAS ABAIXO SÃO AS QUE FALTAVAM:
+    SearchBar.Visible = targetVisible      -- Esconde a barra de busca
+    ResizeHandle.Visible = targetVisible   -- Esconde o ícone de redimensionar
     
     minimizeBtn.Text = minimized and "+" or "−"
 end)
