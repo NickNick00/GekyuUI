@@ -160,6 +160,7 @@ function Library:CreateWindow(title)
     self.MainFrame.BorderSizePixel = 0
     self.MainFrame.ClipsDescendants = false
     self.MainFrame.ZIndex = 5
+    self.MainFrame.Active = true -- ADICIONE ESTA LINHA
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
@@ -430,6 +431,7 @@ end)
     self.ContentArea.Position = UDim2.new(0, 148, 0, 48)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 6
+    self.ContentArea.Active = true -- ADICIONE ESTA LINHA
     self.ContentArea.Parent = self.MainFrame
 
     -- Aumente o padding inferior do ContentArea para empurrar os tabs para cima
