@@ -461,183 +461,164 @@ contentPadding.Parent = self.ContentArea
     self.ConfigPanel = nil
     self.ConfigMinimized = false
 
-    function self:ToggleConfigPanel()
-        if self.ConfigPanel and self.ConfigPanel.Parent then
-            safeTween(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1.5, 0, 0.5, -250)})
-            task.delay(0.35, function()
-                if self.ConfigPanel then
-                    self.ConfigPanel:Destroy()
-                    self.ConfigPanel = nil
+    -- =============================================================================
+-- BLOCO DO PAINEL DE CONFIGURAÇÃO (COPIAR DAQUI ATÉ O FIM)
+-- =============================================================================
+
+function self:ToggleConfigPanel()
+    if self.ConfigPanel and self.ConfigPanel.Parent then
+        safeTween(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = UDim2.new(1.5, 0, 0.5, -250)})
+        task.delay(0.35, function()
+            if self.ConfigPanel then self.ConfigPanel:Destroy(); self.ConfigPanel = nil end
+        end)
+    else
+        local panel = Instance.new("Frame")
+        panel.Name = "ConfigPanel"
+        panel.Size = self.ConfigMinimized and UDim2.new(0,400,0,40) or UDim2.new(0,400,0,500)
+        panel.Position = lastConfigPosition
+        panel.BackgroundColor3 = COLORS.Background
+        panel.ZIndex = 50
+        panel.Parent = ScreenGui
+        Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = COLORS.Stroke; stroke.Transparency = 0.5; stroke.Parent = panel
+
+        -- TopBar do Painel
+        local configTopBar = Instance.new("Frame")
+        configTopBar.Size = UDim2.new(1,0,0,40); configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22); configTopBar.ZIndex = 51; configTopBar.Parent = panel
+        Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
+        CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16)
+
+        -- Botões de fechar/minimizar
+        local configCloseBtn = Instance.new("TextButton")
+        configCloseBtn.Size = UDim2.new(0,30,0,30); configCloseBtn.Position = UDim2.new(1,-35,0.5,-15); configCloseBtn.BackgroundTransparency = 1; configCloseBtn.Text = "X"; configCloseBtn.TextColor3 = Color3.fromRGB(255,100,100); configCloseBtn.ZIndex = 52; configCloseBtn.Parent = configTopBar
+        configCloseBtn.Activated:Connect(function() self:ToggleConfigPanel() end)
+
+        -- Tabs Internas (Info / Config)
+        local configTabBar = Instance.new("Frame")
+        configTabBar.Size = UDim2.new(1,0,0,40); configTabBar.Position = UDim2.new(0,0,0,40); configTabBar.BackgroundColor3 = COLORS.Element; configTabBar.ZIndex = 51; configTabBar.Parent = panel
+        Instance.new("UICorner", configTabBar).CornerRadius = CORNERS.Medium
+
+        local infoTabBtn = Instance.new("TextButton")
+        infoTabBtn.Size = UDim2.new(0.5,0,1,0); infoTabBtn.BackgroundTransparency = 1; infoTabBtn.Text = "Informações"; infoTabBtn.TextColor3 = COLORS.Accent; infoTabBtn.ZIndex = 52; infoTabBtn.Parent = configTabBar
+
+        local configTabBtn = Instance.new("TextButton")
+        configTabBtn.Size = UDim2.new(0.5,0,1,0); configTabBtn.Position = UDim2.new(0.5,0,0,0); configTabBtn.BackgroundTransparency = 1; configTabBtn.Text = "Opções"; configTabBtn.TextColor3 = COLORS.TextDim; configTabBtn.ZIndex = 52; configTabBtn.Parent = configTabBar
+
+        -- Containers de Conteúdo
+        local infoContent = Instance.new("ScrollingFrame")
+        infoContent.Size = UDim2.new(1,0,1,-80); infoContent.Position = UDim2.new(0,0,0,80); infoContent.BackgroundTransparency = 1; infoContent.Visible = true; infoContent.ScrollBarThickness = 0; infoContent.Parent = panel
+        
+        local configContent = Instance.new("ScrollingFrame")
+        configContent.Size = UDim2.new(1,0,1,-80); configContent.Position = UDim2.new(0,0,0,80); configContent.BackgroundTransparency = 1; configContent.Visible = false; configContent.ScrollBarThickness = 0; configContent.Parent = panel
+        Instance.new("UIListLayout", configContent).Padding = UDim.new(0,10); configContent.UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+        -- [FUNCIONALIDADE] TEMAS
+        Library.Dropdown(configContent, "Tema do Hub", {"Black", "Vidro"}, 1, function(selected)
+            if selected == "Vidro" then
+                -- Efeito Vidro
+                self.MainFrame.BackgroundTransparency = 0.85
+                self.MainFrame.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                BottomBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                TopBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                -- Altera textos para preto para visibilidade
+                for _, v in pairs(self.MainFrame:GetDescendants()) do
+                    if v:IsA("TextLabel") or v:IsA("TextBox") or v:IsA("TextButton") then
+                        v.TextColor3 = Color3.new(0,0,0)
+                    end
                 end
-            end)
-        else
-            local panel = Instance.new("Frame")
-            panel.Name = "ConfigPanel"
-            panel.Size = self.ConfigMinimized and UDim2.new(0,400,0,40) or UDim2.new(0,400,0,500)
-            panel.Position = lastConfigPosition
-            panel.BackgroundColor3 = COLORS.Background
-            panel.ZIndex = 50
-            panel.Parent = ScreenGui
-            Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
-
-            local stroke = Instance.new("UIStroke")
-            stroke.Color = COLORS.Stroke
-            stroke.Transparency = 0.5
-            stroke.Parent = panel
-
-            local configTopBar = Instance.new("Frame")
-            configTopBar.Size = UDim2.new(1,0,0,40)
-            configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-            configTopBar.ZIndex = 51
-            configTopBar.Parent = panel
-
-            Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
-
-            CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16, Enum.TextXAlignment.Left)
-
-            local configMinimizeBtn = Instance.new("TextButton")
-            configMinimizeBtn.Size = UDim2.new(0,30,0,30)
-            configMinimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
-            configMinimizeBtn.BackgroundTransparency = 1
-            configMinimizeBtn.Text = self.ConfigMinimized and "+" or "−"
-            configMinimizeBtn.TextColor3 = COLORS.Text
-            configMinimizeBtn.Font = Enum.Font.GothamBold
-            configMinimizeBtn.TextSize = 20
-            configMinimizeBtn.ZIndex = 52
-            configMinimizeBtn.Parent = configTopBar
-
-            configMinimizeBtn.Activated:Connect(function()
-                self.ConfigMinimized = not self.ConfigMinimized
-                if self.ConfigMinimized then
-                    safeTween(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,40)})
-                    configMinimizeBtn.Text = "+"
-                else
-                    safeTween(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0,400,0,500)})
-                    configMinimizeBtn.Text = "−"
+            else
+                -- Voltar ao Black Padrão
+                self.MainFrame.BackgroundTransparency = 0
+                self.MainFrame.BackgroundColor3 = COLORS.Background
+                BottomBar.BackgroundColor3 = COLORS.Background
+                TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+                for _, v in pairs(self.MainFrame:GetDescendants()) do
+                    if v:IsA("TextLabel") or v:IsA("TextBox") or v:IsA("TextButton") then
+                        v.TextColor3 = COLORS.Text
+                    end
                 end
-            end)
-
-            local configCloseBtn = Instance.new("TextButton")
-            configCloseBtn.Size = UDim2.new(0,30,0,30)
-            configCloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
-            configCloseBtn.BackgroundTransparency = 1
-            configCloseBtn.Text = "X"
-            configCloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-            configCloseBtn.Font = Enum.Font.GothamBold
-            configCloseBtn.TextSize = 18
-            configCloseBtn.ZIndex = 52
-            configCloseBtn.Parent = configTopBar
-
-            configCloseBtn.Activated:Connect(function()
-                self:ToggleConfigPanel()
-            end)
-
-            local configTabBar = Instance.new("Frame")
-            configTabBar.Size = UDim2.new(1,0,0,40)
-            configTabBar.Position = UDim2.new(0,0,0,40)
-            configTabBar.BackgroundColor3 = COLORS.Element
-            configTabBar.ZIndex = 51
-            configTabBar.Parent = panel
-
-            Instance.new("UICorner", configTabBar).CornerRadius = CORNERS.Medium
-
-            local infoTabBtn = Instance.new("TextButton")
-            infoTabBtn.Size = UDim2.new(0.5,0,1,0)
-            infoTabBtn.BackgroundTransparency = 1
-            infoTabBtn.Text = "Info"
-            infoTabBtn.TextColor3 = COLORS.Accent
-            infoTabBtn.Font = Enum.Font.GothamBold
-            infoTabBtn.TextSize = 14
-            infoTabBtn.ZIndex = 52
-            infoTabBtn.Parent = configTabBar
-
-            local configTabBtn = Instance.new("TextButton")
-            configTabBtn.Size = UDim2.new(0.5,0,1,0)
-            configTabBtn.Position = UDim2.new(0.5,0,0,0)
-            configTabBtn.BackgroundTransparency = 1
-            configTabBtn.Text = "Config"
-            configTabBtn.TextColor3 = COLORS.TextDim
-            configTabBtn.Font = Enum.Font.GothamBold
-            configTabBtn.TextSize = 14
-            configTabBtn.ZIndex = 52
-            configTabBtn.Parent = configTabBar
-
-            local infoContent = Instance.new("Frame")
-            infoContent.Size = UDim2.new(1,0,1,-80)
-            infoContent.Position = UDim2.new(0,0,0,80)
-            infoContent.BackgroundTransparency = 1
-            infoContent.ZIndex = 51
-            infoContent.Visible = true
-            infoContent.Parent = panel
-
-            CreateSmartTextLabel(infoContent, UDim2.new(1,-20,1,-20), UDim2.new(0,10,0,10), "GekyuUI v1.0\nFeito por Kyuzzy\nPremium Dark Theme", COLORS.Text, Enum.Font.Gotham, 14, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-
-            local configContent = Instance.new("Frame")
-            configContent.Size = UDim2.new(1,0,1,-80)
-            configContent.Position = UDim2.new(0,0,0,80)
-            configContent.BackgroundTransparency = 1
-            configContent.ZIndex = 51
-            configContent.Visible = false
-            configContent.Parent = panel
-
-            CreateSmartTextLabel(configContent, UDim2.new(1,-20,0,30), UDim2.new(0,10,0,10), "Configurações Gerais", COLORS.Accent, Enum.Font.GothamBold, 16, Enum.TextXAlignment.Left)
-
-            infoTabBtn.Activated:Connect(function()
-                infoContent.Visible = true
-                configContent.Visible = false
-                infoTabBtn.TextColor3 = COLORS.Accent
-                configTabBtn.TextColor3 = COLORS.TextDim
-            end)
-
-            configTabBtn.Activated:Connect(function()
-                infoContent.Visible = false
-                configContent.Visible = true
-                infoTabBtn.TextColor3 = COLORS.TextDim
-                configTabBtn.TextColor3 = COLORS.Accent
-            end)
-
-            -- Drag do painel de config
-            local configDragging, configDragStart, configStartPos = false, nil, nil
-
-            local function configUpdate(input)
-                local delta = input.Position - configDragStart
-                safeTween(panel, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {
-                    Position = UDim2.new(configStartPos.X.Scale, configStartPos.X.Offset + delta.X, configStartPos.Y.Scale, configStartPos.Y.Offset + delta.Y)
-                })
             end
+        end)
 
-            configTopBar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    configDragging = true
-                    configDragStart = input.Position
-                    configStartPos = panel.Position
-                    
-                    ContextActionService:BindAction("ConfigDrag", function() return Enum.ContextActionResult.Sink end, false, 
-                        Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
-                    
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            configDragging = false
-                            ContextActionService:UnbindAction("ConfigDrag")
-                            lastConfigPosition = panel.Position
-                        end
-                    end)
-                end
-            end)
+        -- [FUNCIONALIDADE] AUTO SAVE
+        Library.Toggle(configContent, "Auto-Save Config", false, function(state)
+            _G.GekyuAutoSave = state
+            if state then
+                Library.Notify("Auto-Save Ativado!", 2, COLORS.Accent)
+                task.spawn(function()
+                    while _G.GekyuAutoSave do
+                        self:SaveHubSettings()
+                        task.wait(10) -- Salva a cada 10 segundos
+                    end
+                end)
+            end
+        end)
 
-            UserInputService.InputChanged:Connect(function(input)
-                if configDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    configUpdate(input)
-                end
-            end)
+        Library.Button(configContent, "Salvar Agora", function()
+            self:SaveHubSettings()
+            Library.Notify("Configurações Salvas Localmente!", 3, Color3.fromRGB(0, 255, 120))
+        end, {icon = "rbxassetid://6031094678"})
 
-            panel.Position = UDim2.new(1.5, 0, 0.5, -250)
-            safeTween(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = lastConfigPosition})
+        -- Lógica de troca de abas
+        infoTabBtn.Activated:Connect(function()
+            infoContent.Visible = true; configContent.Visible = false
+            infoTabBtn.TextColor3 = COLORS.Accent; configTabBtn.TextColor3 = COLORS.TextDim
+        end)
+        configTabBtn.Activated:Connect(function()
+            infoContent.Visible = false; configContent.Visible = true
+            infoTabBtn.TextColor3 = COLORS.TextDim; configTabBtn.TextColor3 = COLORS.Accent
+        end)
 
-            self.ConfigPanel = panel
-        end
+        -- Drag do Painel
+        local cDragging, cDragStart, cStartPos
+        configTopBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                cDragging = true; cDragStart = input.Position; cStartPos = panel.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then cDragging = false; lastConfigPosition = panel.Position end
+                end)
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if cDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - cDragStart
+                panel.Position = UDim2.new(cStartPos.X.Scale, cStartPos.X.Offset + delta.X, cStartPos.Y.Scale, cStartPos.Y.Offset + delta.Y)
+            end
+        end)
+
+        panel.Position = UDim2.new(1.5, 0, 0.5, -250)
+        safeTween(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = lastConfigPosition})
+        self.ConfigPanel = panel
     end
+end
 
+-- Função de salvamento funcional (File System)
+function self:SaveHubSettings()
+    local HttpService = game:GetService("HttpService")
+    local fileName = "GekyuConfig_" .. game.PlaceId .. ".json"
+    local data = {
+        LastVisit = os.date("%x"),
+        MainPosition = {self.MainFrame.Position.X.Offset, self.MainFrame.Position.Y.Offset},
+        SavedSize = {self.MainFrame.Size.X.Offset, self.MainFrame.Size.Y.Offset}
+    }
+    
+    local success, err = pcall(function()
+        if writefile then
+            writefile(fileName, HttpService:JSONEncode(data))
+        end
+    end)
+    if not success then warn("Erro ao salvar: " .. tostring(err)) end
+end
+
+function self:ShowSwitchHubPopup()
+    Library.Popup("Trocar de Hub", "Deseja abrir o Hub de Jogos?\nIsso fechará o painel atual.", function() ScreenGui:Destroy() end)
+end
+
+-- Fim do Módulo
+return Library
+
+            
     function self:ShowSwitchHubPopup()
         Library.Popup(
             "Trocar de Hub",
