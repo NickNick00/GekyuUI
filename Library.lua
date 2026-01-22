@@ -214,6 +214,7 @@ BottomBar.Parent = self.MainFrame
     Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
 
 
+        -- [CORREÇÃO DO REDIMENSIONAR]
     local function updateResize()
         local resizing = false
         local resizeStartPos
@@ -221,20 +222,21 @@ BottomBar.Parent = self.MainFrame
 
         self.ResizeHandle = Instance.new("ImageButton")
         self.ResizeHandle.Name = "ResizeHandle"
-        self.ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+        self.ResizeHandle.Size = UDim2.new(0, 18, 0, 18)
         self.ResizeHandle.AnchorPoint = Vector2.new(1, 1) 
-        self.ResizeHandle.Position = UDim2.new(1, -10, 1, -5) 
+        self.ResizeHandle.Position = UDim2.new(1, -5, 1, -5) -- Ajustado para o cantinho
         self.ResizeHandle.BackgroundTransparency = 1
         self.ResizeHandle.Image = "rbxassetid://7733715400"
         self.ResizeHandle.ImageColor3 = COLORS.Accent
-        self.ResizeHandle.ZIndex = 60 
+        self.ResizeHandle.ImageTransparency = 0 -- Garantir que esteja visível
+        self.ResizeHandle.ZIndex = 100 -- Valor alto para ficar acima de tudo
         self.ResizeHandle.Parent = self.MainFrame
                     
         self.ResizeHandle.MouseEnter:Connect(function()
-            safeTween(self.ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0, Rotation = 90})
+            safeTween(self.ResizeHandle, TweenInfo.new(0.2), {ImageColor3 = COLORS.AccentPress, Rotation = 90})
         end)
         self.ResizeHandle.MouseLeave:Connect(function()
-            safeTween(self.ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.3, Rotation = 0})
+            safeTween(self.ResizeHandle, TweenInfo.new(0.2), {ImageColor3 = COLORS.Accent, Rotation = 0})
         end)
 
         local BlockOverlay = Instance.new("TextButton")
@@ -242,7 +244,7 @@ BottomBar.Parent = self.MainFrame
         BlockOverlay.BackgroundTransparency = 1
         BlockOverlay.Text = ""
         BlockOverlay.Visible = false
-        BlockOverlay.ZIndex = 19
+        BlockOverlay.ZIndex = 90
         BlockOverlay.Parent = self.MainFrame
 
         self.ResizeHandle.InputBegan:Connect(function(input)
@@ -276,7 +278,10 @@ BottomBar.Parent = self.MainFrame
             end
         end)
     end
-updateResize()
+    
+    -- Chamar a função para criar o handle
+    updateResize() 
+
     
 -- Search Bar (Barra de Pesquisa)
 local SearchBar = Instance.new("Frame")
