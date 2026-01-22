@@ -477,33 +477,34 @@ function self:ToggleConfigPanel()
         panel.Size = self.ConfigMinimized and UDim2.new(0,400,0,40) or UDim2.new(0,400,0,500)
         panel.Position = lastConfigPosition
         panel.BackgroundColor3 = COLORS.Background
-        panel.ZIndex = 50
+        panel.ZIndex = 150 -- Aumentado para ficar acima de tudo
         panel.Parent = ScreenGui
+        
         Instance.new("UICorner", panel).CornerRadius = CORNERS.Large
         local stroke = Instance.new("UIStroke")
         stroke.Color = COLORS.Stroke; stroke.Transparency = 0.5; stroke.Parent = panel
 
         -- TopBar do Painel
         local configTopBar = Instance.new("Frame")
-        configTopBar.Size = UDim2.new(1,0,0,40); configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22); configTopBar.ZIndex = 51; configTopBar.Parent = panel
+        configTopBar.Size = UDim2.new(1,0,0,40); configTopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22); configTopBar.ZIndex = 151; configTopBar.Parent = panel
         Instance.new("UICorner", configTopBar).CornerRadius = CORNERS.Large
         CreateSmartTextLabel(configTopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,15,0,0), "Configurações", COLORS.Accent, Enum.Font.GothamBlack, 16)
 
-        -- Botões de fechar/minimizar
+        -- Botões de fechar
         local configCloseBtn = Instance.new("TextButton")
-        configCloseBtn.Size = UDim2.new(0,30,0,30); configCloseBtn.Position = UDim2.new(1,-35,0.5,-15); configCloseBtn.BackgroundTransparency = 1; configCloseBtn.Text = "X"; configCloseBtn.TextColor3 = Color3.fromRGB(255,100,100); configCloseBtn.ZIndex = 52; configCloseBtn.Parent = configTopBar
+        configCloseBtn.Size = UDim2.new(0,30,0,30); configCloseBtn.Position = UDim2.new(1,-35,0.5,-15); configCloseBtn.BackgroundTransparency = 1; configCloseBtn.Text = "X"; configCloseBtn.TextColor3 = Color3.fromRGB(255,100,100); configCloseBtn.ZIndex = 152; configCloseBtn.Parent = configTopBar
         configCloseBtn.Activated:Connect(function() self:ToggleConfigPanel() end)
 
         -- Tabs Internas (Info / Config)
         local configTabBar = Instance.new("Frame")
-        configTabBar.Size = UDim2.new(1,0,0,40); configTabBar.Position = UDim2.new(0,0,0,40); configTabBar.BackgroundColor3 = COLORS.Element; configTabBar.ZIndex = 51; configTabBar.Parent = panel
+        configTabBar.Size = UDim2.new(1,0,0,40); configTabBar.Position = UDim2.new(0,0,0,40); configTabBar.BackgroundColor3 = COLORS.Element; configTabBar.ZIndex = 151; configTabBar.Parent = panel
         Instance.new("UICorner", configTabBar).CornerRadius = CORNERS.Medium
 
         local infoTabBtn = Instance.new("TextButton")
-        infoTabBtn.Size = UDim2.new(0.5,0,1,0); infoTabBtn.BackgroundTransparency = 1; infoTabBtn.Text = "Informações"; infoTabBtn.TextColor3 = COLORS.Accent; infoTabBtn.ZIndex = 52; infoTabBtn.Parent = configTabBar
+        infoTabBtn.Size = UDim2.new(0.5,0,1,0); infoTabBtn.BackgroundTransparency = 1; infoTabBtn.Text = "Informações"; infoTabBtn.TextColor3 = COLORS.Accent; infoTabBtn.ZIndex = 152; infoTabBtn.Parent = configTabBar
 
         local configTabBtn = Instance.new("TextButton")
-        configTabBtn.Size = UDim2.new(0.5,0,1,0); configTabBtn.Position = UDim2.new(0.5,0,0,0); configTabBtn.BackgroundTransparency = 1; configTabBtn.Text = "Opções"; configTabBtn.TextColor3 = COLORS.TextDim; configTabBtn.ZIndex = 52; configTabBtn.Parent = configTabBar
+        configTabBtn.Size = UDim2.new(0.5,0,1,0); configTabBtn.Position = UDim2.new(0.5,0,0,0); configTabBtn.BackgroundTransparency = 1; configTabBtn.Text = "Opções"; configTabBtn.TextColor3 = COLORS.TextDim; configTabBtn.ZIndex = 152; configTabBtn.Parent = configTabBar
 
         -- Containers de Conteúdo
         local infoContent = Instance.new("ScrollingFrame")
@@ -511,28 +512,24 @@ function self:ToggleConfigPanel()
         
         local configContent = Instance.new("ScrollingFrame")
         configContent.Size = UDim2.new(1,0,1,-80); configContent.Position = UDim2.new(0,0,0,80); configContent.BackgroundTransparency = 1; configContent.Visible = false; configContent.ScrollBarThickness = 0; configContent.Parent = panel
-        Instance.new("UIListLayout", configContent).Padding = UDim.new(0,10); configContent.UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        local configList = Instance.new("UIListLayout", configContent)
+        configList.Padding = UDim.new(0,10); configList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
         -- [FUNCIONALIDADE] TEMAS
         Library.Dropdown(configContent, "Tema do Hub", {"Black", "Vidro"}, 1, function(selected)
             if selected == "Vidro" then
-                -- Efeito Vidro
                 self.MainFrame.BackgroundTransparency = 0.85
                 self.MainFrame.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-                BottomBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-                TopBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-                -- Altera textos para preto para visibilidade
+                if self.MainFrame:FindFirstChild("BottomBar") then self.MainFrame.BottomBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100) end
                 for _, v in pairs(self.MainFrame:GetDescendants()) do
                     if v:IsA("TextLabel") or v:IsA("TextBox") or v:IsA("TextButton") then
                         v.TextColor3 = Color3.new(0,0,0)
                     end
                 end
             else
-                -- Voltar ao Black Padrão
                 self.MainFrame.BackgroundTransparency = 0
                 self.MainFrame.BackgroundColor3 = COLORS.Background
-                BottomBar.BackgroundColor3 = COLORS.Background
-                TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+                if self.MainFrame:FindFirstChild("BottomBar") then self.MainFrame.BottomBar.BackgroundColor3 = COLORS.Background end
                 for _, v in pairs(self.MainFrame:GetDescendants()) do
                     if v:IsA("TextLabel") or v:IsA("TextBox") or v:IsA("TextButton") then
                         v.TextColor3 = COLORS.Text
@@ -548,8 +545,9 @@ function self:ToggleConfigPanel()
                 Library.Notify("Auto-Save Ativado!", 2, COLORS.Accent)
                 task.spawn(function()
                     while _G.GekyuAutoSave do
+                        if not ScreenGui.Parent then break end
                         self:SaveHubSettings()
-                        task.wait(10) -- Salva a cada 10 segundos
+                        task.wait(10)
                     end
                 end)
             end
@@ -557,7 +555,7 @@ function self:ToggleConfigPanel()
 
         Library.Button(configContent, "Salvar Agora", function()
             self:SaveHubSettings()
-            Library.Notify("Configurações Salvas Localmente!", 3, Color3.fromRGB(0, 255, 120))
+            Library.Notify("Configurações Salvas!", 3, Color3.fromRGB(0, 255, 120))
         end, {icon = "rbxassetid://6031094678"})
 
         -- Lógica de troca de abas
@@ -593,29 +591,75 @@ function self:ToggleConfigPanel()
     end
 end
 
--- Função de salvamento funcional (File System)
 function self:SaveHubSettings()
     local HttpService = game:GetService("HttpService")
     local fileName = "GekyuConfig_" .. game.PlaceId .. ".json"
     local data = {
-        LastVisit = os.date("%x"),
         MainPosition = {self.MainFrame.Position.X.Offset, self.MainFrame.Position.Y.Offset},
         SavedSize = {self.MainFrame.Size.X.Offset, self.MainFrame.Size.Y.Offset}
     }
-    
-    local success, err = pcall(function()
-        if writefile then
-            writefile(fileName, HttpService:JSONEncode(data))
-        end
+    pcall(function()
+        if writefile then writefile(fileName, HttpService:JSONEncode(data)) end
     end)
-    if not success then warn("Erro ao salvar: " .. tostring(err)) end
 end
 
 function self:ShowSwitchHubPopup()
     Library.Popup("Trocar de Hub", "Deseja abrir o Hub de Jogos?\nIsso fechará o painel atual.", function() ScreenGui:Destroy() end)
 end
 
--- Fim do Módulo
+-- =============================================================================
+-- FINALIZAÇÃO DA LÓGICA DE TABS E MÓDULO
+-- =============================================================================
+
+function self:CreateTab(name)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1,-16,0,46)
+    button.BackgroundColor3 = COLORS.Element
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = false
+    button.Text = ""
+    button.ZIndex = 7
+    button.Parent = self.TabBar
+    Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
+    
+    local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
+    
+    local indicator = Instance.new("Frame")
+    indicator.Size = UDim2.new(0,4,0.7,0); indicator.Position = UDim2.new(0, 4, 0.15, 0); indicator.BackgroundColor3 = COLORS.Accent; indicator.BackgroundTransparency = 1; indicator.Parent = button
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
+    
+    local content = Instance.new("ScrollingFrame")
+    content.Size = UDim2.new(1,0,1,0); content.BackgroundTransparency = 1; content.Visible = false; content.ScrollBarThickness = 0; content.Parent = self.ContentArea
+    
+    local list = Instance.new("UIListLayout", content)
+    list.Padding = UDim.new(0,12); list.HorizontalAlignment = Enum.HorizontalAlignment.Center; list.SortOrder = Enum.SortOrder.LayoutOrder
+
+    table.insert(self.tabs, {button = button, textLabel = textLabel, indicator = indicator, content = content, name = name:upper()})
+    
+    button.Activated:Connect(function()
+        if self.currentTab then
+            self.currentTab.content.Visible = false
+            self.currentTab.indicator.BackgroundTransparency = 1
+            self.currentTab.textLabel.TextColor3 = COLORS.TextDim
+        end
+        content.Visible = true
+        indicator.BackgroundTransparency = 0
+        textLabel.TextColor3 = COLORS.Text
+        self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
+    end)
+
+    list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 20)
+    end)
+    
+    return content
+end
+
+-- Inicializa a primeira tab após carregar
+task.delay(0.2, function()
+    if self.tabs and self.tabs[1] then self.tabs[1].button.Activated:Fire() end
+end)
+
 return Library
 
             
