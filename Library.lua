@@ -660,7 +660,6 @@ task.delay(0.2, function()
     if self.tabs and self.tabs[1] then self.tabs[1].button.Activated:Fire() end
 end)
 
-return Library
 
             
     function self:ShowSwitchHubPopup()
