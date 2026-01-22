@@ -260,8 +260,8 @@ BottomBar.Parent = self.MainFrame
                 local endConn
                 
                 moveConn = UserInputService.InputChanged:Connect(function(moveInput)
-                    if resizing and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
-                        local delta = moveInput.Position - resizeStartPos
+    if resizing and canResize and (moveInput.UserInputType == Enum.UserInputType.MouseMovement ...) then
+
                         -- Limites mínimos de largura (450) e altura (300)
                         local newWidth = math.max(450, startSize.X.Offset + delta.X)
                         local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
@@ -338,9 +338,12 @@ self.TabBar.Parent = self.MainFrame
     local dragging = false
     local dragStart = nil
     local startPos = nil
+    local canDrag = true -- ADICIONE ESTA LINHA
+    local canResize = true -- ADICIONE ESTA LINHA
+
 
     local function update(input)
-        if not dragging then return end
+    if not dragging or not canDrag then return end -- ADICIONE O "or not canDrag" 
         local delta = input.Position - dragStart
         self.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
@@ -1100,30 +1103,101 @@ contentPadding.Parent = self.ContentArea
 
     knobArea.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
+function Library.Slider(parent, text, min, max, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.95, 0, 0, 62)
+    frame.BackgroundColor3 = COLORS.Element
+    frame.ZIndex = 7
+    frame.Parent = parent
+    Instance.new("UICorner", frame).CornerRadius = CORNERS.Medium
+
+    CreateSmartTextLabel(frame, UDim2.new(0.68, 0, 0, 26), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+    local valueLabel = CreateSmartTextLabel(frame, UDim2.new(0.28, 0, 0, 26), UDim2.new(0.72, 0, 0, 6), tostring(default), COLORS.Accent, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Right)
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(0.92, 0, 0, 8)
+    bar.Position = UDim2.new(0.04, 0, 0.68, 0)
+    bar.BackgroundColor3 = Color3.fromRGB(45, 45, 62)
+    bar.ZIndex = 8
+    bar.Parent = frame
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(math.clamp((default - min)/(max-min), 0, 1), 0, 1, 0)
+    fill.BackgroundColor3 = COLORS.Accent
+    fill.ZIndex = 9
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+
+    local knobArea = Instance.new("TextButton")
+    knobArea.Size = UDim2.new(0, 48, 0, 48)
+    knobArea.Position = UDim2.new(fill.Size.X.Scale, 0, 0.5, 0)
+    knobArea.AnchorPoint = Vector2.new(0.5, 0.5)
+    knobArea.BackgroundTransparency = 1
+    knobArea.Text = ""
+    knobArea.ZIndex = 10
+    knobArea.Parent = bar
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 22, 0, 22)
+    knob.Position = UDim2.new(0.5, 0, 0.5, 0)
+    knob.AnchorPoint = Vector2.new(0.5, 0.5)
+    knob.BackgroundColor3 = Color3.new(1,1,1)
+    knob.ZIndex = 11
+    knob.Parent = knobArea
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+
+    local slider_dragging = false -- Variável local para este slider
+
+    local function getScrollParent()
+        local curr = frame.Parent
+        while curr and not curr:IsA("ScrollingFrame") do
+            curr = curr.Parent
+        end
+        return curr
+    end
+
+    local function updateValue(input)
+        local relative = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+        local value = math.floor(min + (max - min) * relative + 0.5)
+        fill.Size = UDim2.new(relative, 0, 1, 0)
+        knobArea.Position = UDim2.new(relative, 0, 0.5, 0)
+        valueLabel.Text = tostring(value)
+        callback(value)
+    end
+
+    knobArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            slider_dragging = true
+            
+            -- Bloqueia as outras funções do Hub
+            _G.GekyuLock = true -- Criando uma trava global simples
             local scroll = getScrollParent()
-            if scroll then scroll.ScrollingEnabled = false end -- TRAVA O SCROLL
+            if scroll then scroll.ScrollingEnabled = false end
+            
             updateValue(input)
         end
     end)
 
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        if slider_dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             updateValue(input)
         end
     end)
 
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            if dragging then
-                dragging = false
+            if slider_dragging then
+                slider_dragging = false
+                
+                -- Desbloqueia as outras funções do Hub
+                _G.GekyuLock = false
                 local scroll = getScrollParent()
-                if scroll then scroll.ScrollingEnabled = true end -- LIBERA O SCROLL
+                if scroll then scroll.ScrollingEnabled = true end
             end
         end
     end)
 end
-
 
     function Library.Dropdown(parent, text, options, defaultIndex, callback)
         local container = Instance.new("Frame")
