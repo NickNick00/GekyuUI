@@ -461,22 +461,18 @@ contentPadding.Parent = self.ContentArea
     self.ConfigPanel = nil
     self.ConfigMinimized = false
 
-    -- =============================================================================
--- BLOCO DO PAINEL DE CONFIGURAÇÃO (COPIAR DAQUI ATÉ O FIM)
 -- =============================================================================
-
--- =============================================================================
--- PAINEL DE CONFIGURAÇÕES DENTRO DO HUB (animação vertical, abas laterais)
+-- PAINEL DE CONFIGURAÇÕES - INTERNAL OVERLAY (refatorado 2026)
 -- =============================================================================
 
 function self:ToggleConfigPanel()
+    -- Se já existe e está visível → fecha (recolhe para baixo → cima)
     if self.ConfigPanel and self.ConfigPanel.Visible then
-        -- Fecha descendo
-        safeTween(self.ConfigPanel, TweenInfo.new(0.36, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, -1, 0),
-            Size = UDim2.new(1, 0, 1, 0)
+        safeTween(self.ConfigPanel, TweenInfo.new(0.34, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Position = UDim2.new(0, 0, 1, 0),           -- sai para baixo
+            AnchorPoint = Vector2.new(0, 1)
         })
-        task.delay(0.38, function()
+        task.delay(0.36, function()
             if self.ConfigPanel then
                 self.ConfigPanel.Visible = false
             end
@@ -484,134 +480,120 @@ function self:ToggleConfigPanel()
         return
     end
 
-    -- Cria ou mostra o painel de config (só cria uma vez)
+    -- Criação única do overlay interno
     if not self.ConfigPanel then
-        local panel = Instance.new("Frame")
-        panel.Name = "ConfigOverlay"
-        panel.Size = UDim2.new(1, 0, 1, 0)
-        panel.Position = UDim2.new(0, 0, -1, 0)   -- começa fora de cima
-        panel.BackgroundColor3 = Color3.fromRGB(8, 8, 15)
-        panel.BackgroundTransparency = 0.12
-        panel.BorderSizePixel = 0
-        panel.ZIndex = 120
-        panel.Visible = false
-        panel.Parent = self.MainFrame
-
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = CORNERS.Large
-        corner.Parent = panel
-
-        -- Camada semi-transparente para dar sensação de overlay
         local overlay = Instance.new("Frame")
-        overlay.Size = UDim2.new(1,0,1,0)
-        overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
-        overlay.BackgroundTransparency = 0.4
-        overlay.ZIndex = 121
-        overlay.Parent = panel
+        overlay.Name = "ConfigOverlay"
+        overlay.AnchorPoint = Vector2.new(0, 0)
+        overlay.Position = UDim2.new(0, 0, 0, 48)           -- começa exatamente abaixo da TopBar
+        overlay.Size = UDim2.new(1, 0, 1, -74)              -- 48 top + 26 bottom = 74
+        overlay.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
+        overlay.BackgroundTransparency = 0.15
+        overlay.BorderSizePixel = 0
+        overlay.ZIndex = 100                                -- acima das tabs e conteúdo, mas abaixo de TopBar/BottomBar
+        overlay.Visible = false
+        overlay.ClipsDescendants = true
+        overlay.Parent = self.MainFrame
 
-        -- Conteúdo principal (dentro do overlay)
+        Instance.new("UICorner", overlay).CornerRadius = CORNERS.Large
+
+        -- Camada de fundo escurecido (leve overlay)
+        local dim = Instance.new("Frame")
+        dim.Size = UDim2.new(1,0,1,0)
+        dim.BackgroundColor3 = Color3.new(0,0,0)
+        dim.BackgroundTransparency = 0.45
+        dim.ZIndex = 101
+        dim.Parent = overlay
+
+        -- Conteúdo principal (evita que elementos toquem as bordas arredondadas)
         local content = Instance.new("Frame")
         content.Name = "Content"
         content.Size = UDim2.new(1, -16, 1, -16)
-        content.Position = UDim2.new(0,8,0,8)
+        content.Position = UDim2.new(0, 8, 0, 8)
         content.BackgroundColor3 = COLORS.Background
         content.BorderSizePixel = 0
-        content.ZIndex = 122
-        content.Parent = panel
+        content.ZIndex = 102
+        content.Parent = overlay
 
-        Instance.new("UICorner", content).CornerRadius = CORNERS.Large
+        local contentCorner = Instance.new("UICorner")
+        contentCorner.CornerRadius = CORNERS.Large
+        contentCorner.Parent = content
 
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = Color3.fromRGB(90, 170, 255)
-        stroke.Transparency = 0.65
-        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        stroke.LineJoinMode = Enum.LineJoinMode.Round
-        stroke.Parent = content
+        -- Abas laterais (esquerda)
+        local tabContainer = Instance.new("Frame")
+        tabContainer.Name = "ConfigTabs"
+        tabContainer.Size = UDim2.new(0, 140, 1, 0)
+        tabContainer.BackgroundTransparency = 1
+        tabContainer.ZIndex = 105
+        tabContainer.Parent = content
 
-        local glow = Instance.new("UIStroke")
-        glow.Color = Color3.fromRGB(255,255,255)
-        glow.Transparency = 0.7
-        glow.Thickness = 2
-        glow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        glow.LineJoinMode = Enum.LineJoinMode.Round
-        glow.Parent = content
+        local tabLayout = Instance.new("UIListLayout")
+        tabLayout.Padding = UDim.new(0, 8)
+        tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        tabLayout.Parent = tabContainer
 
-        -- Abas laterais (esquerda, igual às tabs normais)
-        local tabBar = Instance.new("Frame")
-        tabBar.Name = "ConfigTabBar"
-        tabBar.Size = UDim2.new(0, 140, 1, -48)
-        tabBar.Position = UDim2.new(0, 0, 0, 48)
-        tabBar.BackgroundTransparency = 1
-        tabBar.ZIndex = 125
-        tabBar.Parent = content
-
-        local tabList = Instance.new("UIListLayout")
-        tabList.Padding = UDim.new(0,8)
-        tabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        tabList.SortOrder = Enum.SortOrder.LayoutOrder
-        tabList.Parent = tabBar
-
-        -- Área de conteúdo direito
-        local rightArea = Instance.new("Frame")
-        rightArea.Name = "RightArea"
-        rightArea.Size = UDim2.new(1, -148, 1, -48)
-        rightArea.Position = UDim2.new(0, 148, 0, 48)
-        rightArea.BackgroundTransparency = 1
-        rightArea.ZIndex = 125
-        rightArea.Parent = content
+        -- Área de conteúdo (direita)
+        local pageContainer = Instance.new("Frame")
+        pageContainer.Name = "Pages"
+        pageContainer.Size = UDim2.new(1, -148, 1, 0)
+        pageContainer.Position = UDim2.new(0, 140, 0, 0)
+        pageContainer.BackgroundTransparency = 1
+        pageContainer.ZIndex = 105
+        pageContainer.Parent = content
 
         local pageLayout = Instance.new("UIPageLayout")
-        pageLayout.Padding = UDim.new(0,0)
-        pageLayout.EasingDirection = Enum.EasingDirection.InOut
-        pageLayout.EasingStyle = Enum.EasingStyle.Quint
-        pageLayout.TweenTime = 0.4
-        pageLayout.FillDirection = Enum.FillDirection.Vertical
         pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        pageLayout.Parent = rightArea
+        pageLayout.Padding = UDim.new(0, 0)
+        pageLayout.EasingStyle = Enum.EasingStyle.Quart
+        pageLayout.EasingDirection = Enum.EasingDirection.Out
+        pageLayout.TweenTime = 0.35
+        pageLayout.Parent = pageContainer
 
         -- ==============================================
-        -- Aba INFO
+        -- Página INFO
         -- ==============================================
         local infoPage = Instance.new("ScrollingFrame")
-        infoPage.Name = "InfoPage"
+        infoPage.Name = "Info"
         infoPage.Size = UDim2.new(1,0,1,0)
         infoPage.BackgroundTransparency = 1
-        infoPage.ScrollBarThickness = 3
+        infoPage.ScrollBarThickness = 4
         infoPage.ScrollBarImageColor3 = COLORS.Stroke
-        infoPage.CanvasSize = UDim2.new(0,0,0,0)
         infoPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        infoPage.ZIndex = 126
-        infoPage.Parent = rightArea
+        infoPage.CanvasSize = UDim2.new(0,0,0,0)
+        infoPage.ScrollingDirection = Enum.ScrollingDirection.Y
+        infoPage.ZIndex = 106
+        infoPage.Parent = pageContainer
 
         local infoList = Instance.new("UIListLayout")
-        infoList.Padding = UDim.new(0,12)
+        infoList.Padding = UDim.new(0, 14)
         infoList.HorizontalAlignment = Enum.HorizontalAlignment.Center
         infoList.SortOrder = Enum.SortOrder.LayoutOrder
         infoList.Parent = infoPage
 
-        -- Caixa com glow na aba INFO
-        local infoBox = Instance.new("Frame")
-        infoBox.Size = UDim2.new(0.96, 0, 0, 180)
-        infoBox.BackgroundColor3 = Color3.fromRGB(12, 12, 22)
-        infoBox.ZIndex = 127
-        infoBox.Parent = infoPage
-        Instance.new("UICorner", infoBox).CornerRadius = CORNERS.Medium
+        -- Caixa com efeito LED branco
+        local infoCard = Instance.new("Frame")
+        infoCard.Size = UDim2.new(0.96, 0, 0, 220)
+        infoCard.BackgroundColor3 = Color3.fromRGB(14, 14, 24)
+        infoCard.ZIndex = 107
+        infoCard.Parent = infoPage
 
-        local infoStroke = Instance.new("UIStroke")
-        infoStroke.Color = Color3.fromRGB(140, 180, 255)
-        infoStroke.Transparency = 0.4
-        infoStroke.Parent = infoBox
+        local cardCorner = Instance.new("UICorner")
+        cardCorner.CornerRadius = CORNERS.Medium
+        cardCorner.Parent = infoCard
 
-        local infoGlow = Instance.new("UIStroke")
-        infoGlow.Color = Color3.fromRGB(255,255,255)
-        infoGlow.Transparency = 0.75
-        infoGlow.Thickness = 1.5
-        infoGlow.Parent = infoBox
+        local ledStroke = Instance.new("UIStroke")
+        ledStroke.Color = Color3.fromRGB(255, 255, 255)
+        ledStroke.Thickness = 2
+        ledStroke.Transparency = 0.3
+        ledStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        ledStroke.Parent = infoCard
 
-        CreateSmartTextLabel(infoBox,
-            UDim2.new(1,-24,1,-24),
-            UDim2.new(0,12,0,12),
-            "Gekyu Premium UI\nVersão FINAL • 2026\n\nDesenvolvido por Kyuzzy\n\nObrigado por usar!\nDivirta-se com moderação.",
+        CreateSmartTextLabel(infoCard,
+            UDim2.new(1, -32, 1, -32),
+            UDim2.new(0, 16, 0, 16),
+            "Gekyu Premium • Internal Overlay\n\n• Versão Final 2026\n• Autor: Kyuzzy\n• Local: Andradina-SP\n\nAproveite com responsabilidade.\nFeedbacks são sempre bem-vindos!",
             COLORS.Text,
             Enum.Font.GothamSemibold,
             15,
@@ -620,105 +602,110 @@ function self:ToggleConfigPanel()
         )
 
         -- ==============================================
-        -- Aba CONFIG (exemplo)
+        -- Página CONFIG (exemplo)
         -- ==============================================
         local configPage = Instance.new("ScrollingFrame")
-        configPage.Name = "ConfigPage"
+        configPage.Name = "Config"
         configPage.Size = UDim2.new(1,0,1,0)
         configPage.BackgroundTransparency = 1
-        configPage.ScrollBarThickness = 3
+        configPage.ScrollBarThickness = 4
         configPage.ScrollBarImageColor3 = COLORS.Stroke
-        configPage.CanvasSize = UDim2.new(0,0,0,0)
         configPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        configPage.ZIndex = 126
-        configPage.Parent = rightArea
+        configPage.CanvasSize = UDim2.new(0,0,0,0)
+        configPage.ZIndex = 106
+        configPage.Parent = pageContainer
 
-        local configListLayout = Instance.new("UIListLayout")
-        configListLayout.Padding = UDim.new(0,10)
-        configListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        configListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        configListLayout.Parent = configPage
+        local configList = Instance.new("UIListLayout")
+        configList.Padding = UDim.new(0, 10)
+        configList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        configList.SortOrder = Enum.SortOrder.LayoutOrder
+        configList.Parent = configPage
 
-        -- Exemplos de componentes na aba Config
-        Library.Button(configPage, "Testar Notificação", function()
-            Library.Notify("Teste de notificação funcionando!", 4, COLORS.Accent)
+        -- Exemplos de controles (você pode adicionar mais depois)
+        Library.Button(configPage, "Testar Notificação Interna", function()
+            Library.Notify("Overlay de config funcionando!", 3.5, COLORS.Accent)
         end)
 
-        Library.Toggle(configPage, "Ativar Sons de Interface", true, function(state)
-            print("Sons de interface:", state and "ON" or "OFF")
+        Library.Toggle(configPage, "Mostrar FPS no canto", false, function(v)
+            print("Mostrar FPS:", v)
         end)
 
-        Library.Button(configPage, "Resetar Configurações", function()
-            Library.Notify("Configurações resetadas (simulação)", 3, Color3.fromRGB(255,140,80))
+        Library.Button(configPage, "Restaurar Padrões", function()
+            Library.Notify("Configurações restauradas (simulado)", 3, Color3.fromRGB(255, 160, 60))
         end)
 
         -- ==============================================
-        -- Botões de aba (lado esquerdo)
+        -- Criação das abas laterais
         -- ==============================================
-        local function createConfigTab(name, page, defaultActive)
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1,-16,0,46)
-            btn.BackgroundColor3 = COLORS.Element
-            btn.BorderSizePixel = 0
-            btn.AutoButtonColor = false
-            btn.Text = ""
-            btn.ZIndex = 128
-            btn.Parent = tabBar
-            Instance.new("UICorner", btn).CornerRadius = CORNERS.Medium
+        local function createConfigTab(tabName, targetPage, isDefault)
+            local tabBtn = Instance.new("TextButton")
+            tabBtn.Size = UDim2.new(1, -20, 0, 46)
+            tabBtn.BackgroundColor3 = COLORS.Element
+            tabBtn.AutoButtonColor = false
+            tabBtn.Text = ""
+            tabBtn.ZIndex = 108
+            tabBtn.Parent = tabContainer
 
-            local lbl = CreateSmartTextLabel(btn,
-                UDim2.new(1,-44,1,0),
-                UDim2.new(0,24,0,0),
-                name:upper(),
-                defaultActive and COLORS.Text or COLORS.TextDim,
+            Instance.new("UICorner", tabBtn).CornerRadius = CORNERS.Medium
+
+            local label = CreateSmartTextLabel(tabBtn,
+                UDim2.new(1, -50, 1, 0),
+                UDim2.new(0, 20, 0, 0),
+                tabName:upper(),
+                isDefault and COLORS.Text or COLORS.TextDim,
                 Enum.Font.GothamBold,
                 13,
                 Enum.TextXAlignment.Left
             )
 
             local indicator = Instance.new("Frame")
-            indicator.Size = UDim2.new(0,4,0.7,0)
-            indicator.Position = UDim2.new(0,4,0.15,0)
+            indicator.Size = UDim2.new(0, 4, 0.75, 0)
+            indicator.Position = UDim2.new(0, 6, 0.125, 0)
             indicator.BackgroundColor3 = COLORS.Accent
-            indicator.BackgroundTransparency = defaultActive and 0 or 1
-            indicator.ZIndex = 129
-            indicator.Parent = btn
+            indicator.BackgroundTransparency = isDefault and 0 or 1
+            indicator.ZIndex = 109
+            indicator.Parent = tabBtn
             Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
 
-            btn.Activated:Connect(function()
-                pageLayout:JumpTo(page)
+            tabBtn.Activated:Connect(function()
+                pageLayout:JumpTo(targetPage)
 
-                for _, other in tabBar:GetChildren() do
-                    if other:IsA("TextButton") then
-                        local ind = other:FindFirstChildWhichIsA("Frame")
-                        local lab = other:FindFirstChildWhichIsA("TextLabel")
-                        if ind and lab then
-                            safeTween(ind, TweenInfo.new(0.25), {BackgroundTransparency = 1})
-                            safeTween(lab, TweenInfo.new(0.25), {TextColor3 = COLORS.TextDim})
-                        end
+                -- Reset visual das outras abas
+                for _, sib in tabContainer:GetChildren() do
+                    if sib:IsA("TextButton") and sib ~= tabBtn then
+                        local ind = sib:FindFirstChildWhichIsA("Frame")
+                        local lbl = sib:FindFirstChildWhichIsA("TextLabel")
+                        if ind then safeTween(ind, TweenInfo.new(0.2), {BackgroundTransparency = 1}) end
+                        if lbl then safeTween(lbl, TweenInfo.new(0.2), {TextColor3 = COLORS.TextDim}) end
                     end
                 end
 
-                safeTween(indicator, TweenInfo.new(0.25), {BackgroundTransparency = 0})
-                safeTween(lbl, TweenInfo.new(0.25), {TextColor3 = COLORS.Text})
+                -- Ativa visual desta aba
+                safeTween(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {BackgroundTransparency = 0})
+                safeTween(label, TweenInfo.new(0.25), {TextColor3 = COLORS.Text})
             end)
 
-            return btn
+            return tabBtn
         end
 
-        createConfigTab("Info", infoPage, true)
+        createConfigTab("Info",   infoPage,   true)
         createConfigTab("Config", configPage, false)
 
-        self.ConfigPanel = panel
+        self.ConfigPanel = overlay
     end
 
-    -- Abre subindo
+    -- Abre (desliza de cima para baixo)
     self.ConfigPanel.Visible = true
-    safeTween(self.ConfigPanel, TweenInfo.new(0.38, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0, 0, 0, 0)
+    self.ConfigPanel.AnchorPoint = Vector2.new(0, 0)
+    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48)  -- começa na posição final, mas...
+    
+    -- Pequeno truque: começa um pouco acima e desce
+    self.ConfigPanel.Position = UDim2.new(0, 0, -0.3, 0)
+    safeTween(self.ConfigPanel, TweenInfo.new(0.34, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0, 0, 0, 48)
     })
-end
-
+    end
+    
 function self:SaveHubSettings()
     local HttpService = game:GetService("HttpService")
     local fileName = "GekyuConfig_" .. game.PlaceId .. ".json"
