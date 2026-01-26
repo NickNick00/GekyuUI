@@ -633,87 +633,236 @@ function self:ToggleConfigPanel()
         track.ZIndex = 109
         track.Parent = toggleSim
 
-        Instance.new("UICorner", track).CornerRadius = UDim.new(1,0)
+-- =============================================================================
+-- PAINEL DE CONFIGURAÇÕES - INTERNAL OVERLAY (correções UX + input 2026)
+-- =============================================================================
 
-        local circle = Instance.new("Frame")
-        circle.Size = UDim2.new(0, 22, 0, 22)
-        circle.Position = UDim2.new(0, 3, 0.5, -11)
-        circle.BackgroundColor3 = Color3.new(1,1,1)
-        circle.ZIndex = 110
-        circle.Parent = track
+function self:ToggleConfigPanel()
+    if self.ConfigPanel and self.ConfigPanel.Visible then
+        -- Fecha subindo rápido
+        safeTween(self.ConfigPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Position = UDim2.new(0, 0, -0.4, 0)
+        })
 
-        Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
+        task.delay(0.26, function()
+            if self.ConfigPanel then
+                self.ConfigPanel.Visible = false
+                self.ConfigPanel.Active = false  -- libera input novamente
+            end
+
+            -- Restaura visibilidade do hub principal
+            if self.ContentArea then self.ContentArea.Visible = true end
+            if self.TabBar then self.TabBar.Visible = true end
+            if self.MainFrame:FindFirstChild("SearchBar") then
+                self.MainFrame.SearchBar.Visible = true
+            end
+        end)
+
+        return
+    end
+
+    -- Criação única (se ainda não existir)
+    if not self.ConfigPanel then
+        local overlay = Instance.new("Frame")
+        overlay.Name = "ConfigOverlay"
+        overlay.Size = UDim2.new(1, 0, 1, -74)
+        overlay.Position = UDim2.new(0, 0, 0, 48)
+        overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
+        overlay.BackgroundTransparency = 0.25
+        overlay.BorderSizePixel = 0
+        overlay.ZIndex = 100
+        overlay.Active = false          -- será ativado ao abrir
+        overlay.Visible = false
+        overlay.ClipsDescendants = true
+        overlay.Parent = self.MainFrame
+
+        Instance.new("UICorner", overlay).CornerRadius = CORNERS.Large
+
+        -- Dim layer
+        local dim = Instance.new("Frame")
+        dim.Size = UDim2.new(1,0,1,0)
+        dim.BackgroundColor3 = Color3.new(0,0,0)
+        dim.BackgroundTransparency = 0.58
+        dim.ZIndex = 101
+        dim.Parent = overlay
+
+        -- Conteúdo com margem de segurança
+        local content = Instance.new("Frame")
+        content.Size = UDim2.new(1, -24, 1, -24)
+        content.Position = UDim2.new(0, 12, 0, 12)
+        content.BackgroundColor3 = COLORS.Background
+        content.BorderSizePixel = 0
+        content.ZIndex = 102
+        content.Parent = overlay
+
+        Instance.new("UICorner", content).CornerRadius = CORNERS.Large
+
+        -- Abas laterais
+        local tabsArea = Instance.new("Frame")
+        tabsArea.Size = UDim2.new(0, 140, 1, 0)
+        tabsArea.BackgroundTransparency = 1
+        tabsArea.ZIndex = 105
+        tabsArea.Parent = content
+
+        local tabsLayout = Instance.new("UIListLayout")
+        tabsLayout.Padding = UDim.new(0, 10)
+        tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        tabsLayout.Parent = tabsArea
+
+        -- Área de páginas
+        local pagesArea = Instance.new("Frame")
+        pagesArea.Size = UDim2.new(1, -152, 1, 0)
+        pagesArea.Position = UDim2.new(0, 140, 0, 0)
+        pagesArea.BackgroundTransparency = 1
+        pagesArea.ZIndex = 105
+        pagesArea.Parent = content
+
+        -- ==============================================
+        -- Container INFO - centralizado absoluto
+        -- ==============================================
+        local infoContainer = Instance.new("Frame")
+        infoContainer.Name = "InfoContainer"
+        infoContainer.Size = UDim2.new(0.9, 0, 0.7, 0)
+        infoContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+        infoContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+        infoContainer.BackgroundColor3 = Color3.fromRGB(14, 14, 24)
+        infoContainer.Visible = true
+        infoContainer.ZIndex = 107
+        infoContainer.Parent = pagesArea
+
+        Instance.new("UICorner", infoContainer).CornerRadius = CORNERS.Medium
+
+        local ledStroke = Instance.new("UIStroke")
+        ledStroke.Color = Color3.fromRGB(255, 255, 255)
+        ledStroke.Thickness = 2
+        ledStroke.Transparency = 0.38
+        ledStroke.Parent = infoContainer
+
+        CreateSmartTextLabel(infoContainer,
+            UDim2.new(1, -40, 1, -40),
+            UDim2.new(0, 20, 0, 20),
+            "Gekyu Hub v1.0\nStatus: Operational\nUser: Test",
+            COLORS.Text,
+            Enum.Font.GothamSemibold,
+            15,
+            Enum.TextXAlignment.Center,
+            Enum.TextYAlignment.Center
+        )
+
+        -- ==============================================
+        -- Container SETTINGS (com toggle real)
+        -- ==============================================
+        local settingsContainer = Instance.new("ScrollingFrame")
+        settingsContainer.Name = "SettingsContainer"
+        settingsContainer.Size = UDim2.new(1, 0, 1, 0)
+        settingsContainer.BackgroundTransparency = 1
+        settingsContainer.ScrollBarThickness = 3
+        settingsContainer.ScrollBarImageColor3 = COLORS.Stroke
+        settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        settingsContainer.CanvasSize = UDim2.new(0,0,0,0)
+        settingsContainer.Visible = false
+        settingsContainer.ZIndex = 107
+        settingsContainer.Parent = pagesArea
+
+        local settingsLayout = Instance.new("UIListLayout")
+        settingsLayout.Padding = UDim.new(0, 12)
+        settingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        settingsLayout.Parent = settingsContainer
+
+        -- Toggle funcional usando Library.Toggle
+        Library.Toggle(settingsContainer, "Ativar sons de interface", false, function(state)
+            print("[Config] Sons de interface:", state and "ON" or "OFF")
+            -- Aqui você pode implementar o toggle global de som se quiser
+        end)
+
+        -- Botão de teste funcional
+        Library.Button(settingsContainer, "Executar Teste", function()
+            Library.Notify("Teste executado com sucesso!", 2.5, Color3.fromRGB(100, 220, 120))
+            print("[Config] Botão de teste clicado")
+        end, {icon = "rbxassetid://6031094678"})
 
         -- ==============================================
         -- Tabs laterais com texto visível e TextScaled
         -- ==============================================
-        local function createTab(tabText, targetContainer, isDefault)
+        local function createTab(tabName, targetPage, defaultActive)
             local tabBtn = Instance.new("TextButton")
-            tabBtn.Size = UDim2.new(1, -20, 0, 52)
+            tabBtn.Size = UDim2.new(1, -20, 0, 50)
             tabBtn.BackgroundColor3 = COLORS.Element
             tabBtn.AutoButtonColor = false
-            tabBtn.Text = ""
+            tabBtn.Text = ""  -- vazio para custom label
             tabBtn.ZIndex = 108
             tabBtn.Parent = tabsArea
 
             Instance.new("UICorner", tabBtn).CornerRadius = CORNERS.Medium
 
+            -- Label com TextScaled
             local label = Instance.new("TextLabel")
             label.Size = UDim2.new(1, -60, 1, 0)
-            label.Position = UDim2.new(0, 24, 0, 0)
+            label.Position = UDim2.new(0, 20, 0, 0)
             label.BackgroundTransparency = 1
-            label.Text = tabText
-            label.TextColor3 = isDefault and COLORS.Text or COLORS.TextDim
+            label.Text = tabName
+            label.TextColor3 = defaultActive and COLORS.Text or COLORS.TextDim
             label.Font = Enum.Font.GothamBold
-            label.TextSize = 15
             label.TextScaled = true
+            label.TextSize = 16
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.ZIndex = 109
             label.Parent = tabBtn
 
             local indicator = Instance.new("Frame")
-            indicator.Size = UDim2.new(0, 5, 0.75, 0)
-            indicator.Position = UDim2.new(0, 6, 0.125, 0)
+            indicator.Size = UDim2.new(0, 5, 0.8, 0)
+            indicator.Position = UDim2.new(0, 6, 0.1, 0)
             indicator.BackgroundColor3 = COLORS.Accent
-            indicator.BackgroundTransparency = isDefault and 0 or 1
+            indicator.BackgroundTransparency = defaultActive and 0 or 1
             indicator.ZIndex = 109
             indicator.Parent = tabBtn
             Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
 
             tabBtn.Activated:Connect(function()
-                infoContainer.Visible    = (targetContainer == infoContainer)
-                settingsContainer.Visible = (targetContainer == settingsContainer)
+                infoContainer.Visible = (targetPage == infoContainer)
+                settingsContainer.Visible = (targetPage == settingsContainer)
 
                 -- Reset visual das outras tabs
-                for _, other in tabsArea:GetChildren() do
-                    if other:IsA("TextButton") and other ~= tabBtn then
-                        local ind = other:FindFirstChildWhichIsA("Frame")
-                        local lbl = other:FindFirstChildWhichIsA("TextLabel")
-                        if ind then safeTween(ind, TweenInfo.new(0.18), {BackgroundTransparency = 1}) end
-                        if lbl then safeTween(lbl, TweenInfo.new(0.18), {TextColor3 = COLORS.TextDim}) end
+                for _, sib in tabsArea:GetChildren() do
+                    if sib:IsA("TextButton") and sib ~= tabBtn then
+                        local ind = sib:FindFirstChildWhichIsA("Frame")
+                        local lbl = sib:FindFirstChildWhichIsA("TextLabel")
+                        if ind then safeTween(ind, TweenInfo.new(0.16), {BackgroundTransparency = 1}) end
+                        if lbl then safeTween(lbl, TweenInfo.new(0.16), {TextColor3 = COLORS.TextDim}) end
                     end
                 end
 
                 -- Ativa esta
-                safeTween(indicator, TweenInfo.new(0.22), {BackgroundTransparency = 0})
-                safeTween(label, TweenInfo.new(0.22), {TextColor3 = COLORS.Text})
+                safeTween(indicator, TweenInfo.new(0.2), {BackgroundTransparency = 0})
+                safeTween(label, TweenInfo.new(0.2), {TextColor3 = COLORS.Text})
             end)
         end
 
-        createTab("INFO",     infoContainer,     true)
+        createTab("INFO",     infoContainer, true)
         createTab("SETTINGS", settingsContainer, false)
 
         self.ConfigPanel = overlay
     end
 
-    -- Abertura: deslize de cima rápido + parada suave
+    -- Abre descendo rápido
     self.ConfigPanel.Visible = true
+    self.ConfigPanel.Active = true          -- bloqueia cliques para trás
     self.ConfigPanel.Position = UDim2.new(0, 0, -0.35, 0)
 
-    safeTween(self.ConfigPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+    safeTween(self.ConfigPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Position = UDim2.new(0, 0, 0, 48)
     })
+
+    -- Esconde conteúdo principal do hub
+    if self.ContentArea then self.ContentArea.Visible = false end
+    if self.TabBar then self.TabBar.Visible = false end
+    if self.MainFrame:FindFirstChild("SearchBar") then
+        self.MainFrame.SearchBar.Visible = false
     end
+            end
     
 function self:SaveHubSettings()
     local HttpService = game:GetService("HttpService")
