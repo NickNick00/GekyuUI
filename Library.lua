@@ -393,44 +393,44 @@ self.TabBar.Parent = self.MainFrame
     end)
 
 -- Localize o trecho do 'minimizeBtn' e substitua por este:
-
 local minimized = false
+
+-- Função auxiliar para alternar visibilidade de tudo que não for a TopBar
+local function toggleInternalElements(visible)
+    -- Lista de elementos que devem sumir completamente
+    self.ContentArea.Visible = visible
+    self.TabBar.Visible = visible
+    
+    -- Se houver uma barra lateral ou barra inferior, adicione aqui:
+    -- self.BottomBar.Visible = visible 
+
+    -- Se o ConfigPanel estiver aberto, ele também deve sumir
+    if self.ConfigPanel then
+        self.ConfigPanel.Visible = visible
+    end
+end
+
 local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     minimized = not minimized
     
-    -- Se o painel de config estiver aberto, fechamos ele imediatamente ou escondemos
-    if self.ConfigPanel then
-        if minimized then
-            self.ConfigPanel.Visible = false
-        elseif not minimized and self.ConfigPanel.Active then 
-            -- Se estava ativo (aberto) antes de minimizar, volta a aparecer
-            self.ConfigPanel.Visible = true
-        end
+    -- 1. Define o tamanho alvo
+    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
+    
+    -- 2. Toggle imediato da visibilidade para evitar que itens apareçam durante o tween
+    if minimized then
+        toggleInternalElements(false)
     end
 
-    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
-    local targetVisible = not minimized
-
-    -- Tween suave da moldura
-    safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+    -- 3. Executa a animação
+    local tween = safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Size = targetSize
     })
-    
-    -- Esconde/Mostra todos os elementos internos
-    BottomBar.Visible = targetVisible
-    self.TabBar.Visible = targetVisible
-    self.ContentArea.Visible = targetVisible
-    SearchBar.Visible = targetVisible
-    
-    if self.ResizeHandle then
-        self.ResizeHandle.Visible = targetVisible
-    end
-    
-    -- Se o painel de config existir e estiver visível, garantimos que ele não ultrapasse a altura da barra
-    if self.ConfigPanel and minimized then
-        self.ConfigPanel.Size = UDim2.new(1, 0, 0, 0)
-    elseif self.ConfigPanel and not minimized then
-        self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74)
+
+    -- 4. Se estiver maximizando, espera a animação ou mostra no meio do caminho
+    if not minimized then
+        -- Espera um milésimo para não bugar o visual e mostra os itens
+        task.wait(0.1)
+        toggleInternalElements(true)
     end
 
     minimizeBtn.Text = minimized and "+" or "−"
