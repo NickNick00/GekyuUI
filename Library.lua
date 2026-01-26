@@ -158,7 +158,7 @@ function Library:CreateWindow(title)
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.ClipsDescendants = false
+    self.MainFrame.ClipsDescendants = true
     self.MainFrame.ZIndex = 5
     self.MainFrame.Active = true -- ADICIONE ESTA LINHA
     self.MainFrame.Parent = ScreenGui
