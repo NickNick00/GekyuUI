@@ -87,7 +87,7 @@ end
 
 local function LimitDropdownText(text)
     if #text > 30 then
-        return text:sub(1, 27) .. "..."
+        return text:sub(1, 25) .. "..."
     end
     return text
 end
@@ -392,28 +392,50 @@ self.TabBar.Parent = self.MainFrame
         ScreenGui:Destroy()
     end)
 
-        local minimized = false
+-- Localize o trecho do 'minimizeBtn' e substitua por este:
+
+local minimized = false
 local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     minimized = not minimized
+    
+    -- Se o painel de config estiver aberto, fechamos ele imediatamente ou escondemos
+    if self.ConfigPanel then
+        if minimized then
+            self.ConfigPanel.Visible = false
+        elseif not minimized and self.ConfigPanel.Active then 
+            -- Se estava ativo (aberto) antes de minimizar, volta a aparecer
+            self.ConfigPanel.Visible = true
+        end
+    end
+
     local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
     local targetVisible = not minimized
 
-    -- Tween da moldura principal
-    safeTween(self.MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quint), {Size = targetSize})
+    -- Tween suave da moldura
+    safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Size = targetSize
+    })
     
-    -- Controle de visibilidade dos elementos
+    -- Esconde/Mostra todos os elementos internos
     BottomBar.Visible = targetVisible
     self.TabBar.Visible = targetVisible
     self.ContentArea.Visible = targetVisible
     SearchBar.Visible = targetVisible
     
-    -- CORREÇÃO: Agora acessamos o ResizeHandle via self
     if self.ResizeHandle then
         self.ResizeHandle.Visible = targetVisible
     end
     
+    -- Se o painel de config existir e estiver visível, garantimos que ele não ultrapasse a altura da barra
+    if self.ConfigPanel and minimized then
+        self.ConfigPanel.Size = UDim2.new(1, 0, 0, 0)
+    elseif self.ConfigPanel and not minimized then
+        self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74)
+    end
+
     minimizeBtn.Text = minimized and "+" or "−"
 end)
+
 
 
 
