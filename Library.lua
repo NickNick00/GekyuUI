@@ -25,7 +25,7 @@ ScreenGui.Parent = CoreGui
 
 -- Cores globais
 local COLORS = {
-    Background    = Color3.fromRGB(5, 5, 10),
+    Background    = Color3.fromRGB(30, 30, 45),
     Accent        = Color3.fromRGB(90, 170, 255),
     AccentPress   = Color3.fromRGB(110, 190, 255),
     Element       = Color3.fromRGB(18, 18, 28),
@@ -501,10 +501,10 @@ function self:ToggleConfigPanel()
         overlay.Name = "ConfigOverlay"
         overlay.Size = UDim2.new(1, 0, 1, -74)
         overlay.Position = UDim2.new(0, 0, 0, 48)
-        overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
+        overlay.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
         overlay.BackgroundTransparency = 0.25
         overlay.BorderSizePixel = 0
-        overlay.ZIndex = 100
+        overlay.ZIndex = 200
         overlay.Active = false          -- será ativado ao abrir
         overlay.Visible = false
         overlay.ClipsDescendants = true
@@ -526,7 +526,7 @@ function self:ToggleConfigPanel()
         content.Position = UDim2.new(0, 12, 0, 12)
         content.BackgroundColor3 = COLORS.Background
         content.BorderSizePixel = 0
-        content.ZIndex = 102
+        content.ZIndex = 201
         content.Parent = overlay
 
         Instance.new("UICorner", content).CornerRadius = CORNERS.Large
@@ -535,7 +535,7 @@ function self:ToggleConfigPanel()
         local tabsArea = Instance.new("Frame")
         tabsArea.Size = UDim2.new(0, 140, 1, 0)
         tabsArea.BackgroundTransparency = 1
-        tabsArea.ZIndex = 105
+        tabsArea.ZIndex = 202
         tabsArea.Parent = content
 
         local tabsLayout = Instance.new("UIListLayout")
@@ -550,7 +550,7 @@ function self:ToggleConfigPanel()
         pagesArea.Size = UDim2.new(1, -152, 1, 0)
         pagesArea.Position = UDim2.new(0, 140, 0, 0)
         pagesArea.BackgroundTransparency = 1
-        pagesArea.ZIndex = 105
+        pagesArea.ZIndex = 202
         pagesArea.Parent = content
 
         -- ==============================================
@@ -563,7 +563,7 @@ function self:ToggleConfigPanel()
         infoContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
         infoContainer.BackgroundColor3 = Color3.fromRGB(14, 14, 24)
         infoContainer.Visible = true
-        infoContainer.ZIndex = 107
+        infoContainer.ZIndex = 203
         infoContainer.Parent = pagesArea
 
         Instance.new("UICorner", infoContainer).CornerRadius = CORNERS.Medium
@@ -597,7 +597,7 @@ function self:ToggleConfigPanel()
         settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
         settingsContainer.CanvasSize = UDim2.new(0,0,0,0)
         settingsContainer.Visible = false
-        settingsContainer.ZIndex = 107
+        settingsContainer.ZIndex = 203
         settingsContainer.Parent = pagesArea
 
         local settingsLayout = Instance.new("UIListLayout")
@@ -627,7 +627,7 @@ function self:ToggleConfigPanel()
             tabBtn.BackgroundColor3 = COLORS.Element
             tabBtn.AutoButtonColor = false
             tabBtn.Text = ""  -- vazio para custom label
-            tabBtn.ZIndex = 108
+            tabBtn.ZIndex = 205
             tabBtn.Parent = tabsArea
 
             Instance.new("UICorner", tabBtn).CornerRadius = CORNERS.Medium
@@ -643,7 +643,7 @@ function self:ToggleConfigPanel()
             label.TextScaled = true
             label.TextSize = 16
             label.TextXAlignment = Enum.TextXAlignment.Left
-            label.ZIndex = 109
+            label.ZIndex = 209
             label.Parent = tabBtn
 
             local indicator = Instance.new("Frame")
@@ -651,7 +651,7 @@ function self:ToggleConfigPanel()
             indicator.Position = UDim2.new(0, 6, 0.1, 0)
             indicator.BackgroundColor3 = COLORS.Accent
             indicator.BackgroundTransparency = defaultActive and 0 or 1
-            indicator.ZIndex = 109
+            indicator.ZIndex = 209
             indicator.Parent = tabBtn
             Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
 
