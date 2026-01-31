@@ -392,35 +392,32 @@ self.TabBar.Parent = self.MainFrame
         ScreenGui:Destroy()
     end)
 
-local minimized = false
-self.SavedSize = self.MainFrame.Size -- Garante que o tamanho original está salvo
+    local minimized = false
+self.SavedSize = self.MainFrame.Size 
 
 local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     minimized = not minimized
     
-    -- 1. VALIDAÇÃO: Se o código parou por erro, esse bloco garante que continue
-    local mainFrame = self.MainFrame
-    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 42) or self.SavedSize
+    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
     
-    -- 2. DESLIGAMENTO IMEDIATO: Para o "vazamento" de elementos atrás da barra
-    -- Vamos esconder o container principal de conteúdo
-    if self.ContentArea then self.ContentArea.Visible = not minimized end
-    if self.TabBar then self.TabBar.Visible = not minimized end
-    if self.ConfigPanel then self.ConfigPanel.Visible = not minimized end
-    
-    -- 3. TWEEN
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-    local appearance = safeTween(mainFrame, tweenInfo, {
+    -- 1. Esconde TUDO que não seja a barra de topo imediatamente
+    local isVisible = not minimized
+    if self.ContentArea then self.ContentArea.Visible = isVisible end
+    if self.TabBar then self.TabBar.Visible = isVisible end
+    if self.ConfigPanel then self.ConfigPanel.Visible = isVisible end
+    if self.MainFrame:FindFirstChild("SearchBar") then self.MainFrame.SearchBar.Visible = isVisible end
+    if self.MainFrame:FindFirstChild("BottomBar") then self.MainFrame.BottomBar.Visible = isVisible end
+    if self.ResizeHandle then self.ResizeHandle.Visible = isVisible end
+
+    -- 2. Tween do tamanho
+    safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Size = targetSize
     })
 
-    -- 4. CORREÇÃO DA BARRA DE TÍTULO
-    -- Garante que o texto e botões da barra não sumam
     minimizeBtn.Text = minimized and "+" or "−"
 end)
 
-
-    
+   
     local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
         self:ToggleConfigPanel()
     end)
@@ -470,28 +467,34 @@ contentPadding.Parent = self.ContentArea
 
 function self:ToggleConfigPanel()
     if self.ConfigPanel and self.ConfigPanel.Visible then
-        -- Fecha subindo rápido
+        -- FECHAR PAINEL
         safeTween(self.ConfigPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, -0.4, 0)
+            Position = UDim2.new(0, 0, -1, 0) -- Sobe para fora da tela
         })
 
         task.delay(0.26, function()
             if self.ConfigPanel then
                 self.ConfigPanel.Visible = false
-                self.ConfigPanel.Active = false  -- libera input novamente
+                self.ConfigPanel.Active = false
             end
 
-            -- Restaura visibilidade do hub principal
-            if self.ContentArea then self.ContentArea.Visible = true end
-            if self.TabBar then self.TabBar.Visible = true end
-            if self.MainFrame:FindFirstChild("SearchBar") then
-                self.MainFrame.SearchBar.Visible = true
+            -- SÓ RESTAURA SE NÃO ESTIVER MINIMIZADO
+            if not minimized then
+                if self.ContentArea then self.ContentArea.Visible = true end
+                if self.TabBar then self.TabBar.Visible = true end
+                if self.MainFrame:FindFirstChild("SearchBar") then
+                    self.MainFrame.SearchBar.Visible = true
+                end
+                if self.MainFrame:FindFirstChild("BottomBar") then
+                    self.MainFrame.BottomBar.Visible = true
+                end
             end
         end)
-
         return
     end
 
+    -- ABRIR PAINEL (Se não estiver minimizado)
+    if minimized then return end -- Opcional: impede abrir config se estiver minimizada    
     -- Criação única (se ainda não existir)
     if not self.ConfigPanel then
         local overlay = Instance.new("Frame")
@@ -501,7 +504,7 @@ function self:ToggleConfigPanel()
         overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
         overlay.BackgroundTransparency = 0.25
         overlay.BorderSizePixel = 0
-        overlay.ZIndex = 100
+        overlay.ZIndex = 200
         overlay.Active = false          -- será ativado ao abrir
         overlay.Visible = false
         overlay.ClipsDescendants = true
@@ -678,23 +681,23 @@ function self:ToggleConfigPanel()
         self.ConfigPanel = overlay
     end
 
-    -- Abre descendo rápido
+-- Lógica de abertura
     self.ConfigPanel.Visible = true
-    self.ConfigPanel.Active = true          -- bloqueia cliques para trás
-    self.ConfigPanel.Position = UDim2.new(0, 0, -0.35, 0)
+    self.ConfigPanel.Active = true
+    self.ConfigPanel.Position = UDim2.new(0, 0, -1, 0)
 
     safeTween(self.ConfigPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Position = UDim2.new(0, 0, 0, 48)
     })
 
-    -- Esconde conteúdo principal do hub
+    -- Esconde itens de trás para não "vazarem"
     if self.ContentArea then self.ContentArea.Visible = false end
     if self.TabBar then self.TabBar.Visible = false end
     if self.MainFrame:FindFirstChild("SearchBar") then
         self.MainFrame.SearchBar.Visible = false
     end
     end
-    
+        
 function self:SaveHubSettings()
     local HttpService = game:GetService("HttpService")
     local fileName = "GekyuConfig_" .. game.PlaceId .. ".json"
