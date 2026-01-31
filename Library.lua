@@ -16,6 +16,63 @@ if CoreGui:FindFirstChild("GekyuPremiumUI") then
     CoreGui.GekyuPremiumUI:Destroy()
 end
 
+-- =============================================
+-- SISTEMA DE TEMAS (exemplo inicial)
+-- =============================================
+
+local currentTheme = "Default"
+
+function Library.applyTheme_Default()
+    if currentTheme == "Default" then return end
+    currentTheme = "Default"
+    
+    COLORS.Background    = Color3.fromRGB(5, 5, 10)
+    COLORS.Accent        = Color3.fromRGB(90, 170, 255)
+    COLORS.AccentPress   = Color3.fromRGB(110, 190, 255)
+    COLORS.Element       = Color3.fromRGB(18, 18, 28)
+    COLORS.ElementHover  = Color3.fromRGB(28, 28, 44)
+    COLORS.Text          = Color3.fromRGB(235, 235, 245)
+    COLORS.TextDim       = Color3.fromRGB(150, 150, 175)
+    COLORS.Stroke        = Color3.fromRGB(50, 50, 75)
+    
+    Library:RefreshAllUI()
+end
+
+function Library.applyTheme_Vidro()
+    currentTheme = "Vidro"
+    
+    COLORS.Background    = Color3.fromRGB(20, 20, 40)
+    COLORS.Accent        = Color3.fromRGB(100, 180, 255)
+    COLORS.AccentPress   = Color3.fromRGB(130, 210, 255)
+    COLORS.Element       = Color3.fromRGB(40, 40, 80)
+    COLORS.ElementHover  = Color3.fromRGB(60, 60, 120)
+    COLORS.Text          = Color3.fromRGB(240, 245, 255)
+    COLORS.TextDim       = Color3.fromRGB(170, 180, 220)
+    COLORS.Stroke        = Color3.fromRGB(100, 140, 255)
+    
+    -- Efeito vidro (transparência)
+    if Library.MainFrame then
+        Library.MainFrame.BackgroundTransparency = 0.55
+    end
+    if Library.ConfigPanel then
+        Library.ConfigPanel.BackgroundTransparency = 0.65
+    end
+    
+    Library:RefreshAllUI()
+end
+
+function Library:RefreshAllUI()
+    print("[Tema] UI atualizada para: " .. currentTheme)
+    
+    -- Atualiza MainFrame
+    if self.MainFrame then
+        self.MainFrame.BackgroundColor3 = COLORS.Background
+    end
+    
+    -- Atualiza outros elementos (adicione mais conforme necessário)
+    -- Exemplo: TopBar, BottomBar, SearchBar, etc.
+end
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "GekyuPremiumUI"
 ScreenGui.ResetOnSpawn = false
