@@ -158,7 +158,7 @@ function Library:CreateWindow(title)
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.ClipsDescendants = true
+    self.MainFrame.ClipsDescendants = true 
     self.MainFrame.ZIndex = 5
     self.MainFrame.Active = true -- ADICIONE ESTA LINHA
     self.MainFrame.Parent = ScreenGui
@@ -469,7 +469,7 @@ function self:ToggleConfigPanel()
     if self.ConfigPanel and self.ConfigPanel.Visible then
         -- FECHAR PAINEL
         safeTween(self.ConfigPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, -1, 0) -- Sobe para fora da tela
+            Position = UDim2.new(0, 0, -1.1, 0) -- Sobe para fora da tela
         })
 
         task.delay(0.26, function()
@@ -508,7 +508,7 @@ function self:ToggleConfigPanel()
         overlay.Active = false          -- será ativado ao abrir
         overlay.Visible = false
         overlay.ClipsDescendants = true
-        overlay.Parent = self.MainFrame
+        overlay.Parent = self.MainFrame.ContentArea
 
         Instance.new("UICorner", overlay).CornerRadius = CORNERS.Large
 
