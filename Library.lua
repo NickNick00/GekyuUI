@@ -87,7 +87,7 @@ end
 
 local function LimitDropdownText(text)
     if #text > 30 then
-        return text:sub(1, 25) .. "..."
+        return text:sub(1, 25) .. ""
     end
     return text
 end
