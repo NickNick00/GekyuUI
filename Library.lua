@@ -392,54 +392,35 @@ self.TabBar.Parent = self.MainFrame
         ScreenGui:Destroy()
     end)
 
--- Localize o trecho do 'minimizeBtn' e substitua por este:
 local minimized = false
-
--- Função auxiliar para alternar visibilidade de tudo que não for a TopBar
-local function toggleInternalElements(visible)
-    -- Lista de elementos que devem sumir completamente
-    self.ContentArea.Visible = visible
-    self.TabBar.Visible = visible
-    
-    -- Se houver uma barra lateral ou barra inferior, adicione aqui:
-    -- self.BottomBar.Visible = visible 
-
-    -- Se o ConfigPanel estiver aberto, ele também deve sumir
-    if self.ConfigPanel then
-        self.ConfigPanel.Visible = visible
-    end
-end
+self.SavedSize = self.MainFrame.Size -- Garante que o tamanho original está salvo
 
 local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     minimized = not minimized
     
-    -- 1. Define o tamanho alvo
-    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
+    -- 1. VALIDAÇÃO: Se o código parou por erro, esse bloco garante que continue
+    local mainFrame = self.MainFrame
+    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 42) or self.SavedSize
     
-    -- 2. Toggle imediato da visibilidade para evitar que itens apareçam durante o tween
-    if minimized then
-        toggleInternalElements(false)
-    end
-
-    -- 3. Executa a animação
-    local tween = safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+    -- 2. DESLIGAMENTO IMEDIATO: Para o "vazamento" de elementos atrás da barra
+    -- Vamos esconder o container principal de conteúdo
+    if self.ContentArea then self.ContentArea.Visible = not minimized end
+    if self.TabBar then self.TabBar.Visible = not minimized end
+    if self.ConfigPanel then self.ConfigPanel.Visible = not minimized end
+    
+    -- 3. TWEEN
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local appearance = safeTween(mainFrame, tweenInfo, {
         Size = targetSize
     })
 
-    -- 4. Se estiver maximizando, espera a animação ou mostra no meio do caminho
-    if not minimized then
-        -- Espera um milésimo para não bugar o visual e mostra os itens
-        task.wait(0.1)
-        toggleInternalElements(true)
-    end
-
+    -- 4. CORREÇÃO DA BARRA DE TÍTULO
+    -- Garante que o texto e botões da barra não sumam
     minimizeBtn.Text = minimized and "+" or "−"
 end)
 
 
-
-
-
+    
     local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
         self:ToggleConfigPanel()
     end)
