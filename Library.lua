@@ -654,7 +654,7 @@ function self:ToggleConfigPanel()
             Enum.TextYAlignment.Center
         )
 
-        -- ==============================================
+-- ==============================================
         -- Container SETTINGS (com toggle real)
         -- ==============================================
         local settingsContainer = Instance.new("ScrollingFrame")
@@ -675,30 +675,30 @@ function self:ToggleConfigPanel()
         settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
         settingsLayout.Parent = settingsContainer
 
-        -- Toggle funcional usando Library.Toggle
+        -- Toggle funcional
         Library.Toggle(settingsContainer, "Ativar sons de interface", false, function(state)
             print("[Config] Sons de interface:", state and "ON" or "OFF")
-            -- Aqui você pode implementar o toggle global de som se quiser
         end)
 
-        -- Botão de teste funcional
+        -- Botão de teste
         Library.Button(settingsContainer, "Executar Teste", function()
             Library.Notify("Teste executado com sucesso!", 2.5, Color3.fromRGB(100, 220, 120))
             print("[Config] Botão de teste clicado")
         end, {icon = "rbxassetid://6031094678"})
 
--- Dropdown de Temas
+        -- ==============================================
+        -- Dropdown de Temas (agora com update forçado)
+        -- ==============================================
         local themes = {
             "Default",
             "Vidro"
-            -- Adicione mais temas aqui no futuro: "Neon", "Dark", etc.
         }
 
         Library.Dropdown(
             settingsContainer,
             "Tema do Hub",
             themes,
-            1,  -- Começa no "Default"
+            1,
             function(selectedTheme)
                 print("[Tema] Selecionado: " .. selectedTheme)
                 
@@ -707,12 +707,15 @@ function self:ToggleConfigPanel()
                 elseif selectedTheme == "Vidro" then
                     Library.applyTheme_Vidro()
                 end
-                
-                -- Opcional: salvar a escolha (se você tiver sistema de save)
-                -- self:SaveHubSettings()
             end
         )
 
+        -- Força atualização do canvas size (importante!)
+        task.delay(0.1, function()
+            if settingsContainer and settingsLayout then
+                settingsContainer.CanvasSize = UDim2.new(0, 0, 0, settingsLayout.AbsoluteContentSize.Y + 20)
+            end
+        end)       
         -- ==============================================
         -- Tabs laterais com texto visível e TextScaled
         -- ==============================================
