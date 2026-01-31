@@ -392,24 +392,29 @@ self.TabBar.Parent = self.MainFrame
         ScreenGui:Destroy()
     end)
 
-local minimized = false
-self.SavedSize = self.MainFrame.Size 
-
 local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
     minimized = not minimized
     
+    -- FECHA O CONFIG PANEL SE ESTIVER ABERTO (evita corte/ vazamento ao minimizar)
+    if self.ConfigPanel and self.ConfigPanel.Visible then
+        self.ConfigPanel.Visible = false
+        self.ConfigPanel.Active = false
+        -- Reseta posição e tamanho para evitar glitches na próxima abertura
+        self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 100)
+        self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74 - 26)
+    end
+    
     local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
     
-    -- 1. Esconde TUDO que não seja a barra de topo imediatamente
+    -- Esconde/mostra elementos
     local isVisible = not minimized
     if self.ContentArea then self.ContentArea.Visible = isVisible end
     if self.TabBar then self.TabBar.Visible = isVisible end
-    if self.ConfigPanel then self.ConfigPanel.Visible = isVisible end
     if self.MainFrame:FindFirstChild("SearchBar") then self.MainFrame.SearchBar.Visible = isVisible end
     if self.MainFrame:FindFirstChild("BottomBar") then self.MainFrame.BottomBar.Visible = isVisible end
     if self.ResizeHandle then self.ResizeHandle.Visible = isVisible end
-
-    -- 2. Tween do tamanho
+    
+    -- Tween do tamanho
     safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Size = targetSize
     })
@@ -466,55 +471,53 @@ contentPadding.Parent = self.ContentArea
 -- =============================================================================
 
 function self:ToggleConfigPanel()
+    -- Impede abrir/fechar se o MainFrame está minimizado
+    if minimized then 
+        -- Opcional: mostra uma notificação rápida
+        Library.Notify("Não é possível abrir Config enquanto minimizado", 2, Color3.fromRGB(220, 100, 100))
+        return 
+    end
+
     if self.ConfigPanel and self.ConfigPanel.Visible then
-        -- FECHAR (de baixo para cima, parando antes da TopBar)
+        -- FECHAR
         safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, 0, 48),      -- começa na posição aberta
-            Size     = UDim2.new(1, 0, 1, -74 - 80) -- diminui a altura para não invadir TopBar
+            Position = UDim2.new(0, 0, 0, 48 - 120),  -- sobe bem pra cima pra sumir
         })
 
-        safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, 0, 48 - 40)  -- sobe só um pouco (ajuste 40~60 se quiser mais/menos)
-        })
-
-        task.delay(0.29, function()
+        task.delay(0.30, function()
             if self.ConfigPanel then
                 self.ConfigPanel.Visible = false
                 self.ConfigPanel.Active = false
-                self.ConfigPanel.Position = UDim2.new(0, 0, -1, 0) -- reseta posição para próxima abertura
-                self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74)   -- reseta tamanho original
+                -- Reseta para próxima abertura
+                self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 100)
+                self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74 - 26)
             end
 
-            -- Só restaura se não estiver minimizado
-            if not minimized then
-                if self.ContentArea then self.ContentArea.Visible = true end
-                if self.TabBar then self.TabBar.Visible = true end
-                if self.MainFrame:FindFirstChild("SearchBar") then
-                    self.MainFrame.SearchBar.Visible = true
-                end
-                if self.MainFrame:FindFirstChild("BottomBar") then
-                    self.MainFrame.BottomBar.Visible = true
-                end
+            -- Restaura fundo
+            if self.ContentArea then self.ContentArea.Visible = true end
+            if self.TabBar then self.TabBar.Visible = true end
+            if self.MainFrame:FindFirstChild("SearchBar") then
+                self.MainFrame.SearchBar.Visible = true
+            end
+            if self.MainFrame:FindFirstChild("BottomBar") then
+                self.MainFrame.BottomBar.Visible = true
             end
         end)
 
         return
     end
 
-    -- ABRIR (só se não estiver minimizado)
-    if minimized then return end
-
-    -- Criação única (se ainda não existir)
+    -- Criação única (ajuste de tamanho inicial)
     if not self.ConfigPanel then
         local overlay = Instance.new("Frame")
         overlay.Name = "ConfigOverlay"
-        overlay.Size = UDim2.new(1, 0, 1, -74 - 26)           -- ← AQUI: -74 (top) -26 (bottom)
-        overlay.Position = UDim2.new(0, 0, 0, 48)             -- começa logo abaixo da TopBar
+        overlay.Size = UDim2.new(1, 0, 1, -74 - 26)  -- altura correta
+        overlay.Position = UDim2.new(0, 0, 0, 48)
         overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
         overlay.BackgroundTransparency = 0.25
         overlay.BorderSizePixel = 0
         overlay.ZIndex = 100
-        overlay.Active = false          -- será ativado ao abrir
+        overlay.Active = false
         overlay.Visible = false
         overlay.ClipsDescendants = true
         overlay.Parent = self.MainFrame
@@ -690,30 +693,25 @@ function self:ToggleConfigPanel()
         self.ConfigPanel = overlay
     end
 
--- Lógica de abertura (desliza de cima para baixo, mas começa ABAIXO da TopBar)
+-- ABRIR
     self.ConfigPanel.Visible = true
     self.ConfigPanel.Active = true
     
-    -- Começa escondido logo abaixo da TopBar (não de -1,0)
-    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 120)   -- ← começa mais baixo
-    self.ConfigPanel.Size     = UDim2.new(1, 0, 1, -74 - 40) -- começa menor
-
-    -- Animação de abrir: desce e cresce ao mesmo tempo
-    safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+    -- Posição inicial (desliza de baixo)
+    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 140)
+    
+    safeTween(self.ConfigPanel, TweenInfo.new(0.32, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Position = UDim2.new(0, 0, 0, 48),
-        Size     = UDim2.new(1, 0, 1, -74)
     })
 
-    -- Esconde itens de trás
+    -- Esconde fundo
     if self.ContentArea then self.ContentArea.Visible = false end
     if self.TabBar then self.TabBar.Visible = false end
     if self.MainFrame:FindFirstChild("SearchBar") then
         self.MainFrame.SearchBar.Visible = false
     end
-    if self.MainFrame:FindFirstChild("BottomBar") then
-        self.MainFrame.BottomBar.Visible = false
+    -- BottomBar fica visível
     end
-end
     
 function self:SaveHubSettings()
     local HttpService = game:GetService("HttpService")
