@@ -504,7 +504,7 @@ function self:ToggleConfigPanel()
         overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
         overlay.BackgroundTransparency = 0.25
         overlay.BorderSizePixel = 0
-        overlay.ZIndex = 200
+        overlay.ZIndex = 100
         overlay.Active = false          -- será ativado ao abrir
         overlay.Visible = false
         overlay.ClipsDescendants = true
