@@ -687,6 +687,32 @@ function self:ToggleConfigPanel()
             print("[Config] Botão de teste clicado")
         end, {icon = "rbxassetid://6031094678"})
 
+-- Dropdown de Temas
+        local themes = {
+            "Default",
+            "Vidro"
+            -- Adicione mais temas aqui no futuro: "Neon", "Dark", etc.
+        }
+
+        Library.Dropdown(
+            settingsContainer,
+            "Tema do Hub",
+            themes,
+            1,  -- Começa no "Default"
+            function(selectedTheme)
+                print("[Tema] Selecionado: " .. selectedTheme)
+                
+                if selectedTheme == "Default" then
+                    Library.applyTheme_Default()
+                elseif selectedTheme == "Vidro" then
+                    Library.applyTheme_Vidro()
+                end
+                
+                -- Opcional: salvar a escolha (se você tiver sistema de save)
+                -- self:SaveHubSettings()
+            end
+        )
+
         -- ==============================================
         -- Tabs laterais com texto visível e TextScaled
         -- ==============================================
