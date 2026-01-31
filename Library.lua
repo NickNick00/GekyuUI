@@ -501,8 +501,8 @@ function self:ToggleConfigPanel()
         overlay.Name = "ConfigOverlay"
         overlay.Size = UDim2.new(1, 0, 1, -74)
         overlay.Position = UDim2.new(0, 0, 0, 48)
-        overlay.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-        overlay.BackgroundTransparency = 0.25
+        overlay.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
+        overlay.BackgroundTransparency = 0
         overlay.BorderSizePixel = 0
         overlay.ZIndex = 200
         overlay.Active = false          -- será ativado ao abrir
@@ -516,7 +516,7 @@ function self:ToggleConfigPanel()
         local dim = Instance.new("Frame")
         dim.Size = UDim2.new(1,0,1,0)
         dim.BackgroundColor3 = Color3.new(0,0,0)
-        dim.BackgroundTransparency = 0.58
+        dim.BackgroundTransparency = 0.8
         dim.ZIndex = 101
         dim.Parent = overlay
 
