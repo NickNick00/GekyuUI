@@ -467,18 +467,25 @@ contentPadding.Parent = self.ContentArea
 
 function self:ToggleConfigPanel()
     if self.ConfigPanel and self.ConfigPanel.Visible then
-        -- FECHAR PAINEL
-        safeTween(self.ConfigPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, -1, 0) -- Sobe para fora da tela
+        -- FECHAR (de baixo para cima, parando antes da TopBar)
+        safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Position = UDim2.new(0, 0, 0, 48),      -- começa na posição aberta
+            Size     = UDim2.new(1, 0, 1, -74 - 80) -- diminui a altura para não invadir TopBar
         })
 
-        task.delay(0.26, function()
+        safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Position = UDim2.new(0, 0, 0, 48 - 40)  -- sobe só um pouco (ajuste 40~60 se quiser mais/menos)
+        })
+
+        task.delay(0.29, function()
             if self.ConfigPanel then
                 self.ConfigPanel.Visible = false
                 self.ConfigPanel.Active = false
+                self.ConfigPanel.Position = UDim2.new(0, 0, -1, 0) -- reseta posição para próxima abertura
+                self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74)   -- reseta tamanho original
             end
 
-            -- SÓ RESTAURA SE NÃO ESTIVER MINIMIZADO
+            -- Só restaura se não estiver minimizado
             if not minimized then
                 if self.ContentArea then self.ContentArea.Visible = true end
                 if self.TabBar then self.TabBar.Visible = true end
@@ -490,11 +497,12 @@ function self:ToggleConfigPanel()
                 end
             end
         end)
+
         return
     end
 
-    -- ABRIR PAINEL (Se não estiver minimizado)
-    if minimized then return end -- Opcional: impede abrir config se estiver minimizada
+    -- ABRIR (só se não estiver minimizado)
+    if minimized then return end
 
     -- Criação única (se ainda não existir)
     if not self.ConfigPanel then
@@ -682,22 +690,30 @@ function self:ToggleConfigPanel()
         self.ConfigPanel = overlay
     end
 
--- Lógica de abertura
+-- Lógica de abertura (desliza de cima para baixo, mas começa ABAIXO da TopBar)
     self.ConfigPanel.Visible = true
     self.ConfigPanel.Active = true
-    self.ConfigPanel.Position = UDim2.new(0, 0, -1, 0)
+    
+    -- Começa escondido logo abaixo da TopBar (não de -1,0)
+    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 - 60)  -- ajuste o -60 se quiser começar mais alto/baixo
+    self.ConfigPanel.Size     = UDim2.new(1, 0, 1, -74 - 40) -- começa menor
 
-    safeTween(self.ConfigPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0, 0, 0, 48)
+    -- Animação de abrir: desce e cresce ao mesmo tempo
+    safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0, 0, 0, 48),
+        Size     = UDim2.new(1, 0, 1, -74)
     })
 
-    -- Esconde itens de trás para não "vazarem"
+    -- Esconde itens de trás
     if self.ContentArea then self.ContentArea.Visible = false end
     if self.TabBar then self.TabBar.Visible = false end
     if self.MainFrame:FindFirstChild("SearchBar") then
         self.MainFrame.SearchBar.Visible = false
     end
+    if self.MainFrame:FindFirstChild("BottomBar") then
+        self.MainFrame.BottomBar.Visible = false
     end
+end
     
 function self:SaveHubSettings()
     local HttpService = game:GetService("HttpService")
