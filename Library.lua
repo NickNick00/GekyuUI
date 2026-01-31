@@ -1,3 +1,4 @@
+
 -- Library.lua
 -- GekyuUI - Versão FINAL corrigida + DRAG DUPLO (topo + base)
 -- Kyuzzy - Atualizado 16/01/2026
@@ -16,7 +17,7 @@ if CoreGui:FindFirstChild("GekyuPremiumUI") then
 end
 
 -- =============================================
--- SISTEMA DE TEMAS (funcional)
+-- SISTEMA DE TEMAS (exemplo inicial)
 -- =============================================
 
 local currentTheme = "Default"
@@ -49,6 +50,7 @@ function Library.applyTheme_Vidro()
     COLORS.TextDim       = Color3.fromRGB(170, 180, 220)
     COLORS.Stroke        = Color3.fromRGB(100, 140, 255)
     
+    -- Efeito vidro (transparência)
     if Library.MainFrame then
         Library.MainFrame.BackgroundTransparency = 0.55
     end
@@ -62,9 +64,13 @@ end
 function Library:RefreshAllUI()
     print("[Tema] UI atualizada para: " .. currentTheme)
     
-    if self and self.MainFrame then
+    -- Atualiza MainFrame
+    if self.MainFrame then
         self.MainFrame.BackgroundColor3 = COLORS.Background
     end
+    
+    -- Atualiza outros elementos (adicione mais conforme necessário)
+    -- Exemplo: TopBar, BottomBar, SearchBar, etc.
 end
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -119,11 +125,12 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
     label.Parent = parent
 
     task.spawn(function()
+        -- Aguarda o objeto ser realmente desenhado na tela
         while label.Parent and label.AbsoluteSize.X == 0 do
             task.wait()
         end
         
-        if not label.Parent then return end
+        if not label.Parent then return end -- Evita erro se o objeto foi destruído
         
         local maxWidth = label.AbsoluteSize.X - 20
         if maxWidth > 10 and label.TextBounds.X > maxWidth then
@@ -131,8 +138,9 @@ local function CreateSmartTextLabel(parent, size, pos, text, color, font, textSi
             label.TextSize = math.max(8, math.floor(label.TextSize * scale * 0.92))
         end
     end)
-    return label
+return label
 end
+
 
 local function LimitDropdownText(text)
     if #text > 30 then
@@ -199,34 +207,42 @@ end
 function Library:CreateWindow(title)
     local self = setmetatable({}, Library)
     
+    -- Defina SavedSize ANTES de usar
     self.SavedSize = self.SavedSize or UDim2.new(0, 550, 0, 350)
     
     self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = self.SavedSize
+    self.MainFrame.Size = self.SavedSize  -- agora está definido
     self.MainFrame.Position = UDim2.new(0.5, -self.SavedSize.X.Offset/2, 0.5, -self.SavedSize.Y.Offset/2)
     self.MainFrame.BackgroundColor3 = COLORS.Background
     self.MainFrame.BorderSizePixel = 0
     self.MainFrame.ClipsDescendants = true
     self.MainFrame.ZIndex = 5
-    self.MainFrame.Active = true
+    self.MainFrame.Active = true -- ADICIONE ESTA LINHA
     self.MainFrame.Parent = ScreenGui
 
     Instance.new("UICorner", self.MainFrame).CornerRadius = CORNERS.Large
+ 
 
-    -- BottomBar
-    local BottomBar = Instance.new("Frame")
-    BottomBar.Name = "BottomBar"
-    BottomBar.Size = UDim2.new(1, 0, 0, 26)
-    BottomBar.Position = UDim2.new(0, 0, 1, -26)
-    BottomBar.BackgroundColor3 = COLORS.Background
-    BottomBar.BorderSizePixel = 0
-    BottomBar.ZIndex = 50
-    BottomBar.Parent = self.MainFrame
+    -- [PARTE 1] Barra de Rodapé e Hitbox do Drag reduzido
+    -- [PARTE 1] Ajuste de simetria da barra inferior
+local BottomBar = Instance.new("Frame")
+BottomBar.Name = "BottomBar"
+BottomBar.Size = UDim2.new(1, 0, 0, 26) -- Mantenha 26 para ambos os lados
+BottomBar.Position = UDim2.new(0, 0, 1, -26)
+BottomBar.BackgroundColor3 = COLORS.Background
+BottomBar.BorderSizePixel = 0
+BottomBar.ZIndex = 50
+BottomBar.Parent = self.MainFrame
+
+-- Importante: Remova qualquer ClipseDescendants do MainFrame 
+-- se a borda parecer cortada em um dos lados.
+
 
     local BBCCorner = Instance.new("UICorner")
     BBCCorner.CornerRadius = CORNERS.Large
     BBCCorner.Parent = BottomBar
 
+    -- Linha preta superior
     local BottomLine = Instance.new("Frame")
     BottomLine.Name = "BottomLine"
     BottomLine.Size = UDim2.new(1, 0, 0, 1)
@@ -236,9 +252,10 @@ function Library:CreateWindow(title)
     BottomLine.ZIndex = 51
     BottomLine.Parent = BottomBar
 
+    -- HITBOX REDUZIDO: Apenas no centro para arrastar
     local BottomDragArea = Instance.new("Frame")
     BottomDragArea.Name = "BottomDragArea"
-    BottomDragArea.Size = UDim2.new(0, 100, 1, 0)
+    BottomDragArea.Size = UDim2.new(0, 100, 1, 0) -- Apenas 100 pixels de largura no centro
     BottomDragArea.Position = UDim2.new(0.5, -50, 0, 0)
     BottomDragArea.BackgroundTransparency = 1
     BottomDragArea.ZIndex = 55
@@ -253,11 +270,13 @@ function Library:CreateWindow(title)
     DragIcon.Parent = BottomBar
     Instance.new("UICorner", DragIcon).CornerRadius = UDim.new(1, 0)
 
-    local function updateResize()
+
+     local function updateResize()
         local resizing = false
         local resizeStartPos
         local startSize
 
+        -- Criamos como self.ResizeHandle para ser acessível globalmente na Library
         self.ResizeHandle = Instance.new("ImageButton")
         self.ResizeHandle.Name = "ResizeHandle"
         self.ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
@@ -269,6 +288,7 @@ function Library:CreateWindow(title)
         self.ResizeHandle.ZIndex = 60 
         self.ResizeHandle.Parent = self.MainFrame
                     
+        -- Efeitos de Hover
         self.ResizeHandle.MouseEnter:Connect(function()
             safeTween(self.ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0, Rotation = 90})
         end)
@@ -276,6 +296,7 @@ function Library:CreateWindow(title)
             safeTween(self.ResizeHandle, TweenInfo.new(0.2), {ImageTransparency = 0.3, Rotation = 0})
         end)
 
+        -- Overlay invisível para capturar o mouse em toda a tela durante o resize
         local BlockOverlay = Instance.new("TextButton")
         BlockOverlay.Size = UDim2.new(1, 0, 1, 0)
         BlockOverlay.BackgroundTransparency = 1
@@ -291,12 +312,14 @@ function Library:CreateWindow(title)
                 startSize = self.MainFrame.Size
                 BlockOverlay.Visible = true
                 
+                -- Sincroniza o arraste mesmo se o mouse sair do ícone
                 local moveConn
                 local endConn
                 
                 moveConn = UserInputService.InputChanged:Connect(function(moveInput)
                     if resizing and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
                         local delta = moveInput.Position - resizeStartPos
+                        -- Limites mínimos de largura (450) e altura (300)
                         local newWidth = math.max(450, startSize.X.Offset + delta.X)
                         local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
                         
@@ -318,17 +341,19 @@ function Library:CreateWindow(title)
         end)
     end
 
-    updateResize()
+updateResize()
     
-    -- Search Bar
-    local SearchBar = Instance.new("Frame")
-    SearchBar.Name = "SearchBar"
-    SearchBar.Size = UDim2.new(0, 128, 0, 32)
-    SearchBar.Position = UDim2.new(0, 6, 0, 54)
-    SearchBar.BackgroundColor3 = COLORS.Element
-    SearchBar.ZIndex = 10
-    SearchBar.Parent = self.MainFrame
-    Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
+
+    
+-- Search Bar (Barra de Pesquisa)
+local SearchBar = Instance.new("Frame")
+SearchBar.Name = "SearchBar"
+SearchBar.Size = UDim2.new(0, 128, 0, 32)
+SearchBar.Position = UDim2.new(0, 6, 0, 54) -- Posicionada logo abaixo do TopBar
+SearchBar.BackgroundColor3 = COLORS.Element
+SearchBar.ZIndex = 10
+SearchBar.Parent = self.MainFrame
+Instance.new("UICorner", SearchBar).CornerRadius = CORNERS.Medium
 
     local SearchBox = Instance.new("TextBox")
     SearchBox.Size = UDim2.new(1,-12,1,-8)
@@ -344,16 +369,18 @@ function Library:CreateWindow(title)
     SearchBox.ZIndex = 7
     SearchBox.Parent = SearchBar
 
-    -- TabBar
-    self.TabBar = Instance.new("ScrollingFrame")
-    self.TabBar.Size = UDim2.new(0, 140, 1, -120) 
-    self.TabBar.Position = UDim2.new(0, 0, 0, 94)
-    self.TabBar.BackgroundTransparency = 1
-    self.TabBar.ScrollBarThickness = 0
-    self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    self.TabBar.ZIndex = 6
-    self.TabBar.Parent = self.MainFrame
+    -- TabBar (Lista de Abas)
+self.TabBar = Instance.new("ScrollingFrame")
+-- Altura calculada: Tamanho total menos (TopBar + Search + Espaçamentos + BottomBar)
+self.TabBar.Size = UDim2.new(0, 140, 1, -120) 
+self.TabBar.Position = UDim2.new(0, 0, 0, 94) -- Começa exatamente onde a busca termina (54 + 32 + 8)
+self.TabBar.BackgroundTransparency = 1
+self.TabBar.ScrollBarThickness = 0
+self.TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+self.TabBar.ZIndex = 6
+self.TabBar.Parent = self.MainFrame
 
+    
     -- TopBar
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1,0,0,48)
@@ -366,16 +393,20 @@ function Library:CreateWindow(title)
 
     CreateSmartTextLabel(TopBar, UDim2.new(0.5,0,1,0), UDim2.new(0,18,0,0), title or "GEKYU • PREMIUM", COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
 
-    -- Sistema de Drag
+    -- Sistema de Drag (unificado para topo e base)
     local dragging = false
     local dragStart = nil
     local startPos = nil
+    local canDrag = true -- ADICIONE ESTA LINHA
+    local canResize = true -- ADICIONE ESTA LINHA
 
-    local function update(input)
-        if not dragging or _G.GekyuLock then return end
+
+        local function update(input)
+        if not dragging or _G.GekyuLock then return end -- Se o slider estiver rodando, ele não deixa arrastar
         local delta = input.Position - dragStart
         self.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
+
 
     local function setupDrag(dragObject)
         dragObject.InputBegan:Connect(function(input)
@@ -399,9 +430,14 @@ function Library:CreateWindow(title)
         end)
     end
 
+    -- [PARTE 3] Conectar o Drag apenas na área central pequena
     setupDrag(TopBar)
-    setupDrag(BottomDragArea)
+    setupDrag(BottomDragArea) -- Agora só arrasta se clicar perto do ícone central
 
+
+
+
+    -- Atualiza posição durante movimento
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update(input)
@@ -413,35 +449,37 @@ function Library:CreateWindow(title)
         ScreenGui:Destroy()
     end)
 
-    local minimized = false
-    self.SavedSize = self.MainFrame.Size 
+local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
+    minimized = not minimized
+    
+    -- FECHA O CONFIG PANEL SE ESTIVER ABERTO (evita corte/ vazamento ao minimizar)
+    if self.ConfigPanel and self.ConfigPanel.Visible then
+        self.ConfigPanel.Visible = false
+        self.ConfigPanel.Active = false
+        -- Reseta posição e tamanho para evitar glitches na próxima abertura
+        self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 100)
+        self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74 - 26)
+    end
+    
+    local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
+    
+    -- Esconde/mostra elementos
+    local isVisible = not minimized
+    if self.ContentArea then self.ContentArea.Visible = isVisible end
+    if self.TabBar then self.TabBar.Visible = isVisible end
+    if self.MainFrame:FindFirstChild("SearchBar") then self.MainFrame.SearchBar.Visible = isVisible end
+    if self.MainFrame:FindFirstChild("BottomBar") then self.MainFrame.BottomBar.Visible = isVisible end
+    if self.ResizeHandle then self.ResizeHandle.Visible = isVisible end
+    
+    -- Tween do tamanho
+    safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Size = targetSize
+    })
 
-    local minimizeBtn = CreateControlButton(TopBar, "−", -102, nil, function()
-        minimized = not minimized
-        
-        if self.ConfigPanel and self.ConfigPanel.Visible then
-            self.ConfigPanel.Visible = false
-            self.ConfigPanel.Active = false
-            self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 100)
-            self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74 - 26)
-        end
-        
-        local targetSize = minimized and UDim2.new(0, self.SavedSize.X.Offset, 0, 48) or self.SavedSize
-        
-        local isVisible = not minimized
-        if self.ContentArea then self.ContentArea.Visible = isVisible end
-        if self.TabBar then self.TabBar.Visible = isVisible end
-        if self.MainFrame:FindFirstChild("SearchBar") then self.MainFrame.SearchBar.Visible = isVisible end
-        if self.MainFrame:FindFirstChild("BottomBar") then self.MainFrame.BottomBar.Visible = isVisible end
-        if self.ResizeHandle then self.ResizeHandle.Visible = isVisible end
-        
-        safeTween(self.MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            Size = targetSize
-        })
+    minimizeBtn.Text = minimized and "+" or "−"
+end)
 
-        minimizeBtn.Text = minimized and "+" or "−"
-    end)
-
+    
     local configBtn = CreateControlButton(TopBar, "", -152, "rbxassetid://3926305904", function()
         self:ToggleConfigPanel()
     end)
@@ -449,7 +487,7 @@ function Library:CreateWindow(title)
     local switchHubBtn = CreateControlButton(TopBar, "", -202, "rbxassetid://7072718362", function()
         self:ShowSwitchHubPopup()
     end)
-    
+
     local TabLayout = Instance.new("UIListLayout")
     TabLayout.Padding = UDim.new(0,8)
     TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -457,19 +495,20 @@ function Library:CreateWindow(title)
     TabLayout.Parent = self.TabBar
 
     self.ContentArea = Instance.new("Frame") 
-    self.ContentArea.Size = UDim2.new(1, -152, 1, -74)
+    self.ContentArea.Size = UDim2.new(1, -152, 1, -74) -- Mesma altura das Tabs (-74)
     self.ContentArea.Position = UDim2.new(0, 148, 0, 48)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 6
-    self.ContentArea.Active = true
+    self.ContentArea.Active = true -- ADICIONE ESTA LINHA
     self.ContentArea.Parent = self.MainFrame
 
-    local contentPadding = Instance.new("UIPadding")
-    contentPadding.PaddingTop = UDim.new(0, 5)
-    contentPadding.PaddingBottom = UDim.new(0, 0)
-    contentPadding.PaddingLeft = UDim.new(0, 10)
-    contentPadding.PaddingRight = UDim.new(0, 10)
-    contentPadding.Parent = self.ContentArea
+    -- Aumente o padding inferior do ContentArea para empurrar os tabs para cima
+ local contentPadding = Instance.new("UIPadding")
+contentPadding.PaddingTop = UDim.new(0, 5)
+contentPadding.PaddingBottom = UDim.new(0, 0)         -- mais espaço na base para evitar invasão
+contentPadding.PaddingLeft = UDim.new(0, 10)
+contentPadding.PaddingRight = UDim.new(0, 10)          -- mais espaço no resize
+contentPadding.Parent = self.ContentArea
     
     local ContentLayout = Instance.new("UIListLayout")
     ContentLayout.Padding = UDim.new(0, 12)
@@ -480,270 +519,371 @@ function Library:CreateWindow(title)
     self.currentTab = nil
     self.tabs = {}
 
+    -- Painel de Configuração (completo)
     self.ConfigPanel = nil
     self.ConfigMinimized = false
-    
-    function self:ToggleConfigPanel()
-        if minimized then 
-            Library.Notify("Não é possível abrir Config enquanto minimizado", 2, Color3.fromRGB(220, 100, 100))
-            return 
-        end
-
-        if self.ConfigPanel and self.ConfigPanel.Visible then
-            safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-                Position = UDim2.new(0, 0, 0, 48 - 120),
-            })
-
-            task.delay(0.30, function()
-                if self.ConfigPanel then
-                    self.ConfigPanel.Visible = false
-                    self.ConfigPanel.Active = false
-                    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 100)
-                    self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74 - 26)
-                end
-
-                if self.ContentArea then self.ContentArea.Visible = true end
-                if self.TabBar then self.TabBar.Visible = true end
-                if self.MainFrame:FindFirstChild("SearchBar") then
-                    self.MainFrame.SearchBar.Visible = true
-                end
-                if self.MainFrame:FindFirstChild("BottomBar") then
-                    self.MainFrame.BottomBar.Visible = true
-                end
-            end)
-
-            return
-        end
-
-        if not self.ConfigPanel then
-            local overlay = Instance.new("Frame")
-            overlay.Name = "ConfigOverlay"
-            overlay.Size = UDim2.new(1, 0, 1, -74 - 26)
-            overlay.Position = UDim2.new(0, 0, 0, 48)
-            overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
-            overlay.BackgroundTransparency = 0.25
-            overlay.BorderSizePixel = 0
-            overlay.ZIndex = 100
-            overlay.Active = false
-            overlay.Visible = false
-            overlay.ClipsDescendants = true
-            overlay.Parent = self.MainFrame
-
-            Instance.new("UICorner", overlay).CornerRadius = CORNERS.Large
-
-            local dim = Instance.new("Frame")
-            dim.Size = UDim2.new(1,0,1,0)
-            dim.BackgroundColor3 = Color3.new(0,0,0)
-            dim.BackgroundTransparency = 0.58
-            dim.ZIndex = 101
-            dim.Parent = overlay
-
-            local content = Instance.new("Frame")
-            content.Size = UDim2.new(1, -24, 1, -24)
-            content.Position = UDim2.new(0, 12, 0, 12)
-            content.BackgroundColor3 = COLORS.Background
-            content.BorderSizePixel = 0
-            content.ZIndex = 102
-            content.Parent = overlay
-
-            Instance.new("UICorner", content).CornerRadius = CORNERS.Large
-
-            local tabsArea = Instance.new("Frame")
-            tabsArea.Size = UDim2.new(0, 140, 1, 0)
-            tabsArea.BackgroundTransparency = 1
-            tabsArea.ZIndex = 105
-            tabsArea.Parent = content
-
-            local tabsLayout = Instance.new("UIListLayout")
-            tabsLayout.Padding = UDim.new(0, 10)
-            tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-            tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-            tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            tabsLayout.Parent = tabsArea
-
-            local pagesArea = Instance.new("Frame")
-            pagesArea.Size = UDim2.new(1, -152, 1, 0)
-            pagesArea.Position = UDim2.new(0, 140, 0, 0)
-            pagesArea.BackgroundTransparency = 1
-            pagesArea.ZIndex = 105
-            pagesArea.Parent = content
-
-            local infoContainer = Instance.new("Frame")
-            infoContainer.Name = "InfoContainer"
-            infoContainer.Size = UDim2.new(0.9, 0, 0.7, 0)
-            infoContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-            infoContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
-            infoContainer.BackgroundColor3 = Color3.fromRGB(14, 14, 24)
-            infoContainer.Visible = true
-            infoContainer.ZIndex = 107
-            infoContainer.Parent = pagesArea
-
-            Instance.new("UICorner", infoContainer).CornerRadius = CORNERS.Medium
-
-            local ledStroke = Instance.new("UIStroke")
-            ledStroke.Color = Color3.fromRGB(255, 255, 255)
-            ledStroke.Thickness = 2
-            ledStroke.Transparency = 0.38
-            ledStroke.Parent = infoContainer
-
-            CreateSmartTextLabel(infoContainer,
-                UDim2.new(1, -40, 1, -40),
-                UDim2.new(0, 20, 0, 20),
-                "Gekyu Hub v1.0\nStatus: Operational\nUser: Test",
-                COLORS.Text,
-                Enum.Font.GothamSemibold,
-                15,
-                Enum.TextXAlignment.Center,
-                Enum.TextYAlignment.Center
-            )
-
-            local settingsContainer = Instance.new("ScrollingFrame")
-            settingsContainer.Name = "SettingsContainer"
-            settingsContainer.Size = UDim2.new(1, 0, 1, 0)
-            settingsContainer.BackgroundTransparency = 1
-            settingsContainer.ScrollBarThickness = 3
-            settingsContainer.ScrollBarImageColor3 = COLORS.Stroke
-            settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-            settingsContainer.CanvasSize = UDim2.new(0,0,0,0)
-            settingsContainer.Visible = false
-            settingsContainer.ZIndex = 107
-            settingsContainer.Parent = pagesArea
-
-            local settingsLayout = Instance.new("UIListLayout")
-            settingsLayout.Padding = UDim.new(0, 12)
-            settingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-            settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            settingsLayout.Parent = settingsContainer
-
-            -- Toggle
-            Library.Toggle(settingsContainer, "Ativar sons de interface", false, function(state)
-                print("[Config] Sons de interface:", state and "ON" or "OFF")
-            end)
-
-            -- Botão teste
-            Library.Button(settingsContainer, "Executar Teste", function()
-                Library.Notify("Teste executado com sucesso!", 2.5, Color3.fromRGB(100, 220, 120))
-                print("[Config] Botão de teste clicado")
-            end, {icon = "rbxassetid://6031094678"})
-
-            -- Dropdown de Temas
-            local themes = {
-                "Default",
-                "Vidro"
-            }
-
-            Library.Dropdown(
-                settingsContainer,
-                "Tema do Hub",
-                themes,
-                1,
-                function(selected)
-                    print("[Tema] Selecionado: " .. selected)
-                    
-                    if selected == "Default" then
-                        Library.applyTheme_Default()
-                    elseif selected == "Vidro" then
-                        Library.applyTheme_Vidro()
-                    end
-                end
-            )
-
-            task.spawn(function()
-                task.wait(0.2)
-                if settingsContainer and settingsLayout then
-                    settingsContainer.CanvasSize = UDim2.new(0, 0, 0, settingsLayout.AbsoluteContentSize.Y + 40)
-                end
-            end)
-
-            local function createTab(tabName, targetPage, defaultActive)
-                local tabBtn = Instance.new("TextButton")
-                tabBtn.Size = UDim2.new(1, -20, 0, 50)
-                tabBtn.BackgroundColor3 = COLORS.Element
-                tabBtn.AutoButtonColor = false
-                tabBtn.Text = ""
-                tabBtn.ZIndex = 108
-                tabBtn.Parent = tabsArea
-
-                Instance.new("UICorner", tabBtn).CornerRadius = CORNERS.Medium
-
-                local label = Instance.new("TextLabel")
-                label.Size = UDim2.new(1, -60, 1, 0)
-                label.Position = UDim2.new(0, 20, 0, 0)
-                label.BackgroundTransparency = 1
-                label.Text = tabName
-                label.TextColor3 = defaultActive and COLORS.Text or COLORS.TextDim
-                label.Font = Enum.Font.GothamBold
-                label.TextScaled = true
-                label.TextSize = 16
-                label.TextXAlignment = Enum.TextXAlignment.Left
-                label.ZIndex = 109
-                label.Parent = tabBtn
-
-                local indicator = Instance.new("Frame")
-                indicator.Size = UDim2.new(0, 5, 0.8, 0)
-                indicator.Position = UDim2.new(0, 6, 0.1, 0)
-                indicator.BackgroundColor3 = COLORS.Accent
-                indicator.BackgroundTransparency = defaultActive and 0 or 1
-                indicator.ZIndex = 109
-                indicator.Parent = tabBtn
-                Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
-
-                tabBtn.Activated:Connect(function()
-                    infoContainer.Visible = (targetPage == infoContainer)
-                    settingsContainer.Visible = (targetPage == settingsContainer)
-
-                    for _, sib in tabsArea:GetChildren() do
-                        if sib:IsA("TextButton") and sib ~= tabBtn then
-                            local ind = sib:FindFirstChildWhichIsA("Frame")
-                            local lbl = sib:FindFirstChildWhichIsA("TextLabel")
-                            if ind then safeTween(ind, TweenInfo.new(0.16), {BackgroundTransparency = 1}) end
-                            if lbl then safeTween(lbl, TweenInfo.new(0.16), {TextColor3 = COLORS.TextDim}) end
-                        end
-                    end
-
-                    safeTween(indicator, TweenInfo.new(0.2), {BackgroundTransparency = 0})
-                    safeTween(label, TweenInfo.new(0.2), {TextColor3 = COLORS.Text})
-                end)
-            end
-
-            createTab("INFO",     infoContainer, true)
-            createTab("SETTINGS", settingsContainer, false)
-
-            self.ConfigPanel = overlay
-        end
-
-        self.ConfigPanel.Visible = true
-        self.ConfigPanel.Active = true
         
-        self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 140)
-        
-        safeTween(self.ConfigPanel, TweenInfo.new(0.32, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            Position = UDim2.new(0, 0, 0, 48),
+        -- =============================================================================
+-- PAINEL DE CONFIGURAÇÕES - INTERNAL OVERLAY (correções UX + input 2026)
+-- =============================================================================
+
+function self:ToggleConfigPanel()
+    -- Impede abrir/fechar se o MainFrame está minimizado
+    if minimized then 
+        -- Opcional: mostra uma notificação rápida
+        Library.Notify("Não é possível abrir Config enquanto minimizado", 2, Color3.fromRGB(220, 100, 100))
+        return 
+    end
+
+    if self.ConfigPanel and self.ConfigPanel.Visible then
+        -- FECHAR
+        safeTween(self.ConfigPanel, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Position = UDim2.new(0, 0, 0, 48 - 120),  -- sobe bem pra cima pra sumir
         })
 
-        if self.ContentArea then self.ContentArea.Visible = false end
-        if self.TabBar then self.TabBar.Visible = false end
-        if self.MainFrame:FindFirstChild("SearchBar") then
-            self.MainFrame.SearchBar.Visible = false
-        end
-    end
-    
-    function self:SaveHubSettings()
-        local HttpService = game:GetService("HttpService")
-        local fileName = "GekyuConfig_" .. game.PlaceId .. ".json"
-        local data = {
-            MainPosition = {self.MainFrame.Position.X.Offset, self.MainFrame.Position.Y.Offset},
-            SavedSize = {self.MainFrame.Size.X.Offset, self.MainFrame.Size.Y.Offset}
-        }
-        pcall(function()
-            if writefile then writefile(fileName, HttpService:JSONEncode(data)) end
+        task.delay(0.30, function()
+            if self.ConfigPanel then
+                self.ConfigPanel.Visible = false
+                self.ConfigPanel.Active = false
+                -- Reseta para próxima abertura
+                self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 100)
+                self.ConfigPanel.Size = UDim2.new(1, 0, 1, -74 - 26)
+            end
+
+            -- Restaura fundo
+            if self.ContentArea then self.ContentArea.Visible = true end
+            if self.TabBar then self.TabBar.Visible = true end
+            if self.MainFrame:FindFirstChild("SearchBar") then
+                self.MainFrame.SearchBar.Visible = true
+            end
+            if self.MainFrame:FindFirstChild("BottomBar") then
+                self.MainFrame.BottomBar.Visible = true
+            end
         end)
+
+        return
     end
 
-    function self:ShowSwitchHubPopup()
-        Library.Popup("Trocar de Hub", "Deseja abrir o Hub de Jogos?\nIsso fechará o painel atual.", function() ScreenGui:Destroy() end)
+    -- Criação única (ajuste de tamanho inicial)
+    if not self.ConfigPanel then
+        local overlay = Instance.new("Frame")
+        overlay.Name = "ConfigOverlay"
+        overlay.Size = UDim2.new(1, 0, 1, -74 - 26)  -- altura correta
+        overlay.Position = UDim2.new(0, 0, 0, 48)
+        overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
+        overlay.BackgroundTransparency = 0.25
+        overlay.BorderSizePixel = 0
+        overlay.ZIndex = 100
+        overlay.Active = false
+        overlay.Visible = false
+        overlay.ClipsDescendants = true
+        overlay.Parent = self.MainFrame
+
+        Instance.new("UICorner", overlay).CornerRadius = CORNERS.Large
+
+        -- Dim layer
+        local dim = Instance.new("Frame")
+        dim.Size = UDim2.new(1,0,1,0)
+        dim.BackgroundColor3 = Color3.new(0,0,0)
+        dim.BackgroundTransparency = 0.58
+        dim.ZIndex = 101
+        dim.Parent = overlay
+
+        -- Conteúdo com margem de segurança
+        local content = Instance.new("Frame")
+        content.Size = UDim2.new(1, -24, 1, -24)
+        content.Position = UDim2.new(0, 12, 0, 12)
+        content.BackgroundColor3 = COLORS.Background
+        content.BorderSizePixel = 0
+        content.ZIndex = 102
+        content.Parent = overlay
+
+        Instance.new("UICorner", content).CornerRadius = CORNERS.Large
+
+        -- Abas laterais
+        local tabsArea = Instance.new("Frame")
+        tabsArea.Size = UDim2.new(0, 140, 1, 0)
+        tabsArea.BackgroundTransparency = 1
+        tabsArea.ZIndex = 105
+        tabsArea.Parent = content
+
+        local tabsLayout = Instance.new("UIListLayout")
+        tabsLayout.Padding = UDim.new(0, 10)
+        tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        tabsLayout.Parent = tabsArea
+
+        -- Área de páginas
+        local pagesArea = Instance.new("Frame")
+        pagesArea.Size = UDim2.new(1, -152, 1, 0)
+        pagesArea.Position = UDim2.new(0, 140, 0, 0)
+        pagesArea.BackgroundTransparency = 1
+        pagesArea.ZIndex = 105
+        pagesArea.Parent = content
+
+        -- ==============================================
+        -- Container INFO - centralizado absoluto
+        -- ==============================================
+        local infoContainer = Instance.new("Frame")
+        infoContainer.Name = "InfoContainer"
+        infoContainer.Size = UDim2.new(0.9, 0, 0.7, 0)
+        infoContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+        infoContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+        infoContainer.BackgroundColor3 = Color3.fromRGB(14, 14, 24)
+        infoContainer.Visible = true
+        infoContainer.ZIndex = 107
+        infoContainer.Parent = pagesArea
+
+        Instance.new("UICorner", infoContainer).CornerRadius = CORNERS.Medium
+
+        local ledStroke = Instance.new("UIStroke")
+        ledStroke.Color = Color3.fromRGB(255, 255, 255)
+        ledStroke.Thickness = 2
+        ledStroke.Transparency = 0.38
+        ledStroke.Parent = infoContainer
+
+        CreateSmartTextLabel(infoContainer,
+            UDim2.new(1, -40, 1, -40),
+            UDim2.new(0, 20, 0, 20),
+            "Gekyu Hub v1.0\nStatus: Operational\nUser: Test",
+            COLORS.Text,
+            Enum.Font.GothamSemibold,
+            15,
+            Enum.TextXAlignment.Center,
+            Enum.TextYAlignment.Center
+        )
+
+-- ==============================================
+        -- Container SETTINGS (com toggle real)
+        -- ==============================================
+        local settingsContainer = Instance.new("ScrollingFrame")
+        settingsContainer.Name = "SettingsContainer"
+        settingsContainer.Size = UDim2.new(1, 0, 1, 0)
+        settingsContainer.BackgroundTransparency = 1
+        settingsContainer.ScrollBarThickness = 3
+        settingsContainer.ScrollBarImageColor3 = COLORS.Stroke
+        settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        settingsContainer.CanvasSize = UDim2.new(0,0,0,0)
+        settingsContainer.Visible = false
+        settingsContainer.ZIndex = 107
+        settingsContainer.Parent = pagesArea
+
+        local settingsLayout = Instance.new("UIListLayout")
+        settingsLayout.Padding = UDim.new(0, 12)
+        settingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        settingsLayout.Parent = settingsContainer
+
+        -- Toggle funcional
+        Library.Toggle(settingsContainer, "Ativar sons de interface", false, function(state)
+            print("[Config] Sons de interface:", state and "ON" or "OFF")
+        end)
+
+        -- Botão de teste
+        Library.Button(settingsContainer, "Executar Teste", function()
+            Library.Notify("Teste executado com sucesso!", 2.5, Color3.fromRGB(100, 220, 120))
+            print("[Config] Botão de teste clicado")
+        end, {icon = "rbxassetid://6031094678"})
+
+        -- ==============================================
+        -- Dropdown de Temas (agora com update forçado)
+        -- ==============================================
+        local themes = {
+            "Default",
+            "Vidro"
+        }
+
+        Library.Dropdown(
+            settingsContainer,
+            "Tema do Hub",
+            themes,
+            1,
+            function(selectedTheme)
+                print("[Tema] Selecionado: " .. selectedTheme)
+                
+                if selectedTheme == "Default" then
+                    Library.applyTheme_Default()
+                elseif selectedTheme == "Vidro" then
+                    Library.applyTheme_Vidro()
+                end
+            end
+        )
+
+        -- Força atualização do canvas size (importante!)
+        task.delay(0.1, function()
+            if settingsContainer and settingsLayout then
+                settingsContainer.CanvasSize = UDim2.new(0, 0, 0, settingsLayout.AbsoluteContentSize.Y + 20)
+            end
+        end)       
+        -- ==============================================
+        -- Tabs laterais com texto visível e TextScaled
+        -- ==============================================
+        local function createTab(tabName, targetPage, defaultActive)
+            local tabBtn = Instance.new("TextButton")
+            tabBtn.Size = UDim2.new(1, -20, 0, 50)
+            tabBtn.BackgroundColor3 = COLORS.Element
+            tabBtn.AutoButtonColor = false
+            tabBtn.Text = ""  -- vazio para custom label
+            tabBtn.ZIndex = 108
+            tabBtn.Parent = tabsArea
+
+            Instance.new("UICorner", tabBtn).CornerRadius = CORNERS.Medium
+
+            -- Label com TextScaled
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1, -60, 1, 0)
+            label.Position = UDim2.new(0, 20, 0, 0)
+            label.BackgroundTransparency = 1
+            label.Text = tabName
+            label.TextColor3 = defaultActive and COLORS.Text or COLORS.TextDim
+            label.Font = Enum.Font.GothamBold
+            label.TextScaled = true
+            label.TextSize = 16
+            label.TextXAlignment = Enum.TextXAlignment.Left
+            label.ZIndex = 109
+            label.Parent = tabBtn
+
+            local indicator = Instance.new("Frame")
+            indicator.Size = UDim2.new(0, 5, 0.8, 0)
+            indicator.Position = UDim2.new(0, 6, 0.1, 0)
+            indicator.BackgroundColor3 = COLORS.Accent
+            indicator.BackgroundTransparency = defaultActive and 0 or 1
+            indicator.ZIndex = 109
+            indicator.Parent = tabBtn
+            Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
+
+            tabBtn.Activated:Connect(function()
+                infoContainer.Visible = (targetPage == infoContainer)
+                settingsContainer.Visible = (targetPage == settingsContainer)
+
+                -- Reset visual das outras tabs
+                for _, sib in tabsArea:GetChildren() do
+                    if sib:IsA("TextButton") and sib ~= tabBtn then
+                        local ind = sib:FindFirstChildWhichIsA("Frame")
+                        local lbl = sib:FindFirstChildWhichIsA("TextLabel")
+                        if ind then safeTween(ind, TweenInfo.new(0.16), {BackgroundTransparency = 1}) end
+                        if lbl then safeTween(lbl, TweenInfo.new(0.16), {TextColor3 = COLORS.TextDim}) end
+                    end
+                end
+
+                -- Ativa esta
+                safeTween(indicator, TweenInfo.new(0.2), {BackgroundTransparency = 0})
+                safeTween(label, TweenInfo.new(0.2), {TextColor3 = COLORS.Text})
+            end)
+        end
+
+        createTab("INFO",     infoContainer, true)
+        createTab("SETTINGS", settingsContainer, false)
+
+        self.ConfigPanel = overlay
+    end
+
+-- ABRIR
+    self.ConfigPanel.Visible = true
+    self.ConfigPanel.Active = true
+    
+    -- Posição inicial (desliza de baixo)
+    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 140)
+    
+    safeTween(self.ConfigPanel, TweenInfo.new(0.32, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0, 0, 0, 48),
+    })
+
+    -- Esconde fundo
+    if self.ContentArea then self.ContentArea.Visible = false end
+    if self.TabBar then self.TabBar.Visible = false end
+    if self.MainFrame:FindFirstChild("SearchBar") then
+        self.MainFrame.SearchBar.Visible = false
+    end
+    -- BottomBar fica visível
     end
     
+function self:SaveHubSettings()
+    local HttpService = game:GetService("HttpService")
+    local fileName = "GekyuConfig_" .. game.PlaceId .. ".json"
+    local data = {
+        MainPosition = {self.MainFrame.Position.X.Offset, self.MainFrame.Position.Y.Offset},
+        SavedSize = {self.MainFrame.Size.X.Offset, self.MainFrame.Size.Y.Offset}
+    }
+    pcall(function()
+        if writefile then writefile(fileName, HttpService:JSONEncode(data)) end
+    end)
+end
+
+function self:ShowSwitchHubPopup()
+    Library.Popup("Trocar de Hub", "Deseja abrir o Hub de Jogos?\nIsso fechará o painel atual.", function() ScreenGui:Destroy() end)
+end
+
+-- =============================================================================
+-- FINALIZAÇÃO DA LÓGICA DE TABS E MÓDULO
+-- =============================================================================
+
+function self:CreateTab(name)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1,-16,0,46)
+    button.BackgroundColor3 = COLORS.Element
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = false
+    button.Text = ""
+    button.ZIndex = 7
+    button.Parent = self.TabBar
+    Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
+    
+    local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
+    
+    local indicator = Instance.new("Frame")
+    indicator.Size = UDim2.new(0,4,0.7,0); indicator.Position = UDim2.new(0, 4, 0.15, 0); indicator.BackgroundColor3 = COLORS.Accent; indicator.BackgroundTransparency = 1; indicator.Parent = button
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
+    
+    local content = Instance.new("ScrollingFrame")
+    content.Size = UDim2.new(1,0,1,0); content.BackgroundTransparency = 1; content.Visible = false; content.ScrollBarThickness = 0; content.Parent = self.ContentArea
+    
+    local list = Instance.new("UIListLayout", content)
+    list.Padding = UDim.new(0,12); list.HorizontalAlignment = Enum.HorizontalAlignment.Center; list.SortOrder = Enum.SortOrder.LayoutOrder
+
+    table.insert(self.tabs, {button = button, textLabel = textLabel, indicator = indicator, content = content, name = name:upper()})
+    
+    button.Activated:Connect(function()
+        if self.currentTab then
+            self.currentTab.content.Visible = false
+            self.currentTab.indicator.BackgroundTransparency = 1
+            self.currentTab.textLabel.TextColor3 = COLORS.TextDim
+        end
+        content.Visible = true
+        indicator.BackgroundTransparency = 0
+        textLabel.TextColor3 = COLORS.Text
+        self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
+    end)
+
+    list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 20)
+    end)
+    
+    return content
+end
+
+-- Inicializa a primeira tab após carregar
+task.delay(0.2, function()
+    if self.tabs and self.tabs[1] then self.tabs[1].button.Activated:Fire() end
+end)
+
+
+            
+    function self:ShowSwitchHubPopup()
+        Library.Popup(
+            "Trocar de Hub",
+            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
+            function()
+                -- Coloque aqui o loadstring do seu outro hub
+                -- loadstring(game:HttpGet("URL_AQUI"))()
+                ScreenGui:Destroy()
+            end,
+            function() end
+        )
+    end
+
+    -- Criação de Tabs com scroll individual
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
@@ -752,6 +892,7 @@ function Library:CreateWindow(title)
         button.AutoButtonColor = false
         button.Text = ""
         button.ZIndex = 7
+        button.ClipsDescendants = true
         button.Parent = self.TabBar
         Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
         
@@ -762,14 +903,20 @@ function Library:CreateWindow(title)
         indicator.Position = UDim2.new(0, 4, 0.15, 0)
         indicator.BackgroundColor3 = COLORS.Accent
         indicator.BackgroundTransparency = 1
+        indicator.BorderSizePixel = 0
+        indicator.ZIndex = 8
         indicator.Parent = button
         Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
         
         local content = Instance.new("ScrollingFrame")
+        content.Name = "TabContent_" .. name
         content.Size = UDim2.new(1,0,1,0)
         content.BackgroundTransparency = 1
         content.Visible = false
-        content.ScrollBarThickness = 0
+        content.ZIndex = 6
+        content.ScrollBarThickness = 0 -- Mude este 4 para 0 
+        content.ScrollBarImageColor3 = COLORS.Stroke
+        content.CanvasSize = UDim2.new(0,0,0,0)
         content.Parent = self.ContentArea
         
         local list = Instance.new("UIListLayout")
@@ -778,18 +925,58 @@ function Library:CreateWindow(title)
         list.SortOrder = Enum.SortOrder.LayoutOrder
         list.Parent = content
 
-        table.insert(self.tabs, {button = button, textLabel = textLabel, indicator = indicator, content = content, name = name:upper()})
+        local lastScrollPos = Vector2.new(0, 0)
+        
+        content:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+            if content.Visible then
+                lastScrollPos = content.CanvasPosition
+            end
+        end)
+
+        table.insert(self.tabs, {
+            button = button,
+            textLabel = textLabel,
+            indicator = indicator,
+            content = content,
+            name = name:upper(),
+            lastScrollPos = lastScrollPos
+        })
+        
+        button.MouseEnter:Connect(function()
+            if content.Visible then return end
+            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover})
+            safeTween(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.Text})
+            safeTween(indicator, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0,4,0.85,0)})
+        end)
+        
+        button.MouseLeave:Connect(function()
+            if content.Visible then return end
+            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element})
+            safeTween(textLabel, TweenInfo.new(0.25), {TextColor3 = COLORS.TextDim})
+            safeTween(indicator, TweenInfo.new(0.35), {Size = UDim2.new(0,4,0.7,0)})
+        end)
         
         button.Activated:Connect(function()
             if self.currentTab then
                 self.currentTab.content.Visible = false
-                self.currentTab.indicator.BackgroundTransparency = 1
+                self.currentTab.lastScrollPos = self.currentTab.content.CanvasPosition
+                safeTween(self.currentTab.indicator, TweenInfo.new(0.25), {BackgroundTransparency = 1})
                 self.currentTab.textLabel.TextColor3 = COLORS.TextDim
+                safeTween(self.currentTab.button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.Element})
             end
+            
+            content.CanvasPosition = lastScrollPos
             content.Visible = true
-            indicator.BackgroundTransparency = 0
+            
+            safeTween(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Back), {BackgroundTransparency = 0, Size = UDim2.new(0,4,0.95,0)})
             textLabel.TextColor3 = COLORS.Text
-            self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
+            safeTween(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-12,0,50)})
+            task.delay(0.15, function()
+                safeTween(button, TweenInfo.new(0.15), {Size = UDim2.new(1,-16,0,46)})
+            end)
+            safeTween(button, TweenInfo.new(0.25), {BackgroundColor3 = COLORS.ElementHover})
+            
+            self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel, lastScrollPos = lastScrollPos}
         end)
 
         list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -799,10 +986,6 @@ function Library:CreateWindow(title)
         return content
     end
 
-    task.delay(0.2, function()
-        if self.tabs and self.tabs[1] then self.tabs[1].button.Activated:Fire() end
-    end)
-    
     -- Filtro de busca
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower()
@@ -843,19 +1026,8 @@ function Library:CreateWindow(title)
         end
     end)
 
-    function self:ShowSwitchHubPopup()
-        Library.Popup(
-            "Trocar de Hub",
-            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
-            function()
-                ScreenGui:Destroy()
-            end,
-            function() end
-        )
-    end
-    
     -- =============================================
-    -- COMPONENTES
+    -- COMPONENTES COMPLETOS
     -- =============================================
 
     function Library.Button(parent, text, callback, options)
@@ -967,8 +1139,132 @@ function Library:CreateWindow(title)
 
         return container
     end
-    
-    function Library.Slider(parent, text, min, max, default, callback)
+
+    function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(0.95, 0, 0, 48)
+        container.BackgroundColor3 = COLORS.Element
+        container.ClipsDescendants = true
+        container.ZIndex = 7
+        container.Parent = parent
+        
+        Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
+
+        local header = Instance.new("Frame")
+        header.Size = UDim2.new(1, 0, 0, 48)
+        header.BackgroundTransparency = 1
+        header.Parent = container
+
+        CreateSmartTextLabel(header, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), toggleText, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+
+        local toggleBtn = Instance.new("TextButton")
+        toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+        toggleBtn.BackgroundTransparency = 1
+        toggleBtn.Text = ""
+        toggleBtn.ZIndex = 8
+        toggleBtn.Parent = header
+
+        local track = Instance.new("Frame")
+        track.Size = UDim2.new(0, 52, 0, 26)
+        track.Position = UDim2.new(1, -64, 0.5, -13)
+        track.BackgroundColor3 = COLORS.TextDim
+        track.ZIndex = 8
+        track.Parent = header
+        
+        Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+        local circle = Instance.new("Frame")
+        circle.Size = UDim2.new(0, 20, 0, 20)
+        circle.Position = UDim2.new(0, 3, 0.5, -10)
+        circle.BackgroundColor3 = Color3.new(1,1,1)
+        circle.ZIndex = 9
+        circle.Parent = track
+        
+        Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+
+        local checkboxesContainer = Instance.new("Frame")
+        checkboxesContainer.Size = UDim2.new(1, 0, 0, 0)
+        checkboxesContainer.Position = UDim2.new(0, 0, 0, 48)
+        checkboxesContainer.BackgroundTransparency = 1
+        checkboxesContainer.ZIndex = 8
+        checkboxesContainer.Parent = container
+
+        local checkListLayout = Instance.new("UIListLayout")
+        checkListLayout.Padding = UDim.new(0, 8)
+        checkListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        checkListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        checkListLayout.Parent = checkboxesContainer
+
+        local state = false
+
+        for _, checkName in ipairs(checkboxesList) do
+            local checkFrame = Instance.new("Frame")
+            checkFrame.Size = UDim2.new(0.92, 0, 0, 36)
+            checkFrame.BackgroundTransparency = 1
+            checkFrame.ZIndex = 8
+            checkFrame.Parent = checkboxesContainer
+
+            CreateSmartTextLabel(checkFrame, UDim2.new(1, -60, 1, 0), UDim2.new(0, 12, 0, 0), checkName, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+
+            local checkHitbox = Instance.new("TextButton")
+            checkHitbox.Size = UDim2.new(0, 45, 0, 45)
+            checkHitbox.Position = UDim2.new(1, -45, 0.5, -22)
+            checkHitbox.BackgroundTransparency = 1
+            checkHitbox.Text = ""
+            checkHitbox.ZIndex = 9
+            checkHitbox.Parent = checkFrame
+
+            local checkBoxVisual = Instance.new("Frame")
+            checkBoxVisual.Size = UDim2.new(0, 20, 0, 20)
+            checkBoxVisual.Position = UDim2.new(0.5, -10, 0.5, -10)
+            checkBoxVisual.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            checkBoxVisual.ZIndex = 9
+            checkBoxVisual.Parent = checkHitbox
+            
+            Instance.new("UICorner", checkBoxVisual).CornerRadius = UDim.new(0, 5)
+
+            local checkMark = Instance.new("TextLabel")
+            checkMark.Size = UDim2.new(1, 0, 1, 0)
+            checkMark.BackgroundTransparency = 1
+            checkMark.Text = "✓"
+            checkMark.TextColor3 = Color3.new(1,1,1)
+            checkMark.Font = Enum.Font.GothamBold
+            checkMark.TextSize = 16
+            checkMark.Visible = false
+            checkMark.ZIndex = 10
+            checkMark.Parent = checkBoxVisual
+
+            local cState = false
+            checkHitbox.Activated:Connect(function()
+                cState = not cState
+                checkMark.Visible = cState
+                
+                safeTween(checkBoxVisual, TweenInfo.new(0.18), {
+                    BackgroundColor3 = cState and COLORS.Accent or Color3.fromRGB(40, 40, 60)
+                })
+            end)
+        end
+
+        toggleBtn.Activated:Connect(function()
+            state = not state
+            
+            safeTween(track, TweenInfo.new(0.24), {BackgroundColor3 = state and COLORS.Accent or COLORS.TextDim})
+            safeTween(circle, TweenInfo.new(0.28, Enum.EasingStyle.Back), {
+                Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
+            })
+
+            local contentHeight = #checkboxesList * 44 + 16
+            local finalHeight = state and (48 + contentHeight) or 48
+
+            safeTween(container, TweenInfo.new(0.38, Enum.EasingStyle.Quint), {
+                Size = UDim2.new(0.95, 0, 0, finalHeight)
+            })
+
+            callback(state)
+        end)
+    end
+
+        function Library.Slider(parent, text, min, max, default, callback)
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0.95, 0, 0, 62)
         frame.BackgroundColor3 = COLORS.Element
@@ -1034,7 +1330,7 @@ function Library:CreateWindow(title)
         knobArea.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 slider_dragging = true
-                _G.GekyuLock = true
+                _G.GekyuLock = true -- TRAVA O HUB
                 local scroll = getScrollParent()
                 if scroll then scroll.ScrollingEnabled = false end
                 updateValue(input)
@@ -1051,13 +1347,14 @@ function Library:CreateWindow(title)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 if slider_dragging then
                     slider_dragging = false
-                    _G.GekyuLock = false
+                    _G.GekyuLock = false -- LIBERA O HUB
                     local scroll = getScrollParent()
                     if scroll then scroll.ScrollingEnabled = true end
                 end
             end
         end)
     end
+
 
     function Library.Dropdown(parent, text, options, defaultIndex, callback)
         local container = Instance.new("Frame")
@@ -1133,8 +1430,8 @@ function Library:CreateWindow(title)
             
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
 
-            local label = CreateSmartTextLabel(btn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
-            label.TextTruncate = Enum.TextTruncate.AtEnd
+           local label = CreateSmartTextLabel(btn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+label.TextTruncate = Enum.TextTruncate.AtEnd
 
             btn.Activated:Connect(function()
                 selectedText.Text = limitedOpt
@@ -1259,7 +1556,7 @@ function Library:CreateWindow(title)
             Instance.new("UICorner", optionBtn).CornerRadius = CORNERS.Small
 
             local label = CreateSmartTextLabel(optionBtn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
-            label.TextTruncate = Enum.TextTruncate.AtEnd
+label.TextTruncate = Enum.TextTruncate.AtEnd
 
             local checkMark = Instance.new("TextLabel")
             checkMark.Size = UDim2.new(0, 24, 0, 24)
@@ -1304,7 +1601,7 @@ function Library:CreateWindow(title)
         updatePreview()
     end
 
-    function Library.InputNumber(parent, text, min, max, default, step, callback)
+        function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
 
         local container = Instance.new("Frame")
@@ -1314,12 +1611,13 @@ function Library:CreateWindow(title)
         container.Parent = parent
         Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
 
+        -- Ajustado: TextTruncate e tamanho para não colidir
         local label = CreateSmartTextLabel(container, UDim2.new(1, -160, 0, 24), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
         label.TextTruncate = Enum.TextTruncate.AtEnd 
 
         local inputFrame = Instance.new("Frame")
         inputFrame.Size = UDim2.new(0, 140, 0, 34)
-        inputFrame.Position = UDim2.new(1, -154, 0.5, -17)
+        inputFrame.Position = UDim2.new(1, -154, 0.5, -17) -- Centralizado verticalmente
         inputFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
         inputFrame.ZIndex = 8
         inputFrame.Parent = container
@@ -1336,6 +1634,9 @@ function Library:CreateWindow(title)
         valueBox.TextSize = 16
         valueBox.ZIndex = 9
         valueBox.Parent = inputFrame
+
+        -- Resto da lógica de minusBtn/plusBtn continua igual...
+
 
         local minusBtn = Instance.new("TextButton")
         minusBtn.Size = UDim2.new(0, 28, 0, 28)
@@ -1393,7 +1694,7 @@ function Library:CreateWindow(title)
 
         updateValue(default)
     end
-    
+
     local activeNotifications = {}
 
     function Library.Notify(message, duration, color)
@@ -1592,7 +1893,14 @@ function Library:CreateWindow(title)
         end)
     end
 
-    print("[GekyuUI] Versão COMPLETA e corrigida - 16/01/2026 - Dropdown de temas funcionando na aba SETTINGS")
+    task.delay(0.1, function()
+        local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
+        if firstTab then firstTab.Activated:Fire() end
+    end)
 
-    return Library
+    return self
 end
+
+print("[GekyuUI] Versão COMPLETA e corrigida - 16/01/2026 - Config minimiza, scroll por tab, todos componentes incluídos")
+
+return Library
