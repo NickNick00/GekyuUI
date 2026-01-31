@@ -508,8 +508,8 @@ function self:ToggleConfigPanel()
     if not self.ConfigPanel then
         local overlay = Instance.new("Frame")
         overlay.Name = "ConfigOverlay"
-        overlay.Size = UDim2.new(1, 0, 1, -74)
-        overlay.Position = UDim2.new(0, 0, 0, 48)
+        overlay.Size = UDim2.new(1, 0, 1, -74 - 26)           -- ← AQUI: -74 (top) -26 (bottom)
+        overlay.Position = UDim2.new(0, 0, 0, 48)             -- começa logo abaixo da TopBar
         overlay.BackgroundColor3 = Color3.fromRGB(8, 8, 16)
         overlay.BackgroundTransparency = 0.25
         overlay.BorderSizePixel = 0
@@ -695,7 +695,7 @@ function self:ToggleConfigPanel()
     self.ConfigPanel.Active = true
     
     -- Começa escondido logo abaixo da TopBar (não de -1,0)
-    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 - 60)  -- ajuste o -60 se quiser começar mais alto/baixo
+    self.ConfigPanel.Position = UDim2.new(0, 0, 0, 48 + 120)   -- ← começa mais baixo
     self.ConfigPanel.Size     = UDim2.new(1, 0, 1, -74 - 40) -- começa menor
 
     -- Animação de abrir: desce e cresce ao mesmo tempo
