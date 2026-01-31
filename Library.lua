@@ -25,7 +25,7 @@ ScreenGui.Parent = CoreGui
 
 -- Cores globais
 local COLORS = {
-    Background    = Color3.fromRGB(30, 30, 45),
+    Background    = Color3.fromRGB(12, 12, 20),
     Accent        = Color3.fromRGB(90, 170, 255),
     AccentPress   = Color3.fromRGB(110, 190, 255),
     Element       = Color3.fromRGB(18, 18, 28),
