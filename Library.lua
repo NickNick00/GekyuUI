@@ -654,68 +654,88 @@ function self:ToggleConfigPanel()
             Enum.TextYAlignment.Center
         )
 
+
+        -- ==============================================
+-- Container SETTINGS (com toggle real)
 -- ==============================================
-        -- Container SETTINGS (com toggle real)
-        -- ==============================================
-        local settingsContainer = Instance.new("ScrollingFrame")
-        settingsContainer.Name = "SettingsContainer"
-        settingsContainer.Size = UDim2.new(1, 0, 1, 0)
-        settingsContainer.BackgroundTransparency = 1
-        settingsContainer.ScrollBarThickness = 3
-        settingsContainer.ScrollBarImageColor3 = COLORS.Stroke
-        settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        settingsContainer.CanvasSize = UDim2.new(0,0,0,0)
-        settingsContainer.Visible = false
-        settingsContainer.ZIndex = 107
-        settingsContainer.Parent = pagesArea
+local settingsContainer = Instance.new("ScrollingFrame")
+settingsContainer.Name = "SettingsContainer"
+settingsContainer.Size = UDim2.new(1, 0, 1, 0)
+settingsContainer.BackgroundTransparency = 1
+settingsContainer.ScrollBarThickness = 4
+settingsContainer.ScrollBarImageColor3 = COLORS.Accent
+settingsContainer.ScrollBarImageTransparency = 0.4
+settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y   -- ← importante
+settingsContainer.CanvasSize = UDim2.new(0,0,0,0)              -- será sobrescrito pelo Automatic
+settingsContainer.Visible = false
+settingsContainer.ZIndex = 107
+settingsContainer.Parent = pagesArea
 
-        local settingsLayout = Instance.new("UIListLayout")
-        settingsLayout.Padding = UDim.new(0, 12)
-        settingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        settingsLayout.Parent = settingsContainer
+local settingsLayout = Instance.new("UIListLayout")
+settingsLayout.Padding = UDim.new(0, 14)   -- um pouco mais de espaço
+settingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+settingsLayout.Parent = settingsContainer
 
-        -- Toggle funcional
-        Library.Toggle(settingsContainer, "Ativar sons de interface", false, function(state)
-            print("[Config] Sons de interface:", state and "ON" or "OFF")
-        end)
+-- Padding interno para não ficar colado nas bordas
+local settingsPadding = Instance.new("UIPadding")
+settingsPadding.PaddingTop = UDim.new(0,12)
+settingsPadding.PaddingBottom = UDim.new(0,20)
+settingsPadding.PaddingLeft = UDim.new(0,8)
+settingsPadding.PaddingRight = UDim.new(0,8)
+settingsPadding.Parent = settingsContainer
 
-        -- Botão de teste
-        Library.Button(settingsContainer, "Executar Teste", function()
-            Library.Notify("Teste executado com sucesso!", 2.5, Color3.fromRGB(100, 220, 120))
-            print("[Config] Botão de teste clicado")
-        end, {icon = "rbxassetid://6031094678"})
+-- ==============================================
+-- ELEMENTOS DE TESTE (adicione aqui o que quiser)
+-- ==============================================
 
-        -- ==============================================
-        -- Dropdown de Temas (agora com update forçado)
-        -- ==============================================
-        local themes = {
-            "Default",
-            "Vidro"
-        }
+-- Toggle de exemplo
+Library.Toggle(settingsContainer, "Ativar sons de interface", false, function(state)
+    print("[Config] Sons de interface:", state and "ON" or "OFF")
+end)
 
-        Library.Dropdown(
-            settingsContainer,
-            "Tema do Hub",
-            themes,
-            1,
-            function(selectedTheme)
-                print("[Tema] Selecionado: " .. selectedTheme)
-                
-                if selectedTheme == "Default" then
-                    Library.applyTheme_Default()
-                elseif selectedTheme == "Vidro" then
-                    Library.applyTheme_Vidro()
-                end
-            end
-        )
+-- Botão de teste (como você pediu)
+Library.Button(settingsContainer, "Executar Teste Rápido", function()
+    Library.Notify("Teste executado com sucesso!", 2.5, Color3.fromRGB(80, 220, 140))
+    print("[Config] Botão de teste foi clicado")
+end, {icon = "rbxassetid://6031094678"})
 
-        -- Força atualização do canvas size (importante!)
-        task.delay(0.1, function()
-            if settingsContainer and settingsLayout then
-                settingsContainer.CanvasSize = UDim2.new(0, 0, 0, settingsLayout.AbsoluteContentSize.Y + 20)
-            end
-        end)       
+-- Dropdown de temas (já existe, só garantimos que funcione)
+local themes = {
+    "Default",
+    "Vidro",
+    -- "Dark Neon", "Pastel", "OLED"  -- pode adicionar mais depois
+}
+
+Library.Dropdown(
+    settingsContainer,
+    "Tema do Hub",
+    themes,
+    1,
+    function(selectedTheme)
+        print("[Tema] Selecionado → " .. selectedTheme)
+        
+        if selectedTheme == "Default" then
+            Library.applyTheme_Default()
+        elseif selectedTheme == "Vidro" then
+            Library.applyTheme_Vidro()
+        end
+        
+        -- Aqui você pode adicionar mais temas no futuro
+    end
+)
+
+-- ==============================================
+-- Força atualização do canvas depois que tudo foi criado
+-- ==============================================
+task.spawn(function()
+    task.wait(0.06)  -- pequeno delay para garantir que os filhos foram renderizados
+    if settingsLayout and settingsContainer then
+        local contentHeight = settingsLayout.AbsoluteContentSize.Y
+        settingsContainer.CanvasSize = UDim2.new(0, 0, 0, contentHeight + 40)
+        print("[Settings] CanvasSize ajustado para: " .. contentHeight + 40)
+    end
+end)
         -- ==============================================
         -- Tabs laterais com texto visível e TextScaled
         -- ==============================================
