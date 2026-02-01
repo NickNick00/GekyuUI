@@ -664,14 +664,14 @@ settingsContainer.Size = UDim2.new(1, 0, 1, 0)
 settingsContainer.Position = UDim2.new(0, 0, 0, 0)
 settingsContainer.BackgroundTransparency = 1
 settingsContainer.BorderSizePixel = 0
-settingsContainer.ScrollBarThickness = 5
+settingsContainer.ScrollBarThickness = 6
 settingsContainer.ScrollBarImageColor3 = COLORS.Accent
-settingsContainer.ScrollBarImageTransparency = 0.3
+settingsContainer.ScrollBarImageTransparency = 0.2
 settingsContainer.ScrollingDirection = Enum.ScrollingDirection.Y
 settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 settingsContainer.CanvasSize = UDim2.new(0,0,0,300) -- valor inicial maior para debug
 settingsContainer.Visible = false
-settingsContainer.ZIndex = 107
+settingsContainer.ZIndex = 110
 settingsContainer.Parent = pagesArea
 
 print("[DEBUG-SETTINGS] ScrollingFrame criado e parentado em pagesArea")
@@ -714,21 +714,20 @@ end)
 print("[DEBUG-SETTINGS] Dropdown criado")
 
 -- Força visibilidade e atualização forte
-task.spawn(function()
-    task.wait(0.12)  -- tempo maior para garantir que os filhos foram renderizados
+-- No final da criação dos componentes de teste (depois do dropdown)
+task.delay(0.2, function()
     if not settingsContainer or not settingsLayout then return end
     
-    local contentH = settingsLayout.AbsoluteContentSize.Y
-    print("[DEBUG-SETTINGS] Altura real do conteúdo (AbsoluteContentSize.Y):", contentH)
+    local contentHeight = settingsLayout.AbsoluteContentSize.Y
+    print("[FORCE-CANVAS] Conteúdo calculado:", contentHeight)
     
-    if contentH < 50 then
-        print("[DEBUG-SETTINGS] AVISO: conteúdo muito pequeno → pode estar invisível ou com altura 0")
-    end
+    settingsContainer.CanvasSize = UDim2.new(0, 0, 0, contentHeight + 80)  -- + margem extra
+    settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y  -- ative isso também
     
-    settingsContainer.CanvasSize = UDim2.new(0, 0, 0, math.max(contentH + 60, 200))
-    settingsContainer.Visible = true   -- força visível temporariamente para debug
-    task.wait(0.1)
-    settingsContainer.Visible = false  -- volta ao normal (será controlado pela tab)
+    -- Força re-render
+    settingsContainer.Visible = false
+    task.wait(0.03)
+    settingsContainer.Visible = true   -- pisca pra forçar
 end)
         -- ==============================================
         -- Tabs laterais com texto visível e TextScaled
@@ -768,8 +767,22 @@ end)
             Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
 
             tabBtn.Activated:Connect(function()
-                infoContainer.Visible = (targetPage == infoContainer)
-                settingsContainer.Visible = (targetPage == settingsContainer)
+    infoContainer.Visible = (targetPage == infoContainer)
+    settingsContainer.Visible = (targetPage == settingsContainer)
+
+    -- FORÇA ATUALIZAÇÃO FORTE
+    if targetPage == settingsContainer then
+        settingsContainer.Visible = true
+        settingsContainer.CanvasPosition = Vector2.new(0, 0)  -- reseta scroll
+        task.spawn(function()
+            task.wait(0.03)  -- dá tempo de render
+            print("[FORCE-VIS] SETTINGS visible = true | CanvasSize.Y =", settingsContainer.CanvasSize.Y.Offset)
+            print("[FORCE-VIS] AbsoluteContentSize.Y =", settingsLayout.AbsoluteContentSize.Y)
+        end)
+    end
+
+    -- resto do código de reset das outras tabs...
+end)
 
                 -- Reset visual das outras tabs
                 for _, sib in tabsArea:GetChildren() do
