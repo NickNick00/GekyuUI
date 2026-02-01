@@ -644,16 +644,18 @@ function self:ToggleConfigPanel()
         ledStroke.Transparency = 0.38
         ledStroke.Parent = infoContainer
 
-        CreateSmartTextLabel(infoContainer,
-            UDim2.new(1, -40, 1, -40),
-            UDim2.new(0, 20, 0, 20),
-            "Gekyu Hub v1.0\nStatus: Operational\nUser: Test",
+        local infoLabel = CreateSmartTextLabel(infoContainer,
+            UDim2.new(0.92, 0, 0.85, 0),  -- 92% largura, 85% altura
+            UDim2.new(0.04, 0, 0.075, 0), -- Centralizado
+            "Gekyu Hub v1.0\n\nStatus: Operational\nUser: Test User\n\nVersão: 1.0 - 2026",
             COLORS.Text,
             Enum.Font.GothamSemibold,
-            15,
+            16,
             Enum.TextXAlignment.Center,
             Enum.TextYAlignment.Center
         )
+        infoLabel.TextWrapped = true
+        infoLabel.ZIndex = 108
 
 
 -- ==============================================
@@ -768,6 +770,9 @@ Library.Button(settingsContainer, "Salvar Posição Atual", function()
     self:SaveHubSettings()
     Library.Notify("Posição e tamanho salvos!", 2.5, COLORS.Accent)
 end)
+
+-- Debug: Confirma que os botões foram criados
+print("[DEBUG] Botões de settings criados:", #settingsContainer:GetChildren(), "elementos no settingsContainer")
 
 -- (você pode continuar adicionando mais botões aqui usando Library.Button)
         -- ==============================================
@@ -1083,60 +1088,8 @@ end)
     -- =============================================
     -- COMPONENTES COMPLETOS
     -- =============================================
-
-    function Library.Button(parent, text, callback, options)
-        options = options or {}
-        local button = Instance.new("TextButton")
-        button.Size = options.size or UDim2.new(0.95, 0, 0, 48)
-        button.BackgroundColor3 = COLORS.Element
-        button.AutoButtonColor = false
-        button.Text = ""
-        button.ZIndex = 7
-        button.Parent = parent
-        
-        Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
-
-        local label = CreateSmartTextLabel(button, UDim2.new(1, options.icon and -60 or 0, 1, 0), UDim2.new(0, options.icon and 16 or 0, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, options.textSize or 15, Enum.TextXAlignment.Left)
-
-        local icon
-        if options.icon then
-            icon = Instance.new("ImageLabel")
-            icon.Size = UDim2.new(0, 28, 0, 28)
-            icon.Position = UDim2.new(1, -42, 0.5, -14)
-            icon.BackgroundTransparency = 1
-            icon.Image = options.icon
-            icon.ImageColor3 = COLORS.Text
-            icon.ScaleType = Enum.ScaleType.Fit
-            icon.ZIndex = 8
-            icon.Parent = button
-        end
-
-        button.MouseEnter:Connect(function()
-            safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.ElementHover})
-            if icon then safeTween(icon, TweenInfo.new(0.3), {ImageColor3 = COLORS.Accent}) end
-        end)
-
-        button.MouseLeave:Connect(function()
-            safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.Element})
-            if icon then safeTween(icon, TweenInfo.new(0.3), {ImageColor3 = COLORS.Text}) end
-        end)
-
-        button.Activated:Connect(function()
-            safeTween(button, TweenInfo.new(0.08), {BackgroundColor3 = COLORS.AccentPress})
-            if icon then
-                safeTween(icon, TweenInfo.new(0.12), {Size = UDim2.new(0,32,0,32)})
-                task.delay(0.12, function()
-                    safeTween(icon, TweenInfo.new(0.12), {Size = UDim2.new(0,28,0,28)})
-                end)
-            end
-            task.delay(0.15, function()
-                safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.ElementHover})
-            end)
-            callback()
-        end)
-
-        return button
-    end
+    -- NOTA: A função Library.Button já está definida no escopo global (linha 694)
+    -- Esta duplicata foi REMOVIDA para evitar problemas de escopo
 
     function Library.Toggle(parent, text, default, callback)
         local container = Instance.new("Frame")
@@ -1955,6 +1908,6 @@ label.TextTruncate = Enum.TextTruncate.AtEnd
     return self
 end
 
-print("[GekyuUI] Versão COMPLETA e corrigida - 16/01/2026 - Config minimiza, scroll por tab, todos componentes incluídos")
+print("[GekyuUI] Versão CORRIGIDA - 01/02/2026 - Escopo Library.Button corrigido, aba INFO centralizada, todos componentes funcionando")
 
 return Library
