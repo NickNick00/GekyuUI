@@ -924,7 +924,12 @@ end
 
 -- Inicializa a primeira tab após carregar
 task.delay(0.2, function()
-    if self.tabs and self.tabs[1] then self.tabs[1].button.Activated:Fire() end
+    if self.tabs and self.tabs[1] then 
+        -- Trigger manual do click em vez de :Fire()
+        for _, connection in pairs(getconnections(self.tabs[1].button.Activated)) do
+            connection:Fire()
+        end
+    end
 end)
 
 
@@ -1078,7 +1083,10 @@ end)
         if foundAny then
             for _, tab in ipairs(self.tabs) do
                 if tab.button.Visible then
-                    tab.button.Activated:Fire()
+                    -- Trigger manual do click
+                    for _, connection in pairs(getconnections(tab.button.Activated)) do
+                        connection:Fire()
+                    end
                     break
                 end
             end
@@ -1902,7 +1910,12 @@ label.TextTruncate = Enum.TextTruncate.AtEnd
 
     task.delay(0.1, function()
         local firstTab = self.TabBar:FindFirstChildWhichIsA("TextButton")
-        if firstTab then firstTab.Activated:Fire() end
+        if firstTab then 
+            -- Trigger manual do click
+            for _, connection in pairs(getconnections(firstTab.Activated)) do
+                connection:Fire()
+            end
+        end
     end)
 
     return self
