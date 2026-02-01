@@ -889,7 +889,7 @@ end)
             "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
             function()
                 -- Coloque aqui o loadstring do seu outro hub
-                -- loadstring(game:HttpGet("URL_AQUI"))()
+               loadstring(game:HttpGet("https://raw.githubusercontent.com/NickNick00/GEKYUHUB/refs/heads/main/GEKYUHUB.lua"))()
                 ScreenGui:Destroy()
             end,
             function() end
