@@ -1,5 +1,3 @@
-
-
 -- Library.lua
 -- GekyuUI - Versão FINAL corrigida + DRAG DUPLO (topo + base)
 -- Kyuzzy - Atualizado 16/01/2026
