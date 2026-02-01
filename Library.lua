@@ -656,78 +656,79 @@ function self:ToggleConfigPanel()
 
 
 -- ==============================================
--- Container SETTINGS - sempre criado com conteúdo padrão
+-- Container SETTINGS - com debug e garantia de visibilidade
 -- ==============================================
 local settingsContainer = Instance.new("ScrollingFrame")
 settingsContainer.Name = "SettingsContainer"
 settingsContainer.Size = UDim2.new(1, 0, 1, 0)
+settingsContainer.Position = UDim2.new(0, 0, 0, 0)
 settingsContainer.BackgroundTransparency = 1
 settingsContainer.BorderSizePixel = 0
-settingsContainer.ScrollBarThickness = 4
+settingsContainer.ScrollBarThickness = 5
 settingsContainer.ScrollBarImageColor3 = COLORS.Accent
-settingsContainer.ScrollBarImageTransparency = 0.5
+settingsContainer.ScrollBarImageTransparency = 0.3
+settingsContainer.ScrollingDirection = Enum.ScrollingDirection.Y
 settingsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-settingsContainer.CanvasSize = UDim2.new(0,0,0,0)
+settingsContainer.CanvasSize = UDim2.new(0,0,0,300) -- valor inicial maior para debug
 settingsContainer.Visible = false
 settingsContainer.ZIndex = 107
 settingsContainer.Parent = pagesArea
 
+print("[DEBUG-SETTINGS] ScrollingFrame criado e parentado em pagesArea")
+
 local settingsLayout = Instance.new("UIListLayout")
-settingsLayout.Padding = UDim.new(0, 12)
+settingsLayout.Padding = UDim.new(0, 16)
 settingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+settingsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 settingsLayout.Parent = settingsContainer
 
 local settingsPadding = Instance.new("UIPadding")
-settingsPadding.PaddingTop = UDim.new(0, 14)
-settingsPadding.PaddingBottom = UDim.new(0, 24)
-settingsPadding.PaddingLeft = UDim.new(0, 10)
-settingsPadding.PaddingRight = UDim.new(0, 10)
+settingsPadding.PaddingTop = UDim.new(0, 16)
+settingsPadding.PaddingBottom = UDim.new(0, 30)
+settingsPadding.PaddingLeft = UDim.new(0, 12)
+settingsPadding.PaddingRight = UDim.new(0, 12)
 settingsPadding.Parent = settingsContainer
 
 -- ==============================================
--- Conteúdo PADRÃO da aba Settings (vem com a library)
+-- Conteúdo padrão (com prints de debug)
 -- ==============================================
 
--- 1. Toggle de sons
-Library.Toggle(settingsContainer, "Ativar sons de interface", true, function(state)
-    print("[Config] Interface sounds:", state and "ON" or "OFF")
-    -- Aqui você pode salvar a preferência depois
+local toggle = Library.Toggle(settingsContainer, "Ativar sons de interface", true, function(state)
+    print("[Config] Sons de interface:", state)
 end)
+print("[DEBUG-SETTINGS] Toggle criado")
 
--- 2. Botão de teste (exatamente como você pediu)
-Library.Button(settingsContainer, "Executar Teste", function()
-    Library.Notify("Teste rápido executado com sucesso!", 3, Color3.fromRGB(100, 220, 120))
-    print("[Config] Botão de teste acionado")
+local testBtn = Library.Button(settingsContainer, "Executar Teste", function()
+    Library.Notify("Teste OK!", 3, Color3.fromRGB(100,220,120))
+    print("[Config] Teste clicado")
 end, {icon = "rbxassetid://6031094678"})
+print("[DEBUG-SETTINGS] Botão de teste criado")
 
--- 3. Dropdown de temas
-local themesList = {
-    "Default",
-    "Vidro",
-    -- Adicione mais temas aqui quando implementar
-}
-
-Library.Dropdown(settingsContainer, "Tema do Hub", themesList, 1, function(selected)
-    print("[Config] Tema alterado para:", selected)
-    
-    if selected == "Default" then
-        Library.applyTheme_Default()
-    elseif selected == "Vidro" then
-        Library.applyTheme_Vidro()
-    end
-    
-    -- Opcional: salvar preferência de tema
+local themes = {"Default", "Vidro"}
+local dropdown = Library.Dropdown(settingsContainer, "Tema do Hub", themes, 1, function(sel)
+    print("[Config] Tema selecionado:", sel)
+    if sel == "Default" then Library.applyTheme_Default()
+    elseif sel == "Vidro" then Library.applyTheme_Vidro() end
 end)
+print("[DEBUG-SETTINGS] Dropdown criado")
 
--- Força atualização do canvas (redundância para garantir)
+-- Força visibilidade e atualização forte
 task.spawn(function()
-    task.wait(0.08)
-    if settingsContainer and settingsLayout then
-        local h = settingsLayout.AbsoluteContentSize.Y
-        settingsContainer.CanvasSize = UDim2.new(0, 0, 0, h + 40)
-        print("[Settings] Canvas atualizado automaticamente → altura:", h + 40)
+    task.wait(0.12)  -- tempo maior para garantir que os filhos foram renderizados
+    if not settingsContainer or not settingsLayout then return end
+    
+    local contentH = settingsLayout.AbsoluteContentSize.Y
+    print("[DEBUG-SETTINGS] Altura real do conteúdo (AbsoluteContentSize.Y):", contentH)
+    
+    if contentH < 50 then
+        print("[DEBUG-SETTINGS] AVISO: conteúdo muito pequeno → pode estar invisível ou com altura 0")
     end
+    
+    settingsContainer.CanvasSize = UDim2.new(0, 0, 0, math.max(contentH + 60, 200))
+    settingsContainer.Visible = true   -- força visível temporariamente para debug
+    task.wait(0.1)
+    settingsContainer.Visible = false  -- volta ao normal (será controlado pela tab)
 end)
         -- ==============================================
         -- Tabs laterais com texto visível e TextScaled
