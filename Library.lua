@@ -744,6 +744,808 @@ function Library.Button(parent, text, callback, options)
         callback()
     end)
 
+
+-- =============================================
+-- COMPONENTES MOVIDOS PARA ESCOPO GLOBAL
+-- =============================================
+
+function Library.Toggle(parent, text, default, callback)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0.95, 0, 0, 48)
+    container.BackgroundColor3 = COLORS.Element
+    container.ZIndex = 7
+    container.Parent = parent
+    
+    Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
+
+    local hitbox = Instance.new("TextButton")
+    hitbox.Size = UDim2.new(1, 0, 1, 0)
+    hitbox.BackgroundTransparency = 1
+    hitbox.Text = ""
+    hitbox.ZIndex = 8
+    hitbox.Parent = container
+
+    CreateSmartTextLabel(container, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(0, 52, 0, 26)
+    track.Position = UDim2.new(1, -64, 0.5, -13)
+    track.BackgroundColor3 = default and COLORS.Accent or COLORS.TextDim
+    track.ZIndex = 8
+    track.Parent = container
+    
+    Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+    local circle = Instance.new("Frame")
+    circle.Size = UDim2.new(0, 20, 0, 20)
+    circle.Position = default and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
+    circle.BackgroundColor3 = Color3.new(1,1,1)
+    circle.ZIndex = 9
+    circle.Parent = track
+    
+    Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+
+    local state = default or false
+
+    local function update()
+        safeTween(track, TweenInfo.new(0.24), {BackgroundColor3 = state and COLORS.Accent or COLORS.TextDim})
+        safeTween(circle, TweenInfo.new(0.28, Enum.EasingStyle.Back), {
+            Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
+        })
+    end
+
+    hitbox.Activated:Connect(function()
+        state = not state
+        update()
+        callback(state)
+    end)
+
+    update()
+
+    return container
+end
+
+function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0.95, 0, 0, 48)
+    container.BackgroundColor3 = COLORS.Element
+    container.ClipsDescendants = true
+    container.ZIndex = 7
+    container.Parent = parent
+    
+    Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
+
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 48)
+    header.BackgroundTransparency = 1
+    header.Parent = container
+
+    CreateSmartTextLabel(header, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), toggleText, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+    toggleBtn.BackgroundTransparency = 1
+    toggleBtn.Text = ""
+    toggleBtn.ZIndex = 8
+    toggleBtn.Parent = header
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(0, 52, 0, 26)
+    track.Position = UDim2.new(1, -64, 0.5, -13)
+    track.BackgroundColor3 = COLORS.TextDim
+    track.ZIndex = 8
+    track.Parent = header
+    
+    Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+    local circle = Instance.new("Frame")
+    circle.Size = UDim2.new(0, 20, 0, 20)
+    circle.Position = UDim2.new(0, 3, 0.5, -10)
+    circle.BackgroundColor3 = Color3.new(1,1,1)
+    circle.ZIndex = 9
+    circle.Parent = track
+    
+    Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+
+    local checkboxesContainer = Instance.new("Frame")
+    checkboxesContainer.Size = UDim2.new(1, 0, 0, 0)
+    checkboxesContainer.Position = UDim2.new(0, 0, 0, 48)
+    checkboxesContainer.BackgroundTransparency = 1
+    checkboxesContainer.ZIndex = 8
+    checkboxesContainer.Parent = container
+
+    local checkListLayout = Instance.new("UIListLayout")
+    checkListLayout.Padding = UDim.new(0, 8)
+    checkListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    checkListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    checkListLayout.Parent = checkboxesContainer
+
+    local state = false
+
+    for _, checkName in ipairs(checkboxesList) do
+        local checkFrame = Instance.new("Frame")
+        checkFrame.Size = UDim2.new(0.92, 0, 0, 36)
+        checkFrame.BackgroundTransparency = 1
+        checkFrame.ZIndex = 8
+        checkFrame.Parent = checkboxesContainer
+
+        CreateSmartTextLabel(checkFrame, UDim2.new(1, -60, 1, 0), UDim2.new(0, 12, 0, 0), checkName, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+
+        local checkHitbox = Instance.new("TextButton")
+        checkHitbox.Size = UDim2.new(0, 45, 0, 45)
+        checkHitbox.Position = UDim2.new(1, -45, 0.5, -22)
+        checkHitbox.BackgroundTransparency = 1
+        checkHitbox.Text = ""
+        checkHitbox.ZIndex = 9
+        checkHitbox.Parent = checkFrame
+
+        local checkBoxVisual = Instance.new("Frame")
+        checkBoxVisual.Size = UDim2.new(0, 20, 0, 20)
+        checkBoxVisual.Position = UDim2.new(0.5, -10, 0.5, -10)
+        checkBoxVisual.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        checkBoxVisual.ZIndex = 9
+        checkBoxVisual.Parent = checkHitbox
+        
+        Instance.new("UICorner", checkBoxVisual).CornerRadius = UDim.new(0, 5)
+
+        local checkMark = Instance.new("TextLabel")
+        checkMark.Size = UDim2.new(1, 0, 1, 0)
+        checkMark.BackgroundTransparency = 1
+        checkMark.Text = "✓"
+        checkMark.TextColor3 = Color3.new(1,1,1)
+        checkMark.Font = Enum.Font.GothamBold
+        checkMark.TextSize = 16
+        checkMark.Visible = false
+        checkMark.ZIndex = 10
+        checkMark.Parent = checkBoxVisual
+
+        local cState = false
+        checkHitbox.Activated:Connect(function()
+            cState = not cState
+            checkMark.Visible = cState
+            
+            safeTween(checkBoxVisual, TweenInfo.new(0.18), {
+                BackgroundColor3 = cState and COLORS.Accent or Color3.fromRGB(40, 40, 60)
+            })
+        end)
+    end
+
+    toggleBtn.Activated:Connect(function()
+        state = not state
+        
+        safeTween(track, TweenInfo.new(0.24), {BackgroundColor3 = state and COLORS.Accent or COLORS.TextDim})
+        safeTween(circle, TweenInfo.new(0.28, Enum.EasingStyle.Back), {
+            Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
+        })
+
+        local contentHeight = #checkboxesList * 44 + 16
+        local finalHeight = state and (48 + contentHeight) or 48
+
+        safeTween(container, TweenInfo.new(0.38, Enum.EasingStyle.Quint), {
+            Size = UDim2.new(0.95, 0, 0, finalHeight)
+        })
+
+        callback(state)
+    end)
+end
+
+function Library.Slider(parent, text, min, max, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.95, 0, 0, 62)
+    frame.BackgroundColor3 = COLORS.Element
+    frame.ZIndex = 7
+    frame.Parent = parent
+    Instance.new("UICorner", frame).CornerRadius = CORNERS.Medium
+
+    CreateSmartTextLabel(frame, UDim2.new(0.68, 0, 0, 26), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+    local valueLabel = CreateSmartTextLabel(frame, UDim2.new(0.28, 0, 0, 26), UDim2.new(0.72, 0, 0, 6), tostring(default), COLORS.Accent, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Right)
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(0.92, 0, 0, 8)
+    bar.Position = UDim2.new(0.04, 0, 0.68, 0)
+    bar.BackgroundColor3 = Color3.fromRGB(45, 45, 62)
+    bar.ZIndex = 8
+    bar.Parent = frame
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(math.clamp((default - min)/(max-min), 0, 1), 0, 1, 0)
+    fill.BackgroundColor3 = COLORS.Accent
+    fill.ZIndex = 9
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+
+    local knobArea = Instance.new("TextButton")
+    knobArea.Size = UDim2.new(0, 48, 0, 48)
+    knobArea.Position = UDim2.new(fill.Size.X.Scale, 0, 0.5, 0)
+    knobArea.AnchorPoint = Vector2.new(0.5, 0.5)
+    knobArea.BackgroundTransparency = 1
+    knobArea.Text = ""
+    knobArea.ZIndex = 10
+    knobArea.Parent = bar
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 22, 0, 22)
+    knob.Position = UDim2.new(0.5, 0, 0.5, 0)
+    knob.AnchorPoint = Vector2.new(0.5, 0.5)
+    knob.BackgroundColor3 = Color3.new(1,1,1)
+    knob.ZIndex = 11
+    knob.Parent = knobArea
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+
+    local slider_dragging = false
+
+    local function getScrollParent()
+        local curr = frame.Parent
+        while curr and not curr:IsA("ScrollingFrame") do
+            curr = curr.Parent
+        end
+        return curr
+    end
+
+    local function updateValue(input)
+        local relative = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+        local value = math.floor(min + (max - min) * relative + 0.5)
+        fill.Size = UDim2.new(relative, 0, 1, 0)
+        knobArea.Position = UDim2.new(relative, 0, 0.5, 0)
+        valueLabel.Text = tostring(value)
+        callback(value)
+    end
+
+    knobArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            slider_dragging = true
+            _G.GekyuLock = true -- TRAVA O HUB
+            local scroll = getScrollParent()
+            if scroll then scroll.ScrollingEnabled = false end
+            updateValue(input)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if slider_dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateValue(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if slider_dragging then
+                slider_dragging = false
+                _G.GekyuLock = false -- LIBERA O HUB
+                local scroll = getScrollParent()
+                if scroll then scroll.ScrollingEnabled = true end
+            end
+        end
+    end)
+end
+
+
+function Library.Dropdown(parent, text, options, defaultIndex, callback)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0.95, 0, 0, 40)
+    container.BackgroundColor3 = COLORS.Element
+    container.ClipsDescendants = true
+    container.ZIndex = 7
+    container.Parent = parent
+    Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
+
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 40)
+    header.BackgroundTransparency = 1
+    header.Parent = container
+
+    CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+
+    local selectBtn = Instance.new("TextButton")
+    selectBtn.Size = UDim2.new(0, 130, 0, 30)
+    selectBtn.Position = UDim2.new(1, -140, 0.5, -15)
+    selectBtn.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
+    selectBtn.Text = ""
+    selectBtn.AutoButtonColor = false
+    selectBtn.ZIndex = 8
+    selectBtn.Parent = header
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = COLORS.Stroke
+    stroke.Transparency = 0.75
+    stroke.Parent = selectBtn
+
+    local selectCorner = Instance.new("UICorner")
+    selectCorner.CornerRadius = UDim.new(0, 8)
+    selectCorner.Parent = selectBtn
+
+    local selectedText = CreateSmartTextLabel(selectBtn, UDim2.new(1, -12, 1, 0), UDim2.new(0, 6, 0, 0), options[defaultIndex or 1] or "Selecione...", COLORS.Accent, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Center)
+
+    local optionsFrame = Instance.new("ScrollingFrame")
+    optionsFrame.Name = "Options"
+    optionsFrame.Size = UDim2.new(1, 0, 0, 0)
+    optionsFrame.Position = UDim2.new(0, 0, 0, 40)
+    optionsFrame.BackgroundTransparency = 1
+    optionsFrame.ScrollBarThickness = 0
+    optionsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    optionsFrame.ZIndex = 9
+    optionsFrame.Parent = container
+
+    local optionsLayout = Instance.new("UIListLayout")
+    optionsLayout.Padding = UDim.new(0, 4)
+    optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    optionsLayout.Parent = optionsFrame
+
+    local opened = false
+
+    local function toggle()
+        opened = not opened
+        local height = opened and math.min(#options * 38, 180) or 0
+        
+        safeTween(optionsFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, height)})
+        safeTween(container, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, 40 + height)})
+        safeTween(stroke, TweenInfo.new(0.3), {Transparency = opened and 0.35 or 0.75})
+    end
+
+    for _, opt in ipairs(options) do
+        local limitedOpt = LimitDropdownText(opt)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0.96, 0, 0, 34)
+        btn.BackgroundTransparency = 1
+        btn.Text = ""
+        btn.AutoButtonColor = false
+        btn.ZIndex = 10
+        btn.Parent = optionsFrame
+        
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+
+       local label = CreateSmartTextLabel(btn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+label.TextTruncate = Enum.TextTruncate.AtEnd
+
+        btn.Activated:Connect(function()
+            selectedText.Text = limitedOpt
+            callback(opt)
+            toggle()
+        end)
+
+        btn.MouseEnter:Connect(function()
+            safeTween(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.92})
+        end)
+
+        btn.MouseLeave:Connect(function()
+            safeTween(btn, TweenInfo.new(0.15), {BackgroundTransparency = 1})
+        end)
+    end
+
+    selectBtn.Activated:Connect(toggle)
+end
+
+function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0.95, 0, 0, 40)
+    container.BackgroundColor3 = COLORS.Element
+    container.ClipsDescendants = true
+    container.ZIndex = 7
+    container.Parent = parent
+    
+    Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
+
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 40)
+    header.BackgroundTransparency = 1
+    header.Parent = container
+
+    CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+
+    local previewBox = Instance.new("TextButton")
+    previewBox.Size = UDim2.new(0, 130, 0, 30)
+    previewBox.Position = UDim2.new(1, -140, 0.5, -15)
+    previewBox.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
+    previewBox.Text = ""
+    previewBox.AutoButtonColor = false
+    previewBox.ZIndex = 8
+    previewBox.Parent = header
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = COLORS.Stroke
+    stroke.Transparency = 0.75
+    stroke.Parent = previewBox
+
+    local previewCorner = Instance.new("UICorner")
+    previewCorner.CornerRadius = UDim.new(0, 8)
+    previewCorner.Parent = previewBox
+
+    local previewText = CreateSmartTextLabel(previewBox, UDim2.new(1, -36, 1, 0), UDim2.new(0, 8, 0, 0), "Nenhum selecionado", COLORS.TextDim, Enum.Font.GothamSemibold, 12, Enum.TextXAlignment.Left)
+
+    local arrow = Instance.new("TextLabel")
+    arrow.Size = UDim2.new(0, 24, 1, 0)
+    arrow.Position = UDim2.new(1, -28, 0, 0)
+    arrow.BackgroundTransparency = 1
+    arrow.Text = "▼"
+    arrow.TextColor3 = COLORS.TextDim
+    arrow.Font = Enum.Font.GothamBold
+    arrow.TextSize = 14
+    arrow.ZIndex = 9
+    arrow.Parent = previewBox
+
+    local optionsContainer = Instance.new("ScrollingFrame")
+    optionsContainer.Name = "Options"
+    optionsContainer.Size = UDim2.new(1, 0, 0, 0)
+    optionsContainer.Position = UDim2.new(0, 0, 0, 40)
+    optionsContainer.BackgroundTransparency = 1
+    optionsContainer.ScrollBarThickness = 0
+    optionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    optionsContainer.ZIndex = 9
+    optionsContainer.Parent = container
+
+    local optionsLayout = Instance.new("UIListLayout")
+    optionsLayout.Padding = UDim.new(0, 4)
+    optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    optionsLayout.Parent = optionsContainer
+
+    local isOpen = false
+    local selected = {}
+
+    if defaultSelected then
+        for _, v in ipairs(defaultSelected) do
+            for i, opt in ipairs(options) do
+                if opt == v then
+                    selected[i] = true
+                    break
+                end
+            end
+        end
+    end
+
+    local function updatePreview()
+        local count = 0
+        for _, isSel in pairs(selected) do if isSel then count += 1 end end
+        
+        local previewStr = count == 0 and "Nenhum selecionado" or (count == #options and "Todos selecionados" or count .. " selecionado(s)")
+        previewText.Text = LimitDropdownText(previewStr)
+        previewText.TextColor3 = count > 0 and COLORS.Accent or COLORS.TextDim
+        
+        local selectedList = {}
+        for i, isSel in pairs(selected) do
+            if isSel then table.insert(selectedList, options[i]) end
+        end
+        callback(selectedList)
+    end
+
+    for i, optionName in ipairs(options) do
+        local limitedOpt = LimitDropdownText(optionName)
+        local optionBtn = Instance.new("TextButton")
+        optionBtn.Size = UDim2.new(0.96, 0, 0, 34)
+        optionBtn.BackgroundTransparency = 1
+        optionBtn.Text = ""
+        optionBtn.AutoButtonColor = false
+        optionBtn.ZIndex = 10
+        optionBtn.Parent = optionsContainer
+        
+        Instance.new("UICorner", optionBtn).CornerRadius = CORNERS.Small
+
+        local label = CreateSmartTextLabel(optionBtn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
+label.TextTruncate = Enum.TextTruncate.AtEnd
+
+        local checkMark = Instance.new("TextLabel")
+        checkMark.Size = UDim2.new(0, 24, 0, 24)
+        checkMark.Position = UDim2.new(1, -34, 0.5, -12)
+        checkMark.BackgroundTransparency = 1
+        checkMark.Text = "✓"
+        checkMark.TextColor3 = COLORS.Accent
+        checkMark.Font = Enum.Font.GothamBold
+        checkMark.TextSize = 18
+        checkMark.Visible = selected[i] or false
+        checkMark.ZIndex = 11
+        checkMark.Parent = optionBtn
+
+        optionBtn.MouseEnter:Connect(function()
+            safeTween(optionBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.92})
+        end)
+
+        optionBtn.MouseLeave:Connect(function()
+            safeTween(optionBtn, TweenInfo.new(0.15), {BackgroundTransparency = 1})
+        end)
+
+        optionBtn.Activated:Connect(function()
+            selected[i] = not selected[i]
+            checkMark.Visible = selected[i]
+            updatePreview()
+        end)
+    end
+
+    local function toggleDropdown()
+        isOpen = not isOpen
+        local maxHeight = math.min(#options * 38 + 8, 180)
+        local targetHeight = isOpen and maxHeight or 0
+        
+        safeTween(optionsContainer, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, targetHeight)})
+        safeTween(container, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, 40 + targetHeight)})
+        safeTween(stroke, TweenInfo.new(0.3), {Transparency = isOpen and 0.35 or 0.75})
+        safeTween(arrow, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Rotation = isOpen and 180 or 0})
+    end
+
+    previewBox.Activated:Connect(toggleDropdown)
+
+    updatePreview()
+end
+
+    function Library.InputNumber(parent, text, min, max, default, step, callback)
+    step = step or 1
+
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0.95, 0, 0, 52)
+    container.BackgroundColor3 = COLORS.Element
+    container.ZIndex = 7
+    container.Parent = parent
+    Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
+
+    -- Ajustado: TextTruncate e tamanho para não colidir
+    local label = CreateSmartTextLabel(container, UDim2.new(1, -160, 0, 24), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
+    label.TextTruncate = Enum.TextTruncate.AtEnd 
+
+    local inputFrame = Instance.new("Frame")
+    inputFrame.Size = UDim2.new(0, 140, 0, 34)
+    inputFrame.Position = UDim2.new(1, -154, 0.5, -17) -- Centralizado verticalmente
+    inputFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
+    inputFrame.ZIndex = 8
+    inputFrame.Parent = container
+    Instance.new("UICorner", inputFrame).CornerRadius = CORNERS.Small
+
+    local valueBox = Instance.new("TextBox")
+    valueBox.Size = UDim2.new(1, -60, 0.8, 0)
+    valueBox.Position = UDim2.new(0.5, 0, 0.5, 0)
+    valueBox.AnchorPoint = Vector2.new(0.5, 0.5)
+    valueBox.BackgroundTransparency = 1
+    valueBox.Text = tostring(default)
+    valueBox.TextColor3 = COLORS.Accent
+    valueBox.Font = Enum.Font.GothamBold
+    valueBox.TextSize = 16
+    valueBox.ZIndex = 9
+    valueBox.Parent = inputFrame
+
+    -- Resto da lógica de minusBtn/plusBtn continua igual...
+
+
+    local minusBtn = Instance.new("TextButton")
+    minusBtn.Size = UDim2.new(0, 28, 0, 28)
+    minusBtn.Position = UDim2.new(0, 6, 0.5, -14)
+    minusBtn.BackgroundTransparency = 1
+    minusBtn.Text = "−"
+    minusBtn.TextColor3 = COLORS.TextDim
+    minusBtn.Font = Enum.Font.GothamBold
+    minusBtn.TextSize = 20
+    minusBtn.ZIndex = 9
+    minusBtn.Parent = inputFrame
+
+    local plusBtn = Instance.new("TextButton")
+    plusBtn.Size = UDim2.new(0, 28, 0, 28)
+    plusBtn.Position = UDim2.new(1, -34, 0.5, -14)
+    plusBtn.BackgroundTransparency = 1
+    plusBtn.Text = "+"
+    plusBtn.TextColor3 = COLORS.TextDim
+    plusBtn.Font = Enum.Font.GothamBold
+    plusBtn.TextSize = 20
+    plusBtn.ZIndex = 9
+    plusBtn.Parent = inputFrame
+
+    local currentValue = default
+
+    local function updateValue(newVal)
+        currentValue = math.clamp(newVal, min, max)
+        valueBox.Text = tostring(currentValue)
+        callback(currentValue)
+    end
+
+    minusBtn.Activated:Connect(function()
+        updateValue(currentValue - step)
+    end)
+
+    plusBtn.Activated:Connect(function()
+        updateValue(currentValue + step)
+    end)
+
+    valueBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local num = tonumber(valueBox.Text)
+            if num then
+                updateValue(num)
+            else
+                valueBox.Text = tostring(currentValue)
+            end
+        end
+    end)
+
+    valueBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local num = tonumber(valueBox.Text)
+        if num then currentValue = num end
+    end)
+
+    updateValue(default)
+end
+
+local activeNotifications = {}
+
+function Library.Notify(message, duration, color)
+    duration = duration or 4
+    color = color or COLORS.Accent
+
+    local holder = ScreenGui:FindFirstChild("NotificationHolder")
+    if not holder then
+        holder = Instance.new("Frame")
+        holder.Name = "NotificationHolder"
+        holder.Size = UDim2.new(0, 320, 0.4, 0)
+        holder.Position = UDim2.new(1, -340, 0, 20)
+        holder.BackgroundTransparency = 1
+        holder.ZIndex = 100
+        holder.Parent = ScreenGui
+
+        local list = Instance.new("UIListLayout")
+        list.Padding = UDim.new(0, 10)
+        list.HorizontalAlignment = Enum.HorizontalAlignment.Right
+        list.VerticalAlignment = Enum.VerticalAlignment.Top
+        list.SortOrder = Enum.SortOrder.LayoutOrder
+        list.Parent = holder
+    end
+
+    if activeNotifications[message] then
+        local data = activeNotifications[message]
+        data.count = (data.count or 1) + 1
+        
+        local label = data.frame:FindFirstChildWhichIsA("TextLabel")
+        label.RichText = true
+        label.Text = message .. "  <font color='rgb(200,220,255)'>x" .. data.count .. "</font>"
+        
+        if data.destroyTime then task.cancel(data.destroyTime) end
+        
+        data.destroyTime = task.delay(duration, function()
+            safeTween(data.frame, TweenInfo.new(0.5), {
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, 0, 0, -40)
+            })
+            task.delay(0.5, function()
+                data.frame:Destroy()
+                activeNotifications[message] = nil
+            end)
+        end)
+        
+        safeTween(data.frame, TweenInfo.new(0.2), {BackgroundColor3 = color})
+        task.delay(0.2, function()
+            safeTween(data.frame, TweenInfo.new(0.4), {BackgroundColor3 = COLORS.Background})
+        end)
+        
+        return
+    end
+
+    local notif = Instance.new("Frame")
+    notif.Size = UDim2.new(1, 0, 0, 64)
+    notif.BackgroundColor3 = COLORS.Background
+    notif.BackgroundTransparency = 0
+    notif.ZIndex = 102
+    notif.Parent = holder
+    
+    Instance.new("UICorner", notif).CornerRadius = CORNERS.Medium
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color
+    stroke.Transparency = 0.4
+    stroke.Parent = notif
+
+    local label = CreateSmartTextLabel(notif, UDim2.new(1, -24, 1, -20), UDim2.new(0, 12, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+    label.ZIndex = 103
+
+    safeTween(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = UDim2.new(0, 0, 0, 0)})
+
+    activeNotifications[message] = {
+        frame = notif,
+        count = 1,
+        destroyTime = task.delay(duration, function()
+            safeTween(notif, TweenInfo.new(0.5), {
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, 0, 0, -40)
+            })
+            task.delay(0.5, function()
+                notif:Destroy()
+                activeNotifications[message] = nil
+            end)
+        end)
+    }
+end
+
+function Library.Popup(titleText, messageText, onConfirm, onCancel)
+    local popupHolder = Instance.new("Frame")
+    popupHolder.Name = "PopupLayer"
+    popupHolder.Size = UDim2.new(1,0,1,0)
+    popupHolder.BackgroundTransparency = 1
+    popupHolder.ZIndex = 200
+    popupHolder.Parent = ScreenGui
+
+    local overlay = Instance.new("TextButton")
+    overlay.Size = UDim2.new(1,0,1,0)
+    overlay.BackgroundColor3 = Color3.new(0,0,0)
+    overlay.BackgroundTransparency = 0.85
+    overlay.Text = ""
+    overlay.AutoButtonColor = false
+    overlay.ZIndex = 201
+    overlay.Parent = popupHolder
+
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(0, 390, 0, 250)
+    popup.Position = UDim2.new(0.5, -195, 0.5, -125)
+    popup.BackgroundColor3 = COLORS.Background
+    popup.ZIndex = 202
+    popup.Parent = popupHolder
+    
+    Instance.new("UICorner", popup).CornerRadius = CORNERS.Large
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = COLORS.Stroke
+    stroke.Transparency = 0.45
+    stroke.Parent = popup
+
+    local topBar = Instance.new("Frame")
+    topBar.Size = UDim2.new(1,0,0,52)
+    topBar.BackgroundColor3 = COLORS.Element
+    topBar.ZIndex = 204
+    topBar.Parent = popup
+
+    Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
+
+    CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
+
+    local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
+    content.ZIndex = 205
+
+    local cancelBtn = Instance.new("TextButton")
+    cancelBtn.Size = UDim2.new(0, 158, 0, 52)
+    cancelBtn.Position = UDim2.new(0.5, -168, 1, -80)
+    cancelBtn.BackgroundColor3 = COLORS.Element
+    cancelBtn.Text = "Cancelar"
+    cancelBtn.TextColor3 = COLORS.TextDim
+    cancelBtn.Font = Enum.Font.GothamBold
+    cancelBtn.TextSize = 15
+    cancelBtn.ZIndex = 206
+    cancelBtn.Parent = popup
+
+    Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
+
+    local confirmBtn = Instance.new("TextButton")
+    confirmBtn.Size = UDim2.new(0, 158, 0, 52)
+    confirmBtn.Position = UDim2.new(0.5, 10, 1, -80)
+    confirmBtn.BackgroundColor3 = COLORS.Accent
+    confirmBtn.Text = "Confirmar"
+    confirmBtn.TextColor3 = Color3.new(1,1,1)
+    confirmBtn.Font = Enum.Font.GothamBold
+    confirmBtn.TextSize = 15
+    confirmBtn.ZIndex = 206
+    confirmBtn.Parent = popup
+
+    Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
+
+    local function closePopup()
+        safeTween(popup, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 340, 0, 210)
+        })
+        
+        safeTween(overlay, TweenInfo.new(0.28), {BackgroundTransparency = 1})
+        
+        task.delay(0.3, function()
+            popupHolder:Destroy()
+        end)
+    end
+
+    cancelBtn.MouseEnter:Connect(function()
+        safeTween(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover})
+    end)
+    
+    cancelBtn.MouseLeave:Connect(function()
+        safeTween(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Element})
+    end)
+
+    confirmBtn.MouseEnter:Connect(function()
+        safeTween(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress})
+    end)
+    
+    confirmBtn.MouseLeave:Connect(function()
+        safeTween(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Accent})
+    end)
     return button
 end
 
@@ -878,76 +1680,6 @@ end
 -- FINALIZAÇÃO DA LÓGICA DE TABS E MÓDULO
 -- =============================================================================
 
-function self:CreateTab(name)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1,-16,0,46)
-    button.BackgroundColor3 = COLORS.Element
-    button.BorderSizePixel = 0
-    button.AutoButtonColor = false
-    button.Text = ""
-    button.ZIndex = 7
-    button.Parent = self.TabBar
-    Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
-    
-    local textLabel = CreateSmartTextLabel(button, UDim2.new(1,-44,1,0), UDim2.new(0, 24, 0, 0), name:upper(), COLORS.TextDim, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left)
-    
-    local indicator = Instance.new("Frame")
-    indicator.Size = UDim2.new(0,4,0.7,0); indicator.Position = UDim2.new(0, 4, 0.15, 0); indicator.BackgroundColor3 = COLORS.Accent; indicator.BackgroundTransparency = 1; indicator.Parent = button
-    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1,0)
-    
-    local content = Instance.new("ScrollingFrame")
-    content.Size = UDim2.new(1,0,1,0); content.BackgroundTransparency = 1; content.Visible = false; content.ScrollBarThickness = 0; content.Parent = self.ContentArea
-    
-    local list = Instance.new("UIListLayout", content)
-    list.Padding = UDim.new(0,12); list.HorizontalAlignment = Enum.HorizontalAlignment.Center; list.SortOrder = Enum.SortOrder.LayoutOrder
-
-    table.insert(self.tabs, {button = button, textLabel = textLabel, indicator = indicator, content = content, name = name:upper()})
-    
-    button.Activated:Connect(function()
-        if self.currentTab then
-            self.currentTab.content.Visible = false
-            self.currentTab.indicator.BackgroundTransparency = 1
-            self.currentTab.textLabel.TextColor3 = COLORS.TextDim
-        end
-        content.Visible = true
-        indicator.BackgroundTransparency = 0
-        textLabel.TextColor3 = COLORS.Text
-        self.currentTab = {button = button, content = content, indicator = indicator, textLabel = textLabel}
-    end)
-
-    list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 20)
-    end)
-    
-    return content
-end
-
--- Inicializa a primeira tab após carregar
-task.delay(0.2, function()
-    if self.tabs and self.tabs[1] then 
-        -- Trigger manual do click em vez de :Fire()
-        for _, connection in pairs(getconnections(self.tabs[1].button.Activated)) do
-            connection:Fire()
-        end
-    end
-end)
-
-
-            
-    function self:ShowSwitchHubPopup()
-        Library.Popup(
-            "Trocar de Hub",
-            "Deseja abrir o Hub de Jogos/Scripts?\n\nIsso vai **fechar automaticamente** o GekyuUI atual.",
-            function()
-                -- Coloque aqui o loadstring do seu outro hub
-                -- loadstring(game:HttpGet("URL_AQUI"))()
-                ScreenGui:Destroy()
-            end,
-            function() end
-        )
-    end
-
-    -- Criação de Tabs com scroll individual
     function self:CreateTab(name)
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(1,-16,0,46)
@@ -1099,803 +1831,11 @@ end)
     -- NOTA: A função Library.Button já está definida no escopo global (linha 694)
     -- Esta duplicata foi REMOVIDA para evitar problemas de escopo
 
-    function Library.Toggle(parent, text, default, callback)
-        local container = Instance.new("Frame")
-        container.Size = UDim2.new(0.95, 0, 0, 48)
-        container.BackgroundColor3 = COLORS.Element
-        container.ZIndex = 7
-        container.Parent = parent
-        
-        Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
 
-        local hitbox = Instance.new("TextButton")
-        hitbox.Size = UDim2.new(1, 0, 1, 0)
-        hitbox.BackgroundTransparency = 1
-        hitbox.Text = ""
-        hitbox.ZIndex = 8
-        hitbox.Parent = container
-
-        CreateSmartTextLabel(container, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-
-        local track = Instance.new("Frame")
-        track.Size = UDim2.new(0, 52, 0, 26)
-        track.Position = UDim2.new(1, -64, 0.5, -13)
-        track.BackgroundColor3 = default and COLORS.Accent or COLORS.TextDim
-        track.ZIndex = 8
-        track.Parent = container
-        
-        Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
-
-        local circle = Instance.new("Frame")
-        circle.Size = UDim2.new(0, 20, 0, 20)
-        circle.Position = default and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-        circle.BackgroundColor3 = Color3.new(1,1,1)
-        circle.ZIndex = 9
-        circle.Parent = track
-        
-        Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
-
-        local state = default or false
-
-        local function update()
-            safeTween(track, TweenInfo.new(0.24), {BackgroundColor3 = state and COLORS.Accent or COLORS.TextDim})
-            safeTween(circle, TweenInfo.new(0.28, Enum.EasingStyle.Back), {
-                Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-            })
-        end
-
-        hitbox.Activated:Connect(function()
-            state = not state
-            update()
-            callback(state)
-        end)
-
-        update()
-
-        return container
-    end
-
-    function Library.ToggleWithCheckboxes(parent, toggleText, checkboxesList, callback)
-        local container = Instance.new("Frame")
-        container.Size = UDim2.new(0.95, 0, 0, 48)
-        container.BackgroundColor3 = COLORS.Element
-        container.ClipsDescendants = true
-        container.ZIndex = 7
-        container.Parent = parent
-        
-        Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-
-        local header = Instance.new("Frame")
-        header.Size = UDim2.new(1, 0, 0, 48)
-        header.BackgroundTransparency = 1
-        header.Parent = container
-
-        CreateSmartTextLabel(header, UDim2.new(1, -90, 1, 0), UDim2.new(0, 16, 0, 0), toggleText, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-
-        local toggleBtn = Instance.new("TextButton")
-        toggleBtn.Size = UDim2.new(1, 0, 1, 0)
-        toggleBtn.BackgroundTransparency = 1
-        toggleBtn.Text = ""
-        toggleBtn.ZIndex = 8
-        toggleBtn.Parent = header
-
-        local track = Instance.new("Frame")
-        track.Size = UDim2.new(0, 52, 0, 26)
-        track.Position = UDim2.new(1, -64, 0.5, -13)
-        track.BackgroundColor3 = COLORS.TextDim
-        track.ZIndex = 8
-        track.Parent = header
-        
-        Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
-
-        local circle = Instance.new("Frame")
-        circle.Size = UDim2.new(0, 20, 0, 20)
-        circle.Position = UDim2.new(0, 3, 0.5, -10)
-        circle.BackgroundColor3 = Color3.new(1,1,1)
-        circle.ZIndex = 9
-        circle.Parent = track
-        
-        Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
-
-        local checkboxesContainer = Instance.new("Frame")
-        checkboxesContainer.Size = UDim2.new(1, 0, 0, 0)
-        checkboxesContainer.Position = UDim2.new(0, 0, 0, 48)
-        checkboxesContainer.BackgroundTransparency = 1
-        checkboxesContainer.ZIndex = 8
-        checkboxesContainer.Parent = container
-
-        local checkListLayout = Instance.new("UIListLayout")
-        checkListLayout.Padding = UDim.new(0, 8)
-        checkListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        checkListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        checkListLayout.Parent = checkboxesContainer
-
-        local state = false
-
-        for _, checkName in ipairs(checkboxesList) do
-            local checkFrame = Instance.new("Frame")
-            checkFrame.Size = UDim2.new(0.92, 0, 0, 36)
-            checkFrame.BackgroundTransparency = 1
-            checkFrame.ZIndex = 8
-            checkFrame.Parent = checkboxesContainer
-
-            CreateSmartTextLabel(checkFrame, UDim2.new(1, -60, 1, 0), UDim2.new(0, 12, 0, 0), checkName, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
-
-            local checkHitbox = Instance.new("TextButton")
-            checkHitbox.Size = UDim2.new(0, 45, 0, 45)
-            checkHitbox.Position = UDim2.new(1, -45, 0.5, -22)
-            checkHitbox.BackgroundTransparency = 1
-            checkHitbox.Text = ""
-            checkHitbox.ZIndex = 9
-            checkHitbox.Parent = checkFrame
-
-            local checkBoxVisual = Instance.new("Frame")
-            checkBoxVisual.Size = UDim2.new(0, 20, 0, 20)
-            checkBoxVisual.Position = UDim2.new(0.5, -10, 0.5, -10)
-            checkBoxVisual.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-            checkBoxVisual.ZIndex = 9
-            checkBoxVisual.Parent = checkHitbox
-            
-            Instance.new("UICorner", checkBoxVisual).CornerRadius = UDim.new(0, 5)
-
-            local checkMark = Instance.new("TextLabel")
-            checkMark.Size = UDim2.new(1, 0, 1, 0)
-            checkMark.BackgroundTransparency = 1
-            checkMark.Text = "✓"
-            checkMark.TextColor3 = Color3.new(1,1,1)
-            checkMark.Font = Enum.Font.GothamBold
-            checkMark.TextSize = 16
-            checkMark.Visible = false
-            checkMark.ZIndex = 10
-            checkMark.Parent = checkBoxVisual
-
-            local cState = false
-            checkHitbox.Activated:Connect(function()
-                cState = not cState
-                checkMark.Visible = cState
-                
-                safeTween(checkBoxVisual, TweenInfo.new(0.18), {
-                    BackgroundColor3 = cState and COLORS.Accent or Color3.fromRGB(40, 40, 60)
-                })
-            end)
-        end
-
-        toggleBtn.Activated:Connect(function()
-            state = not state
-            
-            safeTween(track, TweenInfo.new(0.24), {BackgroundColor3 = state and COLORS.Accent or COLORS.TextDim})
-            safeTween(circle, TweenInfo.new(0.28, Enum.EasingStyle.Back), {
-                Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-            })
-
-            local contentHeight = #checkboxesList * 44 + 16
-            local finalHeight = state and (48 + contentHeight) or 48
-
-            safeTween(container, TweenInfo.new(0.38, Enum.EasingStyle.Quint), {
-                Size = UDim2.new(0.95, 0, 0, finalHeight)
-            })
-
-            callback(state)
-        end)
-    end
-
-        function Library.Slider(parent, text, min, max, default, callback)
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0.95, 0, 0, 62)
-        frame.BackgroundColor3 = COLORS.Element
-        frame.ZIndex = 7
-        frame.Parent = parent
-        Instance.new("UICorner", frame).CornerRadius = CORNERS.Medium
-
-        CreateSmartTextLabel(frame, UDim2.new(0.68, 0, 0, 26), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-        local valueLabel = CreateSmartTextLabel(frame, UDim2.new(0.28, 0, 0, 26), UDim2.new(0.72, 0, 0, 6), tostring(default), COLORS.Accent, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Right)
-
-        local bar = Instance.new("Frame")
-        bar.Size = UDim2.new(0.92, 0, 0, 8)
-        bar.Position = UDim2.new(0.04, 0, 0.68, 0)
-        bar.BackgroundColor3 = Color3.fromRGB(45, 45, 62)
-        bar.ZIndex = 8
-        bar.Parent = frame
-        Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
-
-        local fill = Instance.new("Frame")
-        fill.Size = UDim2.new(math.clamp((default - min)/(max-min), 0, 1), 0, 1, 0)
-        fill.BackgroundColor3 = COLORS.Accent
-        fill.ZIndex = 9
-        fill.Parent = bar
-        Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
-
-        local knobArea = Instance.new("TextButton")
-        knobArea.Size = UDim2.new(0, 48, 0, 48)
-        knobArea.Position = UDim2.new(fill.Size.X.Scale, 0, 0.5, 0)
-        knobArea.AnchorPoint = Vector2.new(0.5, 0.5)
-        knobArea.BackgroundTransparency = 1
-        knobArea.Text = ""
-        knobArea.ZIndex = 10
-        knobArea.Parent = bar
-
-        local knob = Instance.new("Frame")
-        knob.Size = UDim2.new(0, 22, 0, 22)
-        knob.Position = UDim2.new(0.5, 0, 0.5, 0)
-        knob.AnchorPoint = Vector2.new(0.5, 0.5)
-        knob.BackgroundColor3 = Color3.new(1,1,1)
-        knob.ZIndex = 11
-        knob.Parent = knobArea
-        Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
-
-        local slider_dragging = false
-
-        local function getScrollParent()
-            local curr = frame.Parent
-            while curr and not curr:IsA("ScrollingFrame") do
-                curr = curr.Parent
-            end
-            return curr
-        end
-
-        local function updateValue(input)
-            local relative = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
-            local value = math.floor(min + (max - min) * relative + 0.5)
-            fill.Size = UDim2.new(relative, 0, 1, 0)
-            knobArea.Position = UDim2.new(relative, 0, 0.5, 0)
-            valueLabel.Text = tostring(value)
-            callback(value)
-        end
-
-        knobArea.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                slider_dragging = true
-                _G.GekyuLock = true -- TRAVA O HUB
-                local scroll = getScrollParent()
-                if scroll then scroll.ScrollingEnabled = false end
-                updateValue(input)
-            end
-        end)
-
-        UserInputService.InputChanged:Connect(function(input)
-            if slider_dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                updateValue(input)
-            end
-        end)
-
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                if slider_dragging then
-                    slider_dragging = false
-                    _G.GekyuLock = false -- LIBERA O HUB
-                    local scroll = getScrollParent()
-                    if scroll then scroll.ScrollingEnabled = true end
-                end
-            end
-        end)
-    end
-
-
-    function Library.Dropdown(parent, text, options, defaultIndex, callback)
-        local container = Instance.new("Frame")
-        container.Size = UDim2.new(0.95, 0, 0, 40)
-        container.BackgroundColor3 = COLORS.Element
-        container.ClipsDescendants = true
-        container.ZIndex = 7
-        container.Parent = parent
-        Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-
-        local header = Instance.new("Frame")
-        header.Size = UDim2.new(1, 0, 0, 40)
-        header.BackgroundTransparency = 1
-        header.Parent = container
-
-        CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-
-        local selectBtn = Instance.new("TextButton")
-        selectBtn.Size = UDim2.new(0, 130, 0, 30)
-        selectBtn.Position = UDim2.new(1, -140, 0.5, -15)
-        selectBtn.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
-        selectBtn.Text = ""
-        selectBtn.AutoButtonColor = false
-        selectBtn.ZIndex = 8
-        selectBtn.Parent = header
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = COLORS.Stroke
-        stroke.Transparency = 0.75
-        stroke.Parent = selectBtn
-
-        local selectCorner = Instance.new("UICorner")
-        selectCorner.CornerRadius = UDim.new(0, 8)
-        selectCorner.Parent = selectBtn
-
-        local selectedText = CreateSmartTextLabel(selectBtn, UDim2.new(1, -12, 1, 0), UDim2.new(0, 6, 0, 0), options[defaultIndex or 1] or "Selecione...", COLORS.Accent, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Center)
-
-        local optionsFrame = Instance.new("ScrollingFrame")
-        optionsFrame.Name = "Options"
-        optionsFrame.Size = UDim2.new(1, 0, 0, 0)
-        optionsFrame.Position = UDim2.new(0, 0, 0, 40)
-        optionsFrame.BackgroundTransparency = 1
-        optionsFrame.ScrollBarThickness = 0
-        optionsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        optionsFrame.ZIndex = 9
-        optionsFrame.Parent = container
-
-        local optionsLayout = Instance.new("UIListLayout")
-        optionsLayout.Padding = UDim.new(0, 4)
-        optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        optionsLayout.Parent = optionsFrame
-
-        local opened = false
-
-        local function toggle()
-            opened = not opened
-            local height = opened and math.min(#options * 38, 180) or 0
-            
-            safeTween(optionsFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, height)})
-            safeTween(container, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, 40 + height)})
-            safeTween(stroke, TweenInfo.new(0.3), {Transparency = opened and 0.35 or 0.75})
-        end
-
-        for _, opt in ipairs(options) do
-            local limitedOpt = LimitDropdownText(opt)
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0.96, 0, 0, 34)
-            btn.BackgroundTransparency = 1
-            btn.Text = ""
-            btn.AutoButtonColor = false
-            btn.ZIndex = 10
-            btn.Parent = optionsFrame
-            
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
-
-           local label = CreateSmartTextLabel(btn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
-label.TextTruncate = Enum.TextTruncate.AtEnd
-
-            btn.Activated:Connect(function()
-                selectedText.Text = limitedOpt
-                callback(opt)
-                toggle()
-            end)
-
-            btn.MouseEnter:Connect(function()
-                safeTween(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.92})
-            end)
-
-            btn.MouseLeave:Connect(function()
-                safeTween(btn, TweenInfo.new(0.15), {BackgroundTransparency = 1})
-            end)
-        end
-
-        selectBtn.Activated:Connect(toggle)
-    end
-
-    function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
-        local container = Instance.new("Frame")
-        container.Size = UDim2.new(0.95, 0, 0, 40)
-        container.BackgroundColor3 = COLORS.Element
-        container.ClipsDescendants = true
-        container.ZIndex = 7
-        container.Parent = parent
-        
-        Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-
-        local header = Instance.new("Frame")
-        header.Size = UDim2.new(1, 0, 0, 40)
-        header.BackgroundTransparency = 1
-        header.Parent = container
-
-        CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-
-        local previewBox = Instance.new("TextButton")
-        previewBox.Size = UDim2.new(0, 130, 0, 30)
-        previewBox.Position = UDim2.new(1, -140, 0.5, -15)
-        previewBox.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
-        previewBox.Text = ""
-        previewBox.AutoButtonColor = false
-        previewBox.ZIndex = 8
-        previewBox.Parent = header
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = COLORS.Stroke
-        stroke.Transparency = 0.75
-        stroke.Parent = previewBox
-
-        local previewCorner = Instance.new("UICorner")
-        previewCorner.CornerRadius = UDim.new(0, 8)
-        previewCorner.Parent = previewBox
-
-        local previewText = CreateSmartTextLabel(previewBox, UDim2.new(1, -36, 1, 0), UDim2.new(0, 8, 0, 0), "Nenhum selecionado", COLORS.TextDim, Enum.Font.GothamSemibold, 12, Enum.TextXAlignment.Left)
-
-        local arrow = Instance.new("TextLabel")
-        arrow.Size = UDim2.new(0, 24, 1, 0)
-        arrow.Position = UDim2.new(1, -28, 0, 0)
-        arrow.BackgroundTransparency = 1
-        arrow.Text = "▼"
-        arrow.TextColor3 = COLORS.TextDim
-        arrow.Font = Enum.Font.GothamBold
-        arrow.TextSize = 14
-        arrow.ZIndex = 9
-        arrow.Parent = previewBox
-
-        local optionsContainer = Instance.new("ScrollingFrame")
-        optionsContainer.Name = "Options"
-        optionsContainer.Size = UDim2.new(1, 0, 0, 0)
-        optionsContainer.Position = UDim2.new(0, 0, 0, 40)
-        optionsContainer.BackgroundTransparency = 1
-        optionsContainer.ScrollBarThickness = 0
-        optionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        optionsContainer.ZIndex = 9
-        optionsContainer.Parent = container
-
-        local optionsLayout = Instance.new("UIListLayout")
-        optionsLayout.Padding = UDim.new(0, 4)
-        optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        optionsLayout.Parent = optionsContainer
-
-        local isOpen = false
-        local selected = {}
-
-        if defaultSelected then
-            for _, v in ipairs(defaultSelected) do
-                for i, opt in ipairs(options) do
-                    if opt == v then
-                        selected[i] = true
-                        break
-                    end
-                end
-            end
-        end
-
-        local function updatePreview()
-            local count = 0
-            for _, isSel in pairs(selected) do if isSel then count += 1 end end
-            
-            local previewStr = count == 0 and "Nenhum selecionado" or (count == #options and "Todos selecionados" or count .. " selecionado(s)")
-            previewText.Text = LimitDropdownText(previewStr)
-            previewText.TextColor3 = count > 0 and COLORS.Accent or COLORS.TextDim
-            
-            local selectedList = {}
-            for i, isSel in pairs(selected) do
-                if isSel then table.insert(selectedList, options[i]) end
-            end
-            callback(selectedList)
-        end
-
-        for i, optionName in ipairs(options) do
-            local limitedOpt = LimitDropdownText(optionName)
-            local optionBtn = Instance.new("TextButton")
-            optionBtn.Size = UDim2.new(0.96, 0, 0, 34)
-            optionBtn.BackgroundTransparency = 1
-            optionBtn.Text = ""
-            optionBtn.AutoButtonColor = false
-            optionBtn.ZIndex = 10
-            optionBtn.Parent = optionsContainer
-            
-            Instance.new("UICorner", optionBtn).CornerRadius = CORNERS.Small
-
-            local label = CreateSmartTextLabel(optionBtn, UDim2.new(1, -120, 1, 0), UDim2.new(0, 12, 0, 0), limitedOpt, COLORS.TextDim, Enum.Font.GothamSemibold, 13, Enum.TextXAlignment.Left)
-label.TextTruncate = Enum.TextTruncate.AtEnd
-
-            local checkMark = Instance.new("TextLabel")
-            checkMark.Size = UDim2.new(0, 24, 0, 24)
-            checkMark.Position = UDim2.new(1, -34, 0.5, -12)
-            checkMark.BackgroundTransparency = 1
-            checkMark.Text = "✓"
-            checkMark.TextColor3 = COLORS.Accent
-            checkMark.Font = Enum.Font.GothamBold
-            checkMark.TextSize = 18
-            checkMark.Visible = selected[i] or false
-            checkMark.ZIndex = 11
-            checkMark.Parent = optionBtn
-
-            optionBtn.MouseEnter:Connect(function()
-                safeTween(optionBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.92})
-            end)
-
-            optionBtn.MouseLeave:Connect(function()
-                safeTween(optionBtn, TweenInfo.new(0.15), {BackgroundTransparency = 1})
-            end)
-
-            optionBtn.Activated:Connect(function()
-                selected[i] = not selected[i]
-                checkMark.Visible = selected[i]
-                updatePreview()
-            end)
-        end
-
-        local function toggleDropdown()
-            isOpen = not isOpen
-            local maxHeight = math.min(#options * 38 + 8, 180)
-            local targetHeight = isOpen and maxHeight or 0
-            
-            safeTween(optionsContainer, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, targetHeight)})
-            safeTween(container, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, 40 + targetHeight)})
-            safeTween(stroke, TweenInfo.new(0.3), {Transparency = isOpen and 0.35 or 0.75})
-            safeTween(arrow, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Rotation = isOpen and 180 or 0})
-        end
-
-        previewBox.Activated:Connect(toggleDropdown)
-
-        updatePreview()
-    end
-
-        function Library.InputNumber(parent, text, min, max, default, step, callback)
-        step = step or 1
-
-        local container = Instance.new("Frame")
-        container.Size = UDim2.new(0.95, 0, 0, 52)
-        container.BackgroundColor3 = COLORS.Element
-        container.ZIndex = 7
-        container.Parent = parent
-        Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-
-        -- Ajustado: TextTruncate e tamanho para não colidir
-        local label = CreateSmartTextLabel(container, UDim2.new(1, -160, 0, 24), UDim2.new(0, 14, 0, 6), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-        label.TextTruncate = Enum.TextTruncate.AtEnd 
-
-        local inputFrame = Instance.new("Frame")
-        inputFrame.Size = UDim2.new(0, 140, 0, 34)
-        inputFrame.Position = UDim2.new(1, -154, 0.5, -17) -- Centralizado verticalmente
-        inputFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
-        inputFrame.ZIndex = 8
-        inputFrame.Parent = container
-        Instance.new("UICorner", inputFrame).CornerRadius = CORNERS.Small
-
-        local valueBox = Instance.new("TextBox")
-        valueBox.Size = UDim2.new(1, -60, 0.8, 0)
-        valueBox.Position = UDim2.new(0.5, 0, 0.5, 0)
-        valueBox.AnchorPoint = Vector2.new(0.5, 0.5)
-        valueBox.BackgroundTransparency = 1
-        valueBox.Text = tostring(default)
-        valueBox.TextColor3 = COLORS.Accent
-        valueBox.Font = Enum.Font.GothamBold
-        valueBox.TextSize = 16
-        valueBox.ZIndex = 9
-        valueBox.Parent = inputFrame
-
-        -- Resto da lógica de minusBtn/plusBtn continua igual...
-
-
-        local minusBtn = Instance.new("TextButton")
-        minusBtn.Size = UDim2.new(0, 28, 0, 28)
-        minusBtn.Position = UDim2.new(0, 6, 0.5, -14)
-        minusBtn.BackgroundTransparency = 1
-        minusBtn.Text = "−"
-        minusBtn.TextColor3 = COLORS.TextDim
-        minusBtn.Font = Enum.Font.GothamBold
-        minusBtn.TextSize = 20
-        minusBtn.ZIndex = 9
-        minusBtn.Parent = inputFrame
-
-        local plusBtn = Instance.new("TextButton")
-        plusBtn.Size = UDim2.new(0, 28, 0, 28)
-        plusBtn.Position = UDim2.new(1, -34, 0.5, -14)
-        plusBtn.BackgroundTransparency = 1
-        plusBtn.Text = "+"
-        plusBtn.TextColor3 = COLORS.TextDim
-        plusBtn.Font = Enum.Font.GothamBold
-        plusBtn.TextSize = 20
-        plusBtn.ZIndex = 9
-        plusBtn.Parent = inputFrame
-
-        local currentValue = default
-
-        local function updateValue(newVal)
-            currentValue = math.clamp(newVal, min, max)
-            valueBox.Text = tostring(currentValue)
-            callback(currentValue)
-        end
-
-        minusBtn.Activated:Connect(function()
-            updateValue(currentValue - step)
-        end)
-
-        plusBtn.Activated:Connect(function()
-            updateValue(currentValue + step)
-        end)
-
-        valueBox.FocusLost:Connect(function(enterPressed)
-            if enterPressed then
-                local num = tonumber(valueBox.Text)
-                if num then
-                    updateValue(num)
-                else
-                    valueBox.Text = tostring(currentValue)
-                end
-            end
-        end)
-
-        valueBox:GetPropertyChangedSignal("Text"):Connect(function()
-            local num = tonumber(valueBox.Text)
-            if num then currentValue = num end
-        end)
-
-        updateValue(default)
-    end
-
-    local activeNotifications = {}
-
-    function Library.Notify(message, duration, color)
-        duration = duration or 4
-        color = color or COLORS.Accent
-
-        local holder = ScreenGui:FindFirstChild("NotificationHolder")
-        if not holder then
-            holder = Instance.new("Frame")
-            holder.Name = "NotificationHolder"
-            holder.Size = UDim2.new(0, 320, 0.4, 0)
-            holder.Position = UDim2.new(1, -340, 0, 20)
-            holder.BackgroundTransparency = 1
-            holder.ZIndex = 100
-            holder.Parent = ScreenGui
-
-            local list = Instance.new("UIListLayout")
-            list.Padding = UDim.new(0, 10)
-            list.HorizontalAlignment = Enum.HorizontalAlignment.Right
-            list.VerticalAlignment = Enum.VerticalAlignment.Top
-            list.SortOrder = Enum.SortOrder.LayoutOrder
-            list.Parent = holder
-        end
-
-        if activeNotifications[message] then
-            local data = activeNotifications[message]
-            data.count = (data.count or 1) + 1
-            
-            local label = data.frame:FindFirstChildWhichIsA("TextLabel")
-            label.RichText = true
-            label.Text = message .. "  <font color='rgb(200,220,255)'>x" .. data.count .. "</font>"
-            
-            if data.destroyTime then task.cancel(data.destroyTime) end
-            
-            data.destroyTime = task.delay(duration, function()
-                safeTween(data.frame, TweenInfo.new(0.5), {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.new(1, 0, 0, -40)
-                })
-                task.delay(0.5, function()
-                    data.frame:Destroy()
-                    activeNotifications[message] = nil
-                end)
-            end)
-            
-            safeTween(data.frame, TweenInfo.new(0.2), {BackgroundColor3 = color})
-            task.delay(0.2, function()
-                safeTween(data.frame, TweenInfo.new(0.4), {BackgroundColor3 = COLORS.Background})
-            end)
-            
-            return
-        end
-
-        local notif = Instance.new("Frame")
-        notif.Size = UDim2.new(1, 0, 0, 64)
-        notif.BackgroundColor3 = COLORS.Background
-        notif.BackgroundTransparency = 0
-        notif.ZIndex = 102
-        notif.Parent = holder
-        
-        Instance.new("UICorner", notif).CornerRadius = CORNERS.Medium
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = color
-        stroke.Transparency = 0.4
-        stroke.Parent = notif
-
-        local label = CreateSmartTextLabel(notif, UDim2.new(1, -24, 1, -20), UDim2.new(0, 12, 0, 10), message, COLORS.Text, Enum.Font.GothamSemibold, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-        label.ZIndex = 103
-
-        safeTween(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = UDim2.new(0, 0, 0, 0)})
-
-        activeNotifications[message] = {
-            frame = notif,
-            count = 1,
-            destroyTime = task.delay(duration, function()
-                safeTween(notif, TweenInfo.new(0.5), {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.new(1, 0, 0, -40)
-                })
-                task.delay(0.5, function()
-                    notif:Destroy()
-                    activeNotifications[message] = nil
-                end)
-            end)
-        }
-    end
-
-    function Library.Popup(titleText, messageText, onConfirm, onCancel)
-        local popupHolder = Instance.new("Frame")
-        popupHolder.Name = "PopupLayer"
-        popupHolder.Size = UDim2.new(1,0,1,0)
-        popupHolder.BackgroundTransparency = 1
-        popupHolder.ZIndex = 200
-        popupHolder.Parent = ScreenGui
-
-        local overlay = Instance.new("TextButton")
-        overlay.Size = UDim2.new(1,0,1,0)
-        overlay.BackgroundColor3 = Color3.new(0,0,0)
-        overlay.BackgroundTransparency = 0.85
-        overlay.Text = ""
-        overlay.AutoButtonColor = false
-        overlay.ZIndex = 201
-        overlay.Parent = popupHolder
-
-        local popup = Instance.new("Frame")
-        popup.Size = UDim2.new(0, 390, 0, 250)
-        popup.Position = UDim2.new(0.5, -195, 0.5, -125)
-        popup.BackgroundColor3 = COLORS.Background
-        popup.ZIndex = 202
-        popup.Parent = popupHolder
-        
-        Instance.new("UICorner", popup).CornerRadius = CORNERS.Large
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = COLORS.Stroke
-        stroke.Transparency = 0.45
-        stroke.Parent = popup
-
-        local topBar = Instance.new("Frame")
-        topBar.Size = UDim2.new(1,0,0,52)
-        topBar.BackgroundColor3 = COLORS.Element
-        topBar.ZIndex = 204
-        topBar.Parent = popup
-
-        Instance.new("UICorner", topBar).CornerRadius = CORNERS.Large
-
-        CreateSmartTextLabel(topBar, UDim2.new(1, -20, 1, 0), UDim2.new(0, 18, 0, 0), titleText, COLORS.Accent, Enum.Font.GothamBlack, 18, Enum.TextXAlignment.Left)
-
-        local content = CreateSmartTextLabel(popup, UDim2.new(1, -40, 0, 110), UDim2.new(0, 20, 0, 70), messageText, COLORS.Text, Enum.Font.Gotham, 15, Enum.TextXAlignment.Left, Enum.TextYAlignment.Top)
-        content.ZIndex = 205
-
-        local cancelBtn = Instance.new("TextButton")
-        cancelBtn.Size = UDim2.new(0, 158, 0, 52)
-        cancelBtn.Position = UDim2.new(0.5, -168, 1, -80)
-        cancelBtn.BackgroundColor3 = COLORS.Element
-        cancelBtn.Text = "Cancelar"
-        cancelBtn.TextColor3 = COLORS.TextDim
-        cancelBtn.Font = Enum.Font.GothamBold
-        cancelBtn.TextSize = 15
-        cancelBtn.ZIndex = 206
-        cancelBtn.Parent = popup
-
-        Instance.new("UICorner", cancelBtn).CornerRadius = CORNERS.Small
-
-        local confirmBtn = Instance.new("TextButton")
-        confirmBtn.Size = UDim2.new(0, 158, 0, 52)
-        confirmBtn.Position = UDim2.new(0.5, 10, 1, -80)
-        confirmBtn.BackgroundColor3 = COLORS.Accent
-        confirmBtn.Text = "Confirmar"
-        confirmBtn.TextColor3 = Color3.new(1,1,1)
-        confirmBtn.Font = Enum.Font.GothamBold
-        confirmBtn.TextSize = 15
-        confirmBtn.ZIndex = 206
-        confirmBtn.Parent = popup
-
-        Instance.new("UICorner", confirmBtn).CornerRadius = CORNERS.Small
-
-        local function closePopup()
-            safeTween(popup, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(0, 340, 0, 210)
-            })
-            
-            safeTween(overlay, TweenInfo.new(0.28), {BackgroundTransparency = 1})
-            
-            task.delay(0.3, function()
-                popupHolder:Destroy()
-            end)
-        end
-
-        cancelBtn.MouseEnter:Connect(function()
-            safeTween(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover})
-        end)
-        
-        cancelBtn.MouseLeave:Connect(function()
-            safeTween(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Element})
-        end)
-
-        confirmBtn.MouseEnter:Connect(function()
-            safeTween(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.AccentPress})
-        end)
-        
-        confirmBtn.MouseLeave:Connect(function()
-            safeTween(confirmBtn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Accent})
-        end)
+    -- =============================================
+    -- COMPONENTES FORAM MOVIDOS PARA O ESCOPO GLOBAL
+    -- (linhas 747-1544 agora)
+    -- =============================================
 
         cancelBtn.Activated:Connect(function()
             if onCancel then onCancel() end
