@@ -687,49 +687,89 @@ settingsPadding.PaddingRight = UDim.new(0, 10)
 settingsPadding.Parent = settingsContainer
 
 -- ==============================================
--- Conteúdo PADRÃO da aba Settings (vem com a library)
+-- Botão PADRÃO que você pediu (já usando a função nova)
 -- ==============================================
 
--- 1. Toggle de sons
-Library.Toggle(settingsContainer, "Ativar sons de interface", true, function(state)
-    print("[Config] Interface sounds:", state and "ON" or "OFF")
-    -- Aqui você pode salvar a preferência depois
-end)
-
--- 2. Botão de teste (exatamente como você pediu)
-Library.Button(settingsContainer, "Executar Teste", function()
-    Library.Notify("Teste rápido executado com sucesso!", 3, Color3.fromRGB(100, 220, 120))
-    print("[Config] Botão de teste acionado")
-end, {icon = "rbxassetid://6031094678"})
-
--- 3. Dropdown de temas
-local themesList = {
-    "Default",
-    "Vidro",
-    -- Adicione mais temas aqui quando implementar
-}
-
-Library.Dropdown(settingsContainer, "Tema do Hub", themesList, 1, function(selected)
-    print("[Config] Tema alterado para:", selected)
+-- Primeiro: coloque a função Button no escopo global da Library (logo após as cores e funções auxiliares)
+function Library.Button(parent, text, callback, options)
+    options = options or {}
+    local button = Instance.new("TextButton")
+    button.Size = options.size or UDim2.new(0.95, 0, 0, 48)
+    button.BackgroundColor3 = COLORS.Element
+    button.AutoButtonColor = false
+    button.Text = ""
+    button.ZIndex = 7
+    button.Parent = parent
     
-    if selected == "Default" then
-        Library.applyTheme_Default()
-    elseif selected == "Vidro" then
-        Library.applyTheme_Vidro()
+    Instance.new("UICorner", button).CornerRadius = CORNERS.Medium
+
+    local label = CreateSmartTextLabel(button, UDim2.new(1, options.icon and -60 or 0, 1, 0), UDim2.new(0, options.icon and 16 or 0, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, options.textSize or 15, Enum.TextXAlignment.Left)
+
+    local icon
+    if options.icon then
+        icon = Instance.new("ImageLabel")
+        icon.Size = UDim2.new(0, 28, 0, 28)
+        icon.Position = UDim2.new(1, -42, 0.5, -14)
+        icon.BackgroundTransparency = 1
+        icon.Image = options.icon
+        icon.ImageColor3 = COLORS.Text
+        icon.ScaleType = Enum.ScaleType.Fit
+        icon.ZIndex = 8
+        icon.Parent = button
     end
-    
-    -- Opcional: salvar preferência de tema
+
+    button.MouseEnter:Connect(function()
+        safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.ElementHover})
+        if icon then safeTween(icon, TweenInfo.new(0.3), {ImageColor3 = COLORS.Accent}) end
+    end)
+
+    button.MouseLeave:Connect(function()
+        safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.Element})
+        if icon then safeTween(icon, TweenInfo.new(0.3), {ImageColor3 = COLORS.Text}) end
+    end)
+
+    button.Activated:Connect(function()
+        safeTween(button, TweenInfo.new(0.08), {BackgroundColor3 = COLORS.AccentPress})
+        if icon then
+            safeTween(icon, TweenInfo.new(0.12), {Size = UDim2.new(0,32,0,32)})
+            task.delay(0.12, function()
+                safeTween(icon, TweenInfo.new(0.12), {Size = UDim2.new(0,28,0,28)})
+            end)
+        end
+        task.delay(0.15, function()
+            safeTween(button, TweenInfo.new(0.18), {BackgroundColor3 = COLORS.ElementHover})
+        end)
+        callback()
+    end)
+
+    return button
+end
+
+-- ==============================================
+-- Exemplos usando o botão padrão no painel de config
+-- ==============================================
+
+Library.Button(settingsContainer, "Executar Teste Rápido", function()
+    Library.Notify("Teste executado com o botão padrão!", 3, Color3.fromRGB(100, 220, 120))
+    print("[Config] Botão padrão acionado")
+end, {
+    icon = "rbxassetid://6031094678",   -- ícone de play/check
+    textSize = 15
+})
+
+Library.Button(settingsContainer, "Resetar Configurações", function()
+    Library.Notify("Configurações resetadas (simulado)", 3, Color3.fromRGB(255, 140, 80))
+    -- Aqui você colocaria a lógica real de reset
+end, {
+    icon = "rbxassetid://7072721039"    -- ícone de refresh/reset
+})
+
+Library.Button(settingsContainer, "Salvar Posição Atual", function()
+    self:SaveHubSettings()
+    Library.Notify("Posição e tamanho salvos!", 2.5, COLORS.Accent)
 end)
 
--- Força atualização do canvas (redundância para garantir)
-task.spawn(function()
-    task.wait(0.08)
-    if settingsContainer and settingsLayout then
-        local h = settingsLayout.AbsoluteContentSize.Y
-        settingsContainer.CanvasSize = UDim2.new(0, 0, 0, h + 40)
-        print("[Settings] Canvas atualizado automaticamente → altura:", h + 40)
-    end
-end)
+-- (você pode continuar adicionando mais botões aqui usando Library.Button)
         -- ==============================================
         -- Tabs laterais com texto visível e TextScaled
         -- ==============================================
