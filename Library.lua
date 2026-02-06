@@ -1,4 +1,3 @@
-
 -- Library.lua
 -- GekyuUI - Versão FINAL corrigida + DRAG DUPLO (topo + base)
 -- Kyuzzy - Atualizado 16/01/2026
@@ -197,7 +196,7 @@ local function CreateControlButton(parent, text, posX, iconAssetId, callback)
         end
         task.delay(0.12, function()
             safeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 15, 21)})
-        end)
+        end
         callback()
     end)
     
@@ -772,7 +771,7 @@ end)
 
                 -- Reset visual das outras tabs
                 for _, sib in tabsArea:GetChildren() do
-                    if sib:IsA("TextButton") and sib ~= tabBtn then
+                    if sib:IsA("TextButton") and sib \~= tabBtn then
                         local ind = sib:FindFirstChildWhichIsA("Frame")
                         local lbl = sib:FindFirstChildWhichIsA("TextLabel")
                         if ind then safeTween(ind, TweenInfo.new(0.16), {BackgroundTransparency = 1}) end
@@ -810,7 +809,7 @@ end)
         self.MainFrame.SearchBar.Visible = false
     end
     -- BottomBar fica visível
-    end
+end
     
 function self:SaveHubSettings()
     local HttpService = game:GetService("HttpService")
@@ -1368,441 +1367,145 @@ end)
         end)
     end
 
-function Library.Dropdown(parent, text, options, defaultIndex, callback)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(0.95, 0, 0, 40)
-    container.BackgroundColor3 = COLORS.Element
-    container.ClipsDescendants = true
-    container.ZIndex = 7
-    container.Parent = parent
-    Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
 
-    local header = Instance.new("Frame")
-    header.Size = UDim2.new(1, 0, 0, 40)
-    header.BackgroundTransparency = 1
-    header.Parent = container
-
-    CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-
-    local selectBtn = Instance.new("TextButton")
-    selectBtn.Size = UDim2.new(0, 130, 0, 30)
-    selectBtn.Position = UDim2.new(1, -140, 0.5, -15)
-    selectBtn.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
-    selectBtn.Text = ""
-    selectBtn.AutoButtonColor = false
-    selectBtn.ZIndex = 8
-    selectBtn.Parent = header
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = COLORS.Stroke
-    stroke.Transparency = 0.75
-    stroke.Parent = selectBtn
-
-    local selectCorner = Instance.new("UICorner")
-    selectCorner.CornerRadius = UDim.new(0, 8)
-    selectCorner.Parent = selectBtn
-
-    local selectedText = CreateSmartTextLabel(
-        selectBtn,
-        UDim2.new(1, -12, 1, 0),
-        UDim2.new(0, 6, 0, 0),
-        options[defaultIndex or 1] or "Selecione...",
-        COLORS.Accent,
-        Enum.Font.GothamSemibold,
-        13,
-        Enum.TextXAlignment.Center
-    )
-
-    local optionsFrame = Instance.new("ScrollingFrame")
-    optionsFrame.Name = "Options"
-    optionsFrame.Size = UDim2.new(1, 0, 0, 0)
-    optionsFrame.Position = UDim2.new(0, 0, 0, 40)
-    optionsFrame.BackgroundTransparency = 1
-    optionsFrame.ScrollBarThickness = 0
-    optionsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    optionsFrame.ZIndex = 9
-    optionsFrame.Parent = container
-
-    local optionsLayout = Instance.new("UIListLayout")
-    optionsLayout.Padding = UDim.new(0, 4)
-    optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    optionsLayout.Parent = optionsFrame
-
-    local opened = false
-    local currentOptions = options or {}
-    local currentCallback = callback
-    local currentSelected = options[defaultIndex or 1] or "Selecione..."
-
-    local function toggle()
-        opened = not opened
-        local height = opened and math.min(#currentOptions * 38, 180) or 0
-        
-        safeTween(optionsFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, height)})
-        safeTween(container, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, 40 + height)})
-        safeTween(stroke, TweenInfo.new(0.3), {Transparency = opened and 0.35 or 0.75})
-    end
-
-    local optionButtons = {}
-
-    local function clearOptions()
-        for _, btn in ipairs(optionButtons) do
-            btn:Destroy()
-        end
-        optionButtons = {}
-    end
-
-    local function rebuildOptions()
-        clearOptions()
-        
-        for _, opt in ipairs(currentOptions) do
-            local limitedOpt = LimitDropdownText(opt)
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0.96, 0, 0, 34)
-            btn.BackgroundTransparency = 1
-            btn.Text = ""
-            btn.AutoButtonColor = false
-            btn.ZIndex = 10
-            btn.Parent = optionsFrame
-            
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
-
-            local label = CreateSmartTextLabel(
-                btn,
-                UDim2.new(1, -120, 1, 0),
-                UDim2.new(0, 12, 0, 0),
-                limitedOpt,
-                COLORS.TextDim,
-                Enum.Font.GothamSemibold,
-                13,
-                Enum.TextXAlignment.Left
-            )
-            label.TextTruncate = Enum.TextTruncate.AtEnd
-
-            btn.Activated:Connect(function()
-                currentSelected = opt
-                selectedText.Text = limitedOpt
-                if currentCallback then
-                    currentCallback(opt)
-                end
-                toggle()  -- fecha ao selecionar
-            end)
-
-            btn.MouseEnter:Connect(function()
-                safeTween(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.92})
-            end)
-
-            btn.MouseLeave:Connect(function()
-                safeTween(btn, TweenInfo.new(0.15), {BackgroundTransparency = 1})
-            end)
-
-            table.insert(optionButtons, btn)
-        end
-        
-        -- Atualiza altura máxima se aberto
-        if opened then
-            local height = math.min(#currentOptions * 38, 180)
-            safeTween(optionsFrame, TweenInfo.new(0.25), {Size = UDim2.new(1, 0, 0, height)})
-            safeTween(container, TweenInfo.new(0.25), {Size = UDim2.new(0.95, 0, 0, 40 + height)})
-        end
-    end
-
-    -- Inicializa
-    rebuildOptions()
-
-    selectBtn.Activated:Connect(toggle)
-
-    -- Objeto retornado com método de atualização
-    local dropdownObject = {}
-
-    function dropdownObject:Update(newOptions, newDefaultIndex)
-        if not newOptions or type(newOptions) \~= "table" then return end
-        
-        currentOptions = newOptions
-        
-        -- Tenta preservar a seleção atual se ainda existir na nova lista
-        local found = false
-        for _, opt in ipairs(newOptions) do
-            if opt == currentSelected then
-                found = true
-                break
-            end
-        end
-        
-        if not found then
-            -- Se o valor anterior sumiu → volta para o default ou primeiro item
-            currentSelected = (newDefaultIndex and newOptions[newDefaultIndex]) or newOptions[1] or "Selecione..."
-            selectedText.Text = LimitDropdownText(currentSelected)
-        end
-        
-        rebuildOptions()
-    end
-
-    function dropdownObject:GetSelected()
-        return currentSelected
-    end
-
-    function dropdownObject:SetCallback(newCallback)
-        currentCallback = newCallback
-    end
-
-    return dropdownObject
-    end
-
-function Library.DropdownMulti(parent, text, options, defaultSelected, callback)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(0.95, 0, 0, 40)
-    container.BackgroundColor3 = COLORS.Element
-    container.ClipsDescendants = true
-    container.ZIndex = 7
-    container.Parent = parent
+    function Library.Dropdown(parent, text, options, defaultIndex, callback)
+    local dropdown = {}
     
-    Instance.new("UICorner", container).CornerRadius = CORNERS.Medium
-
-    local header = Instance.new("Frame")
-    header.Size = UDim2.new(1, 0, 0, 40)
-    header.BackgroundTransparency = 1
-    header.Parent = container
-
-    CreateSmartTextLabel(header, UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 14, 0, 0), text, COLORS.Text, Enum.Font.GothamBold, 14, Enum.TextXAlignment.Left)
-
-    local previewBox = Instance.new("TextButton")
-    previewBox.Size = UDim2.new(0, 130, 0, 30)
-    previewBox.Position = UDim2.new(1, -140, 0.5, -15)
-    previewBox.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
-    previewBox.Text = ""
-    previewBox.AutoButtonColor = false
-    previewBox.ZIndex = 8
-    previewBox.Parent = header
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = COLORS.Stroke
-    stroke.Transparency = 0.75
-    stroke.Parent = previewBox
-
-    local previewCorner = Instance.new("UICorner")
-    previewCorner.CornerRadius = UDim.new(0, 8)
-    previewCorner.Parent = previewBox
-
-    local previewText = CreateSmartTextLabel(
-        previewBox,
-        UDim2.new(1, -36, 1, 0),
-        UDim2.new(0, 8, 0, 0),
-        "Nenhum selecionado",
-        COLORS.TextDim,
-        Enum.Font.GothamSemibold,
-        12,
-        Enum.TextXAlignment.Left
-    )
-
-    local arrow = Instance.new("TextLabel")
-    arrow.Size = UDim2.new(0, 24, 1, 0)
-    arrow.Position = UDim2.new(1, -28, 0, 0)
-    arrow.BackgroundTransparency = 1
-    arrow.Text = "▼"
-    arrow.TextColor3 = COLORS.TextDim
-    arrow.Font = Enum.Font.GothamBold
-    arrow.TextSize = 14
-    arrow.ZIndex = 9
-    arrow.Parent = previewBox
-
-    local optionsContainer = Instance.new("ScrollingFrame")
-    optionsContainer.Name = "Options"
-    optionsContainer.Size = UDim2.new(1, 0, 0, 0)
-    optionsContainer.Position = UDim2.new(0, 0, 0, 40)
-    optionsContainer.BackgroundTransparency = 1
-    optionsContainer.ScrollBarThickness = 0
-    optionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    optionsContainer.ZIndex = 9
-    optionsContainer.Parent = container
-
-    local optionsLayout = Instance.new("UIListLayout")
-    optionsLayout.Padding = UDim.new(0, 4)
-    optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    optionsLayout.Parent = optionsContainer
-
-    local isOpen = false
-    local currentOptions = options or {}
-    local selected = {}           -- índice → boolean
-    local optionButtons = {}
-    local currentCallback = callback
-
-    -- Inicializa seleções default
-    if defaultSelected and type(defaultSelected) == "table" then
-        for _, v in ipairs(defaultSelected) do
-            for i, opt in ipairs(currentOptions) do
-                if opt == v then
-                    selected[i] = true
-                    break
-                end
-            end
-        end
-    end
-
-    local function updatePreview()
-        local count = 0
-        for _, isSel in pairs(selected) do
-            if isSel then count = count + 1 end
-        end
-        
-        local previewStr
-        if count == 0 then
-            previewStr = "Nenhum selecionado"
-        elseif count == #currentOptions then
-            previewStr = "Todos selecionados"
-        else
-            previewStr = count .. " selecionado(s)"
-        end
-        
-        previewText.Text = LimitDropdownText(previewStr)
-        previewText.TextColor3 = (count > 0) and COLORS.Accent or COLORS.TextDim
-        
-        -- Chama callback com lista atual de selecionados
-        local selectedList = {}
-        for i, isSel in pairs(selected) do
-            if isSel then
-                table.insert(selectedList, currentOptions[i])
-            end
-        end
-        if currentCallback then
-            currentCallback(selectedList)
-        end
-    end
-
+    -- Container principal do dropdown (ajuste conforme seu layout atual)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 40)  -- Ajuste altura conforme necessário
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent.TabContent or parent  -- Assumindo que parentTab tem um "Content" ou similar
+    
+    -- Label do título
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.5, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = COLORS.Text
+    label.Font = Enum.Font.GothamSemibold
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+    
+    -- Botão principal (mostra a seleção atual)
+    local selectedButton = Instance.new("TextButton")
+    selectedButton.Size = UDim2.new(0.5, -10, 1, -8)
+    selectedButton.Position = UDim2.new(0.5, 5, 0, 4)
+    selectedButton.BackgroundColor3 = COLORS.Element
+    selectedButton.TextColor3 = COLORS.Text
+    selectedButton.Font = Enum.Font.Gotham
+    selectedButton.TextSize = 13
+    selectedButton.Text = options[defaultIndex or 1] or "Selecione..."
+    selectedButton.Parent = frame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = selectedButton
+    
+    -- Container da lista (inicialmente invisível)
+    local listFrame = Instance.new("ScrollingFrame")
+    listFrame.Name = "OptionsList"
+    listFrame.Size = UDim2.new(0.5, -10, 0, 0)  -- Começa com altura 0
+    listFrame.Position = UDim2.new(0.5, 5, 1, 4)
+    listFrame.BackgroundColor3 = COLORS.Element
+    listFrame.BorderSizePixel = 0
+    listFrame.ScrollBarThickness = 4
+    listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    listFrame.Visible = false
+    listFrame.Parent = frame
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Padding = UDim.new(0, 4)
+    listLayout.Parent = listFrame
+    
+    local listCorner = Instance.new("UICorner")
+    listCorner.CornerRadius = UDim.new(0, 6)
+    listCorner.Parent = listFrame
+    
+    local listStroke = Instance.new("UIStroke")
+    listStroke.Color = COLORS.Stroke
+    listStroke.Thickness = 1
+    listStroke.Parent = listFrame
+    
+    -- Função interna para atualizar opções
+    local currentButtons = {}
+    
     local function clearOptions()
-        for _, btn in ipairs(optionButtons) do
+        for _, btn in ipairs(currentButtons) do
             btn:Destroy()
         end
-        optionButtons = {}
+        currentButtons = {}
+        listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     end
-
-    local function rebuildOptions()
+    
+    local function updateOptions(newOptions)
         clearOptions()
         
-        for i, optionName in ipairs(currentOptions) do
-            local limitedOpt = LimitDropdownText(optionName)
-            local optionBtn = Instance.new("TextButton")
-            optionBtn.Size = UDim2.new(0.96, 0, 0, 34)
-            optionBtn.BackgroundTransparency = 1
-            optionBtn.Text = ""
-            optionBtn.AutoButtonColor = false
-            optionBtn.ZIndex = 10
-            optionBtn.Parent = optionsContainer
-            
-            Instance.new("UICorner", optionBtn).CornerRadius = CORNERS.Small
-
-            local label = CreateSmartTextLabel(
-                optionBtn,
-                UDim2.new(1, -120, 1, 0),
-                UDim2.new(0, 12, 0, 0),
-                limitedOpt,
-                COLORS.TextDim,
-                Enum.Font.GothamSemibold,
-                13,
-                Enum.TextXAlignment.Left
-            )
-            label.TextTruncate = Enum.TextTruncate.AtEnd
-
-            local checkMark = Instance.new("TextLabel")
-            checkMark.Size = UDim2.new(0, 24, 0, 24)
-            checkMark.Position = UDim2.new(1, -34, 0.5, -12)
-            checkMark.BackgroundTransparency = 1
-            checkMark.Text = "✓"
-            checkMark.TextColor3 = COLORS.Accent
-            checkMark.Font = Enum.Font.GothamBold
-            checkMark.TextSize = 18
-            checkMark.Visible = selected[i] or false
-            checkMark.ZIndex = 11
-            checkMark.Parent = optionBtn
-
-            optionBtn.MouseEnter:Connect(function()
-                safeTween(optionBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.92})
-            end)
-
-            optionBtn.MouseLeave:Connect(function()
-                safeTween(optionBtn, TweenInfo.new(0.15), {BackgroundTransparency = 1})
-            end)
-
-            optionBtn.Activated:Connect(function()
-                selected[i] = not selected[i]
-                checkMark.Visible = selected[i]
-                updatePreview()
-            end)
-
-            table.insert(optionButtons, optionBtn)
-        end
-        
-        -- Ajusta altura se estiver aberto
-        if isOpen then
-            local maxHeight = math.min(#currentOptions * 38 + 8, 180)
-            safeTween(optionsContainer, TweenInfo.new(0.25), {Size = UDim2.new(1, 0, 0, maxHeight)})
-            safeTween(container, TweenInfo.new(0.25), {Size = UDim2.new(0.95, 0, 0, 40 + maxHeight)})
-        end
-        
-        updatePreview()
-    end
-
-    -- Inicializa
-    rebuildOptions()
-
-    local function toggleDropdown()
-        isOpen = not isOpen
-        local maxHeight = math.min(#currentOptions * 38 + 8, 180)
-        local targetHeight = isOpen and maxHeight or 0
-        
-        safeTween(optionsContainer, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, targetHeight)})
-        safeTween(container, TweenInfo.new(0.32, Enum.EasingStyle.Quint), {Size = UDim2.new(0.95, 0, 0, 40 + targetHeight)})
-        safeTween(stroke, TweenInfo.new(0.3), {Transparency = isOpen and 0.35 or 0.75})
-        safeTween(arrow, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Rotation = isOpen and 180 or 0})
-    end
-
-    previewBox.Activated:Connect(toggleDropdown)
-
-    -- Objeto retornado
-    local dropdownMultiObject = {}
-
-    function dropdownMultiObject:Update(newOptions)
-        if not newOptions or type(newOptions) \~= "table" then return end
-        
-        currentOptions = newOptions
-        
-        -- Preserva seleções que ainda existem na nova lista
-        local newSelected = {}
+        local totalHeight = 0
         for i, opt in ipairs(newOptions) do
-            -- Verifica se este item estava selecionado antes
-            for oldI, oldOpt in ipairs(options or {}) do
-                if oldOpt == opt and selected[oldI] then
-                    newSelected[i] = true
-                    break
-                end
-            end
-        end
-        selected = newSelected
-        
-        rebuildOptions()
-    end
-
-    function dropdownMultiObject:GetSelected()
-        local list = {}
-        for i, isSel in pairs(selected) do
-            if isSel then
-                table.insert(list, currentOptions[i])
-            end
-        end
-        return list
-    end
-
-    function dropdownMultiObject:SetCallback(newCallback)
-        currentCallback = newCallback
-        updatePreview() -- força chamada imediata com novo callback
-    end
-
-    -- Chama callback inicial
-    updatePreview()
-
-    return dropdownMultiObject
-            end
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -8, 0, 28)
+            btn.BackgroundColor3 = COLORS.ElementHover
+            btn.TextColor3 = COLORS.Text
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 13
+            btn.Text = LimitDropdownText(opt)  -- usa sua função de limite
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.Parent = listFrame
             
-        function Library.InputNumber(parent, text, min, max, default, step, callback)
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.Parent = btn
+            
+            btn.MouseEnter:Connect(function()
+                safeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.Accent})
+            end)
+            btn.MouseLeave:Connect(function()
+                safeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = COLORS.ElementHover})
+            end)
+            
+            btn.Activated:Connect(function()
+                selectedButton.Text = LimitDropdownText(opt)
+                listFrame.Visible = false
+                safeTween(listFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.5, -10, 0, 0)})
+                callback(opt)
+            end)
+            
+            table.insert(currentButtons, btn)
+            totalHeight = totalHeight + 32  -- 28 + 4 padding
+        end
+        
+        listFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+    end
+    
+    -- Inicializa com opções iniciais
+    updateOptions(options)
+    
+    -- Toggle da lista ao clicar no botão principal
+    selectedButton.Activated:Connect(function()
+        if listFrame.Visible then
+            listFrame.Visible = false
+            safeTween(listFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.5, -10, 0, 0)})
+        else
+            listFrame.Visible = true
+            safeTween(listFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0.5, -10, 0, math.min(180, #options * 32))})
+        end
+    end)
+    
+    -- Método público para atualizar as opções depois
+    function dropdown:UpdateOptions(newOptions)
+        updateOptions(newOptions or {})
+        -- Opcional: resetar seleção para o primeiro item
+        -- selectedButton.Text = LimitDropdownText(newOptions[1] or "Selecione...")
+    end
+    
+    -- Retorna o objeto com o método de update
+    return dropdown
+end
+
+    function Library.InputNumber(parent, text, min, max, default, step, callback)
         step = step or 1
 
         local container = Instance.new("Frame")
